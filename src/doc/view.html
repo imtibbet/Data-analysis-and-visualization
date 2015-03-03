@@ -1,0 +1,86 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module view</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>view</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/imtibbet/Documents/CS251/DataVis/src/view.py">/home/imtibbet/Documents/CS251/DataVis/src/view.py</a></font></td></tr></table>
+    <p><tt>Ian&nbsp;Tibbetts<br>
+Colby&nbsp;College&nbsp;CS251&nbsp;Spring&nbsp;'15<br>
+Professors&nbsp;Stephanie&nbsp;Taylor&nbsp;and&nbsp;Bruce&nbsp;Maxwell</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="numpy.html">numpy</a><br>
+</td><td width="25%" valign=top><a href="numpy.matlib.html">numpy.matlib</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ee77aa">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Classes</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#ee77aa"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl>
+<dt><font face="helvetica, arial"><a href="view.html#View">View</a>
+</font></dt></dl>
+ <p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#ffc8d8">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#000000" face="helvetica, arial"><a name="View">class <strong>View</strong></a></font></td></tr>
+    
+<tr><td bgcolor="#ffc8d8"><tt>&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%">Methods defined here:<br>
+<dl><dt><a name="View-__init__"><strong>__init__</strong></a>(self, vrp<font color="#909090">=[0.5, 0.5, 1]</font>, vpn<font color="#909090">=[0, 0, -1]</font>, vup<font color="#909090">=[0, 1, 0]</font>, u<font color="#909090">=[1, 0, 0]</font>, extent<font color="#909090">=[1, 1, 1]</font>, screen<font color="#909090">=[400, 400]</font>, offset<font color="#909090">=[20, 20]</font>, verbose<font color="#909090">=False</font>)</dt><dd><tt>Constructor&nbsp;for&nbsp;the&nbsp;view&nbsp;class,&nbsp;with&nbsp;defaults&nbsp;for&nbsp;all&nbsp;parameters</tt></dd></dl>
+
+<dl><dt><a name="View-build"><strong>build</strong></a>(self)</dt><dd><tt>returns&nbsp;the&nbsp;view&nbsp;transformation&nbsp;matrix&nbsp;for&nbsp;this&nbsp;view&nbsp;instance</tt></dd></dl>
+
+<dl><dt><a name="View-clone"><strong>clone</strong></a>(self)</dt><dd><tt>returns&nbsp;a&nbsp;deep&nbsp;clone&nbsp;of&nbsp;this&nbsp;view</tt></dd></dl>
+
+<dl><dt><a name="View-getRotateX"><strong>getRotateX</strong></a>(self, a)</dt><dd><tt>given&nbsp;an&nbsp;angle&nbsp;(in&nbsp;degrees)&nbsp;return&nbsp;the&nbsp;4x4&nbsp;rotation&nbsp;matrix&nbsp;about&nbsp;x</tt></dd></dl>
+
+<dl><dt><a name="View-getRotateXYZ"><strong>getRotateXYZ</strong></a>(self, u, v, w)</dt><dd><tt>returns&nbsp;a&nbsp;4x4&nbsp;rotation&nbsp;matrix&nbsp;to&nbsp;align&nbsp;to&nbsp;the&nbsp;given&nbsp;axes</tt></dd></dl>
+
+<dl><dt><a name="View-getRotateY"><strong>getRotateY</strong></a>(self, a)</dt><dd><tt>given&nbsp;an&nbsp;angle&nbsp;(in&nbsp;degrees)&nbsp;return&nbsp;the&nbsp;4x4&nbsp;rotation&nbsp;matrix&nbsp;about&nbsp;y</tt></dd></dl>
+
+<dl><dt><a name="View-getRotateZ"><strong>getRotateZ</strong></a>(self, a)</dt><dd><tt>given&nbsp;an&nbsp;angle&nbsp;(in&nbsp;degrees)&nbsp;return&nbsp;the&nbsp;4x4&nbsp;rotation&nbsp;matrix&nbsp;about&nbsp;z</tt></dd></dl>
+
+<dl><dt><a name="View-getScale"><strong>getScale</strong></a>(self, sx, sy, sz<font color="#909090">=1</font>)</dt><dd><tt>returns&nbsp;a&nbsp;4x4&nbsp;scale&nbsp;matrix</tt></dd></dl>
+
+<dl><dt><a name="View-getTranslate"><strong>getTranslate</strong></a>(self, dx, dy, dz<font color="#909090">=0</font>)</dt><dd><tt>returns&nbsp;a&nbsp;4x4&nbsp;translation&nbsp;matrix</tt></dd></dl>
+
+<dl><dt><a name="View-reset"><strong>reset</strong></a>(self)</dt><dd><tt>resets&nbsp;all&nbsp;parameters&nbsp;of&nbsp;this&nbsp;view&nbsp;to&nbsp;their&nbsp;defaults</tt></dd></dl>
+
+<dl><dt><a name="View-rotateVRC"><strong>rotateVRC</strong></a>(self, angUp, angU)</dt><dd><tt>rotate&nbsp;the&nbsp;view&nbsp;about&nbsp;the&nbsp;up&nbsp;and&nbsp;u&nbsp;axes&nbsp;by&nbsp;the&nbsp;given&nbsp;angles&nbsp;(in&nbsp;degrees)</tt></dd></dl>
+
+</td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-cos"><strong>cos</strong></a>(...)</dt><dd><tt><a href="#-cos">cos</a>(x)<br>
+&nbsp;<br>
+Return&nbsp;the&nbsp;cosine&nbsp;of&nbsp;x&nbsp;(measured&nbsp;in&nbsp;radians).</tt></dd></dl>
+ <dl><dt><a name="-normalize"><strong>normalize</strong></a>(v)</dt><dd><tt>return&nbsp;the&nbsp;given&nbsp;vector&nbsp;with&nbsp;unit&nbsp;length</tt></dd></dl>
+ <dl><dt><a name="-sin"><strong>sin</strong></a>(...)</dt><dd><tt><a href="#-sin">sin</a>(x)<br>
+&nbsp;<br>
+Return&nbsp;the&nbsp;sine&nbsp;of&nbsp;x&nbsp;(measured&nbsp;in&nbsp;radians).</tt></dd></dl>
+</td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#55aa55">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Data</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#55aa55"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><strong>pi</strong> = 3.141592653589793</td></tr></table>
+</body></html>
