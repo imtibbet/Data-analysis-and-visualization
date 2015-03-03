@@ -252,3 +252,50 @@ class DistributionDialog(OkCancelDialog):
         y = self.e2.get(self.e2.curselection())
         z = self.e2.get(self.e3.curselection())
         self.result = [x.upper(), y.upper(), z.upper()]
+        
+class PickAxesDialog(OkCancelDialog):
+
+    def __init__(self, parent, data, title = None):
+
+        self.headers = data.get_headers()
+        OkCancelDialog.__init__(self, parent, title)
+        
+    def body(self, master):
+    
+        if len(self.headers) < 2:
+        	print("not enough headers to plot")
+        	self.result = None
+        	self.cancel()
+        	
+        tk.Label(master, text="X Axes:").grid(row=0)
+        self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
+        for header in self.headers:
+            self.e1.insert(tk.END, header)
+        self.e1.select_set(0)
+        self.e1.grid(row=0, column=1)
+        
+        tk.Label(master, text="Y Axes:").grid(row=1)
+        self.e2 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
+        for header in self.headers:
+            self.e2.insert(tk.END, header)        
+        self.e2.select_set(1) 
+        self.e2.grid(row=1, column=1)
+        
+        if len(self.headers) > 2:
+			tk.Label(master, text="Z Axes:").grid(row=2)
+			self.e3 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
+			for header in self.headers:
+				self.e3.insert(tk.END, header)        
+			self.e3.select_set(2) 
+			self.e3.grid(row=2, column=1)
+        
+        return self.e1 # initial focus
+
+    def apply(self):
+        x = self.e1.get(self.e1.curselection())
+        y = self.e2.get(self.e2.curselection())
+        if len(self.headers) < 3:
+        	self.result = [x, y]
+        else:
+			z = self.e2.get(self.e3.curselection())
+			self.result = [x, y, z]
