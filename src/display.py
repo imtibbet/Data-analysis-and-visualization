@@ -9,8 +9,7 @@ import numpy as np
 import analysis
 from data import Data
 from view import View
-from dialog import AboutAppDialog, AboutBruceDialog, AboutMeDialog, \
-	AboutStephDialog, BindingsDialog, DistributionDialog, PickAxesDialog
+import dialog
 from optparse import OptionParser
 from collections import OrderedDict
 
@@ -513,31 +512,31 @@ class DisplayApp:
 		'''
 		display the application about dialog
 		'''
-		AboutAppDialog(self.root, title="About Application")
+		dialog.AboutAppDialog(self.root, title="About Application")
 
 	def displayAboutMe(self, event=None):
 		'''
 		display the author about dialog
 		'''
-		AboutMeDialog(self.root, title="About Me")
+		dialog.AboutMeDialog(self.root, title="About Me")
 
 	def displayAboutSteph(self, event=None):
 		'''
 		display the Stephanie about dialog
 		'''
-		AboutStephDialog(self.root, title="About Stephanie Taylor")
+		dialog.AboutStephDialog(self.root, title="About Stephanie Taylor")
 
 	def displayAboutBruce(self, event=None):
 		'''
 		display the Bruce about dialog
 		'''
-		AboutBruceDialog(self.root, title="About Bruce Maxwell")
+		dialog.AboutBruceDialog(self.root, title="About Bruce Maxwell")
 
 	def displayBindings(self, event=None):
 		'''
 		display the Key Bindings about dialog
 		'''
-		BindingsDialog(self.root, title="Key Bindings")
+		dialog.BindingsDialog(self.root, title="Key Bindings")
 	
 	def drawObject(self, x, y, dx=6, dy=6):
 		'''
@@ -582,7 +581,7 @@ class DisplayApp:
 		'''
 		if not self.data:
 			return None
-		return PickAxesDialog(self.root, self.data, title="Pick Data Axes").result
+		return dialog.PickAxesDialog(self.root, self.data, title="Pick Data Axes").result
 		
 	def getRandomColor(self, event=None):
 		'''
@@ -647,7 +646,7 @@ class DisplayApp:
 		define a new color for the color selector control
 		'''
 		if self.verbose: print("creating a new color")
-		#d = ColorMakerDialog(self.root, title="Create New Color")
+		#d = dialog.ColorMakerDialog(self.root, title="Create New Color")
 		result = askcolor()
 		if result[0]:
 			(rb, gb, bb) = result[0]
@@ -823,7 +822,7 @@ class DisplayApp:
 		'''
 		if self.verbose: print("setting a new distribution")
 		[xDistribution, yDistribution, zDistribution] = \
-			DistributionDialog(self.root, 
+			dialog.DistributionDialog(self.root, 
 							   self.xDistribution.get(), 
 							   self.yDistribution.get(), 
 							   self.zDistribution.get(), 
@@ -832,7 +831,7 @@ class DisplayApp:
 		self.xDistribution.set(xDistribution)
 		self.yDistribution.set(yDistribution)
 		self.zDistribution.set(zDistribution)
-		 
+
 	def showObjectPosition(self, event):
 		'''
 		update the status if the event is over an object on the canvas

@@ -8,7 +8,7 @@
 <td valign=bottom>&nbsp;<br>
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>display</strong></big></big></font></td
 ><td align=right valign=bottom
-><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/imtibbet/Documents/CS251/DataVis/src/display.py">/home/imtibbet/Documents/CS251/DataVis/src/display.py</a></font></td></tr></table>
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/imtibbet/Documents/CS251/src/display.py">/home/imtibbet/Documents/CS251/src/display.py</a></font></td></tr></table>
     <p><tt>Ian&nbsp;Tibbetts<br>
 Colby&nbsp;College&nbsp;CS251&nbsp;Spring&nbsp;'15<br>
 Professors&nbsp;Stephanie&nbsp;Taylor&nbsp;and&nbsp;Bruce&nbsp;Maxwell</tt></p>
@@ -20,12 +20,13 @@ Professors&nbsp;Stephanie&nbsp;Taylor&nbsp;and&nbsp;Bruce&nbsp;Maxwell</tt></p>
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
 <td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="analysis.html">analysis</a><br>
-<a href="numpy.html">numpy</a><br>
-</td><td width="25%" valign=top><a href="random.html">random</a><br>
-<a href="Tkinter.html">Tkinter</a><br>
-</td><td width="25%" valign=top><a href="tkFileDialog.html">tkFileDialog</a><br>
-<a href="types.html">types</a><br>
-</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<a href="dialog.html">dialog</a><br>
+</td><td width="25%" valign=top><a href="numpy.html">numpy</a><br>
+<a href="random.html">random</a><br>
+</td><td width="25%" valign=top><a href="Tkinter.html">Tkinter</a><br>
+<a href="tkFileDialog.html">tkFileDialog</a><br>
+</td><td width="25%" valign=top><a href="types.html">types</a><br>
+</td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#ee77aa">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -47,7 +48,7 @@ Professors&nbsp;Stephanie&nbsp;Taylor&nbsp;and&nbsp;Bruce&nbsp;Maxwell</tt></p>
 <td width="100%">Methods defined here:<br>
 <dl><dt><a name="DisplayApp-__init__"><strong>__init__</strong></a>(self, width, height, filename<font color="#909090">=''</font>, verbose<font color="#909090">=True</font>)</dt><dd><tt>Constructor&nbsp;for&nbsp;the&nbsp;display&nbsp;application</tt></dd></dl>
 
-<dl><dt><a name="DisplayApp-buildAxes"><strong>buildAxes</strong></a>(self, axes<font color="#909090">=[[0, 0, 0], [1, 0, 0], [0, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 1]]</font>)</dt><dd><tt>builds&nbsp;the&nbsp;view&nbsp;transformation&nbsp;matrix&nbsp;[VTM],&nbsp;<br>
+<dl><dt><a name="DisplayApp-buildAxes"><strong>buildAxes</strong></a>(self, axes<font color="#909090">=[[0, 0, 0], [1, 0, 0], [0, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 1]]</font>, axeslabels<font color="#909090">=[[1.05, 0, 0], [0, 1.05, 0], [0, 0, 1.05]]</font>)</dt><dd><tt>builds&nbsp;the&nbsp;view&nbsp;transformation&nbsp;matrix&nbsp;[VTM],&nbsp;<br>
 multiplies&nbsp;the&nbsp;axis&nbsp;endpoints&nbsp;by&nbsp;the&nbsp;VTM,&nbsp;<br>
 then&nbsp;creates&nbsp;three&nbsp;new&nbsp;line&nbsp;objects,&nbsp;one&nbsp;for&nbsp;each&nbsp;axis</tt></dd></dl>
 
@@ -63,8 +64,6 @@ then&nbsp;creates&nbsp;three&nbsp;new&nbsp;line&nbsp;objects,&nbsp;one&nbsp;for&
 
 <dl><dt><a name="DisplayApp-clearData"><strong>clearData</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>clear&nbsp;the&nbsp;data&nbsp;from&nbsp;the&nbsp;canvas</tt></dd></dl>
 
-<dl><dt><a name="DisplayApp-createColor"><strong>createColor</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>define&nbsp;a&nbsp;new&nbsp;color&nbsp;for&nbsp;the&nbsp;color&nbsp;selector&nbsp;control</tt></dd></dl>
-
 <dl><dt><a name="DisplayApp-createRandomDataPoints"><strong>createRandomDataPoints</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>draw&nbsp;a&nbsp;number&nbsp;of&nbsp;random&nbsp;points&nbsp;on&nbsp;the&nbsp;canvas</tt></dd></dl>
 
 <dl><dt><a name="DisplayApp-deletePoint"><strong>deletePoint</strong></a>(self, event)</dt><dd><tt>delete&nbsp;the&nbsp;top&nbsp;point&nbsp;under&nbsp;the&nbsp;event&nbsp;location</tt></dd></dl>
@@ -79,18 +78,25 @@ then&nbsp;creates&nbsp;three&nbsp;new&nbsp;line&nbsp;objects,&nbsp;one&nbsp;for&
 
 <dl><dt><a name="DisplayApp-displayBindings"><strong>displayBindings</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>display&nbsp;the&nbsp;Key&nbsp;Bindings&nbsp;about&nbsp;dialog</tt></dd></dl>
 
-<dl><dt><a name="DisplayApp-drawObject"><strong>drawObject</strong></a>(self, x, y, z, dx<font color="#909090">=6</font>, dy<font color="#909090">=6</font>)</dt><dd><tt>add&nbsp;the&nbsp;control&nbsp;selected&nbsp;shape&nbsp;to&nbsp;the&nbsp;canvas&nbsp;at&nbsp;x,&nbsp;y&nbsp;with&nbsp;size&nbsp;dx,&nbsp;dy</tt></dd></dl>
+<dl><dt><a name="DisplayApp-drawObject"><strong>drawObject</strong></a>(self, x, y, dx<font color="#909090">=6</font>, dy<font color="#909090">=6</font>)</dt><dd><tt>add&nbsp;the&nbsp;control&nbsp;selected&nbsp;shape&nbsp;to&nbsp;the&nbsp;canvas&nbsp;at&nbsp;x,&nbsp;y&nbsp;with&nbsp;size&nbsp;dx,&nbsp;dy</tt></dd></dl>
 
-<dl><dt><a name="DisplayApp-getColorByDepth"><strong>getColorByDepth</strong></a>(self, z)</dt><dd><tt>color&nbsp;according&nbsp;the&nbsp;given&nbsp;normalized&nbsp;z</tt></dd></dl>
+<dl><dt><a name="DisplayApp-getColorByDepth"><strong>getColorByDepth</strong></a>(self)</dt><dd><tt>get&nbsp;the&nbsp;color&nbsp;according&nbsp;the&nbsp;given&nbsp;normalized&nbsp;z</tt></dd></dl>
 
 <dl><dt><a name="DisplayApp-getCurrentColor"><strong>getCurrentColor</strong></a>(self)</dt><dd><tt>get&nbsp;the&nbsp;current&nbsp;color&nbsp;selected&nbsp;by&nbsp;the&nbsp;controls</tt></dd></dl>
 
+<dl><dt><a name="DisplayApp-getDataAxes"><strong>getDataAxes</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>return&nbsp;the&nbsp;headers&nbsp;for&nbsp;the&nbsp;current&nbsp;data,&nbsp;return&nbsp;None&nbsp;if&nbsp;not&nbsp;possible</tt></dd></dl>
+
+<dl><dt><a name="DisplayApp-getRandomColor"><strong>getRandomColor</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>set&nbsp;the&nbsp;color&nbsp;channel&nbsp;pickers&nbsp;to&nbsp;three&nbsp;random&nbsp;integers&nbsp;between&nbsp;0&nbsp;and&nbsp;250<br>
+and&nbsp;return&nbsp;the&nbsp;random&nbsp;rgb&nbsp;band&nbsp;values&nbsp;as&nbsp;hex&nbsp;string</tt></dd></dl>
+
 <dl><dt><a name="DisplayApp-getShapeFunction"><strong>getShapeFunction</strong></a>(self, shape, x, y, dx, dy)</dt><dd><tt>returns&nbsp;the&nbsp;function&nbsp;and&nbsp;arguments&nbsp;as&nbsp;a&nbsp;tuple&nbsp;for&nbsp;the&nbsp;arguments</tt></dd></dl>
+
+<dl><dt><a name="DisplayApp-getUserColor"><strong>getUserColor</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>define&nbsp;a&nbsp;new&nbsp;color&nbsp;for&nbsp;the&nbsp;color&nbsp;selector&nbsp;control</tt></dd></dl>
 
 <dl><dt><a name="DisplayApp-handleButton1"><strong>handleButton1</strong></a>(self, event)</dt><dd><tt>prepare&nbsp;for&nbsp;moving&nbsp;objects&nbsp;on&nbsp;canvas,&nbsp;the&nbsp;first&nbsp;object&nbsp;under&nbsp;the&nbsp;event<br>
 or&nbsp;all&nbsp;the&nbsp;objects&nbsp;if&nbsp;the&nbsp;event&nbsp;is&nbsp;not&nbsp;over&nbsp;any&nbsp;objects</tt></dd></dl>
 
-<dl><dt><a name="DisplayApp-handleButton1Motion"><strong>handleButton1Motion</strong></a>(self, event)</dt><dd><tt>move&nbsp;the&nbsp;objects&nbsp;selected&nbsp;by&nbsp;the&nbsp;click</tt></dd></dl>
+<dl><dt><a name="DisplayApp-handleButton1Motion"><strong>handleButton1Motion</strong></a>(self, event)</dt><dd><tt>pan&nbsp;the&nbsp;view</tt></dd></dl>
 
 <dl><dt><a name="DisplayApp-handleButton2"><strong>handleButton2</strong></a>(self, event)</dt><dd><tt>prepare&nbsp;to&nbsp;rotate&nbsp;the&nbsp;view&nbsp;by&nbsp;storing&nbsp;click&nbsp;and&nbsp;original&nbsp;view</tt></dd></dl>
 
@@ -99,9 +105,7 @@ or&nbsp;all&nbsp;the&nbsp;objects&nbsp;if&nbsp;the&nbsp;event&nbsp;is&nbsp;not&n
 <dl><dt><a name="DisplayApp-handleButton3"><strong>handleButton3</strong></a>(self, event)</dt><dd><tt>prepare&nbsp;for&nbsp;scaling&nbsp;by&nbsp;storing&nbsp;a&nbsp;base&nbsp;click&nbsp;point&nbsp;and&nbsp;the&nbsp;value&nbsp;of&nbsp;the&nbsp;&nbsp;<br>
 extent&nbsp;in&nbsp;the&nbsp;view&nbsp;space&nbsp;that&nbsp;does&nbsp;not&nbsp;change&nbsp;while&nbsp;the&nbsp;user&nbsp;moves</tt></dd></dl>
 
-<dl><dt><a name="DisplayApp-handleButton3Motion"><strong>handleButton3Motion</strong></a>(self, event)</dt><dd><tt>scale&nbsp;the&nbsp;objects&nbsp;selected&nbsp;by&nbsp;the&nbsp;click</tt></dd></dl>
-
-<dl><dt><a name="DisplayApp-handleCmd1"><strong>handleCmd1</strong></a>(self)</dt><dd><tt>handle&nbsp;the&nbsp;command&nbsp;1&nbsp;button</tt></dd></dl>
+<dl><dt><a name="DisplayApp-handleButton3Motion"><strong>handleButton3Motion</strong></a>(self, event)</dt><dd><tt>zoom&nbsp;the&nbsp;view</tt></dd></dl>
 
 <dl><dt><a name="DisplayApp-handleQuit"><strong>handleQuit</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>quit&nbsp;the&nbsp;display&nbsp;application</tt></dd></dl>
 
@@ -113,10 +117,9 @@ extent&nbsp;in&nbsp;the&nbsp;view&nbsp;space&nbsp;that&nbsp;does&nbsp;not&nbsp;c
 
 <dl><dt><a name="DisplayApp-preDefineDistributions"><strong>preDefineDistributions</strong></a>(self)</dt><dd><tt>define&nbsp;the&nbsp;distributions&nbsp;for&nbsp;creating&nbsp;points</tt></dd></dl>
 
-<dl><dt><a name="DisplayApp-randomColor"><strong>randomColor</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>set&nbsp;the&nbsp;color&nbsp;channel&nbsp;pickers&nbsp;to&nbsp;three&nbsp;random&nbsp;integers&nbsp;between&nbsp;0&nbsp;and&nbsp;250<br>
-and&nbsp;return&nbsp;the&nbsp;random&nbsp;rgb&nbsp;band&nbsp;values&nbsp;as&nbsp;hex&nbsp;string</tt></dd></dl>
-
 <dl><dt><a name="DisplayApp-setBindings"><strong>setBindings</strong></a>(self)</dt><dd><tt>set&nbsp;the&nbsp;key&nbsp;bindings&nbsp;for&nbsp;the&nbsp;application</tt></dd></dl>
+
+<dl><dt><a name="DisplayApp-setColorMode"><strong>setColorMode</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>callback&nbsp;for&nbsp;radio&nbsp;button</tt></dd></dl>
 
 <dl><dt><a name="DisplayApp-setDistribution"><strong>setDistribution</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>select&nbsp;the&nbsp;distribution&nbsp;using&nbsp;the&nbsp;dialog&nbsp;and&nbsp;update&nbsp;status</tt></dd></dl>
 
@@ -128,9 +131,9 @@ and&nbsp;return&nbsp;the&nbsp;random&nbsp;rgb&nbsp;band&nbsp;values&nbsp;as&nbsp
 
 <dl><dt><a name="DisplayApp-updateColor"><strong>updateColor</strong></a>(self, event<font color="#909090">=None</font>)</dt><dd><tt>update&nbsp;all&nbsp;the&nbsp;objects&nbsp;on&nbsp;the&nbsp;canvas&nbsp;to&nbsp;the&nbsp;current&nbsp;color</tt></dd></dl>
 
-<dl><dt><a name="DisplayApp-updateData"><strong>updateData</strong></a>(self)</dt><dd><tt>redraw&nbsp;the&nbsp;active&nbsp;data&nbsp;with&nbsp;the&nbsp;current&nbsp;vtm</tt></dd></dl>
-
 <dl><dt><a name="DisplayApp-updateNumObjStrVar"><strong>updateNumObjStrVar</strong></a>(self)</dt><dd><tt>update&nbsp;the&nbsp;status&nbsp;bar&nbsp;to&nbsp;reflect&nbsp;the&nbsp;current&nbsp;number&nbsp;of&nbsp;objects</tt></dd></dl>
+
+<dl><dt><a name="DisplayApp-updateScreen"><strong>updateScreen</strong></a>(self)</dt><dd><tt>updates&nbsp;the&nbsp;view&nbsp;to&nbsp;the&nbsp;current&nbsp;screen&nbsp;dimensions</tt></dd></dl>
 
 <dl><dt><a name="DisplayApp-viewPreset"><strong>viewPreset</strong></a>(self)</dt><dd><tt>set&nbsp;the&nbsp;view&nbsp;to&nbsp;the&nbsp;specified&nbsp;preset</tt></dd></dl>
 
