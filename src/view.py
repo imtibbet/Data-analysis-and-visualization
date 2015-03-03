@@ -30,100 +30,6 @@ class View:
 		self.offset = np.matrix(offset, np.float)
 		self.verbose = verbose
 	
-	def reset(self):
-		'''
-		resets all parameters of this view to their defaults
-		'''
-		self.__init__()
-		
-	def clone(self):
-		'''
-		returns a deep clone of this view
-		'''
-		return View(self.vrp, self.vpn, self.vup, self.u, self.extent, 
-					self.screen, self.offset, self.verbose)
-	
-	def getTranslate(self, dx, dy, dz=0):
-		'''
-		returns a 4x4 translation matrix
-		'''
-		return np.asmatrix([[1,0,0,dx],
-							[0,1,0,dy],
-							[0,0,1,dz],
-							[0,0,0,1]],
-							np.float)
-		
-	def getScale(self, sx, sy, sz=1):
-		'''
-		returns a 4x4 scale matrix
-		'''
-		return np.asmatrix([[sx,0,0,0],
-							[0,sy,0,0],
-							[0,0,sz,0],
-							[0,0,0,1]],
-							np.float)
-		
-	def rotateVRC(self, angUp, angU):
-		'''
-		rotate the view about the up and u axes by the given angles (in degrees)
-		'''
-		centerVV = self.vrp + self.vpn * self.extent[0,2] * 0.5
-		t1 = self.getTranslate(-centerVV[0,0], -centerVV[0,1], -centerVV[0,2])
-		Rxyz = self.getRotateXYZ(self.u, self.vup, self.vpn)
-		r1 = self.getRotateY(angUp)
-		r2 = self.getRotateX(angU)
-		t2 = self.getTranslate(centerVV[0,0], centerVV[0,1], centerVV[0,2])
-		tvrc = np.zeros((4,4), np.float)
-		tvrc[:,:3] = np.vstack((self.vrp, self.u, self.vup, self.vpn))
-		tvrc[0,3] = 1 # vrp is a point so homogeneous of 1
-		tvrc = (t2*Rxyz.T*r2*r1*Rxyz*t1*tvrc.T).T
-		self.vrp = 	tvrc[0,:3].copy()
-		self.u = 	normalize(tvrc[1,:3]).copy()
-		self.vup = 	normalize(tvrc[2,:3]).copy()
-		self.vpn = 	normalize(tvrc[3,:3]).copy()
-		
-	def getRotateXYZ(self, u, v, w):
-		'''
-		returns a 4x4 rotation matrix to align to the given axes
-		'''
-		m = npm.identity(4, np.float)
-		rot = np.vstack((u, v, w))
-		m[0:3,0:3] = rot
-		return m
-	
-	def getRotateX(self, a):
-		'''
-		given an angle (in degrees) return the 4x4 rotation matrix about x
-		'''
-		a *= pi/180.0 # convert to radians
-		return np.asmatrix([[1,0,0,0],
-							[0,cos(a),sin(a),0],
-							[0,-sin(a),cos(a),0],
-							[0,0,0,1]],
-							np.float)
-		
-	def getRotateY(self, a):
-		'''
-		given an angle (in degrees) return the 4x4 rotation matrix about y
-		'''
-		a *= pi/180.0 # convert to radians
-		return np.asmatrix([[cos(a),0,-sin(a),0],
-							[0,1,0,0],
-							[sin(a),0,cos(a),0],
-							[0,0,0,1]],
-							np.float)
-		
-	def getRotateZ(self, a):
-		'''
-		given an angle (in degrees) return the 4x4 rotation matrix about z
-		'''
-		a *= pi/180.0 # convert to radians
-		return np.asmatrix([[cos(a),sin(a),0,0],
-							[-sin(a),cos(a),0,0],
-							[0,0,1,0],
-							[0,0,0,1]],
-							np.float)
-		
 	def build(self):
 		'''
 		returns the view transformation matrix for this view instance
@@ -187,6 +93,100 @@ class View:
 		
 		# return the complete vtm matrix
 		return vtm
+		
+	def clone(self):
+		'''
+		returns a deep clone of this view
+		'''
+		return View(self.vrp, self.vpn, self.vup, self.u, self.extent, 
+					self.screen, self.offset, self.verbose)
+	
+	def getTranslate(self, dx, dy, dz=0):
+		'''
+		returns a 4x4 translation matrix
+		'''
+		return np.asmatrix([[1,0,0,dx],
+							[0,1,0,dy],
+							[0,0,1,dz],
+							[0,0,0,1]],
+							np.float)
+		
+	def getRotateXYZ(self, u, v, w):
+		'''
+		returns a 4x4 rotation matrix to align to the given axes
+		'''
+		m = npm.identity(4, np.float)
+		rot = np.vstack((u, v, w))
+		m[0:3,0:3] = rot
+		return m
+	
+	def getRotateX(self, a):
+		'''
+		given an angle (in degrees) return the 4x4 rotation matrix about x
+		'''
+		a *= pi/180.0 # convert to radians
+		return np.asmatrix([[1,0,0,0],
+							[0,cos(a),sin(a),0],
+							[0,-sin(a),cos(a),0],
+							[0,0,0,1]],
+							np.float)
+		
+	def getRotateY(self, a):
+		'''
+		given an angle (in degrees) return the 4x4 rotation matrix about y
+		'''
+		a *= pi/180.0 # convert to radians
+		return np.asmatrix([[cos(a),0,-sin(a),0],
+							[0,1,0,0],
+							[sin(a),0,cos(a),0],
+							[0,0,0,1]],
+							np.float)
+		
+	def getRotateZ(self, a):
+		'''
+		given an angle (in degrees) return the 4x4 rotation matrix about z
+		'''
+		a *= pi/180.0 # convert to radians
+		return np.asmatrix([[cos(a),sin(a),0,0],
+							[-sin(a),cos(a),0,0],
+							[0,0,1,0],
+							[0,0,0,1]],
+							np.float)
+		
+	def getScale(self, sx, sy, sz=1):
+		'''
+		returns a 4x4 scale matrix
+		'''
+		return np.asmatrix([[sx,0,0,0],
+							[0,sy,0,0],
+							[0,0,sz,0],
+							[0,0,0,1]],
+							np.float)
+							
+	def reset(self):
+		'''
+		resets all parameters of this view to their defaults
+		'''
+		self.__init__()
+		
+	def rotateVRC(self, angUp, angU):
+		'''
+		rotate the view about the up and u axes by the given angles (in degrees)
+		'''
+		centerVV = self.vrp + self.vpn * self.extent[0,2] * 0.5
+		t1 = self.getTranslate(-centerVV[0,0], -centerVV[0,1], -centerVV[0,2])
+		Rxyz = self.getRotateXYZ(self.u, self.vup, self.vpn)
+		r1 = self.getRotateY(angUp)
+		r2 = self.getRotateX(angU)
+		t2 = self.getTranslate(centerVV[0,0], centerVV[0,1], centerVV[0,2])
+		tvrc = np.zeros((4,4), np.float)
+		tvrc[:,:3] = np.vstack((self.vrp, self.u, self.vup, self.vpn))
+		tvrc[0,3] = 1 # vrp is a point so homogeneous of 1
+		tvrc = (t2*Rxyz.T*r2*r1*Rxyz*t1*tvrc.T).T
+		self.vrp = 	tvrc[0,:3].copy()
+		self.u = 	normalize(tvrc[1,:3]).copy()
+		self.vup = 	normalize(tvrc[2,:3]).copy()
+		self.vpn = 	normalize(tvrc[3,:3]).copy()
 
 if __name__ == "__main__":
 	

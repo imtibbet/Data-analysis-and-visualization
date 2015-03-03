@@ -26,7 +26,7 @@ except ImportError:
 # create a class to build and manage the display
 class DisplayApp:
 
-	def __init__(self, width, height, filename="", verbose=True):
+	def __init__(self, width, height, filename=None, verbose=True):
 		'''
 		Constructor for the display application
 		'''
@@ -34,6 +34,10 @@ class DisplayApp:
 		self.verbose = verbose
 		self.filename = filename
 		self.data = None
+		self.activeData = None
+		self.width = None
+		self.height = None
+		self.filename2data = {}
 		self.preDefineColors()
 		self.preDefineDistributions()
 		self.objects = [] # shapes drawn on canvas
@@ -44,13 +48,15 @@ class DisplayApp:
 
 		# set up the geometry for the window
 		self.root.geometry( "%dx%d+50+30" % (width, height) )
-		self.width = width
-		self.height = height
 		
 		# set the title of the window
 		self.root.title("Tibbetts GUI")
 		# set the maximum size of the window for resizing
 		self.root.maxsize( 1600, 900 )
+		
+		# set the canvas field to grant access to shape functions
+		self.canvas = tk.Canvas( self.root, width=width, height=height )
+		self.preDefineShapes()
 
 		# setup the menus
 		self.buildMenus()
@@ -61,8 +67,8 @@ class DisplayApp:
 		# build the status bar
 		self.buildStatusFrame()
 
-		# build the Canvas
-		self.buildCanvas(width, height)
+		# pack the Canvas
+		self.canvas.pack( expand=tk.YES, fill=tk.BOTH )
 
 		# bring the window to the front
 		self.root.lift()
@@ -72,6 +78,10 @@ class DisplayApp:
 
 		# set up the key bindings
 		self.setBindings()
+		
+		# set the width and height for updating the screen
+		self.width = self.canvas.winfo_width()
+		self.height = self.canvas.winfo_height()
 		
 		# build the axes
 		self.buildAxes()
@@ -96,8 +106,8 @@ class DisplayApp:
 				axis.append(1) # homogeneous coordinate
 		for axis in axeslabels:
 			if len(axis) < 4:axis.append(1) # homogeneous coordinate
-		self.view = View()
-		self.updateScreen()
+		self.view = View(offset=[self.width*0.1, self.height*0.1],
+							screen=[self.width*0.8, self.height*0.8])
 		self.baseView = self.view.clone()
 		VTM = self.view.build()
 		self.axes = np.asmatrix(axes)
@@ -112,14 +122,6 @@ class DisplayApp:
 												axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
 			self.labels.append(self.canvas.create_text(labelPts[i, 0], labelPts[i, 1], 
 												font=("Purina", 20), text=self.labelStrings[i]))
-					
-	def buildCanvas(self, width, height):
-		'''
-		build the canvas where objects will be drawn
-		'''
-		if self.verbose: print("building the canvas")
-		self.canvas = tk.Canvas( self.root, width=width, height=height )
-		self.canvas.pack( expand=tk.YES, fill=tk.BOTH )
 
 	def buildControlsFrame(self):
 		'''
@@ -137,12 +139,23 @@ class DisplayApp:
 		row=0
 		# use a label to set the size of the right panel
 		tk.Label( self.rightcntlframe, text="Data"
-				  ).grid( row=row, column=1, pady=10 )
+				  ).grid( row=row, column=1 )
 		row+=1
 
 		# make an open button in the frame
 		tk.Button( self.rightcntlframe, text="Open", 
 				   command=self.openData, width=10
+				   ).grid( row=row, column=1 )
+		row+=1
+		
+		self.openFilenames = tk.Listbox(self.rightcntlframe, selectmode=tk.SINGLE, 
+										exportselection=0, height=3)
+		self.openFilenames.grid( row=row, column=1 )
+		row+=1
+
+		# make a clear button in the frame
+		tk.Button( self.rightcntlframe, text="Plot Selected", 
+				   command=self.plotData, width=10
 				   ).grid( row=row, column=1 )
 		row+=1
 
@@ -166,27 +179,44 @@ class DisplayApp:
 		row+=1
 
 		# shape selector
-		tk.Label( self.rightcntlframe, text="\nShape Select"
+		tk.Label( self.rightcntlframe, text="\nShape"
 					   ).grid( row=row, column=1 )
 		row+=1
+
+		# make a shape mode selector in the frame
+		colorModes = [
+			("Shape By Data", "d"),
+			("Selected Shape", "s")
+		]
+		self.shapeModeStr = tk.StringVar()
+		self.shapeModeStr.set("d") # initialize
+		for text, mode in colorModes:
+			b = tk.Radiobutton(self.rightcntlframe, text=text,
+							variable=self.shapeModeStr, value=mode, command=self.update)
+			b.grid( row=row, column=1 )
+			row+=1
 		
+		# User selected shape
 		self.shapeOption = tk.StringVar( self.root )
-		self.shapeOption.set("oval")
+		self.shapeOption.set(self.shapeFunctions.keys()[0].capitalize())
 		tk.OptionMenu( self.rightcntlframe, self.shapeOption, 
-					   "oval", "rectangle", 
-					   "up triangle", "down triangle",
-					   "x", "star",
+					   *[shape.capitalize() for shape in self.shapeFunctions],
 					   command=self.update
+					   ).grid( row=row, column=1 )
+		row+=1
+
+		# shape selector
+		tk.Label( self.rightcntlframe, text="\nColor"
 					   ).grid( row=row, column=1 )
 		row+=1
 
 		# make a color mode selector in the frame
 		colorModes = [
-			("Color By Depth", "z"),
-			("Current Color", "c")
+			("Color By Data", "d"),
+			("Selected Color", "s")
 		]
 		self.colorModeStr = tk.StringVar()
-		self.colorModeStr.set("z") # initialize
+		self.colorModeStr.set("d") # initialize
 		self.colorMode = self.getColorByDepth
 		for text, mode in colorModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
@@ -245,6 +275,7 @@ class DisplayApp:
 	def buildData(self): 
 		'''
 		build the data on the screen based on the data and filename fields
+		Note: this method is the only one that transforms and draws data
 		'''
 		
 		# clean the data on the canvas
@@ -254,38 +285,14 @@ class DisplayApp:
 		
 		# if the data is not set, set according to filename
 		if not self.data:
-			
-			# leave data unset if no filename
-			if not self.filename:
+			self.setActiveData()
+			if not self.data: 
 				return
-			
-			# otherwise set data instance and read active data columns
-			else:
-				self.data = Data(self.filename, self.verbose)
-				headers = self.getDataAxes()
-				if not headers: return
-				self.activeData = analysis.normalize_columns_separately(
-														self.data, headers)
-				[rows, cols] = self.activeData.shape
-				if(cols == 2): # pad missing z data
-					self.activeData = np.column_stack((self.activeData, 
-													   [0]*rows, [1]*rows))
-					self.labelStrings[0] = headers[0]
-					self.labelStrings[1] = headers[1]
-				else: # pad the homogeneous coordinate
-					self.activeData = np.column_stack((self.activeData, 
-													   [1]*rows))
-					self.labelStrings[0] = headers[0]
-					self.labelStrings[1] = headers[1]
-					self.labelStrings[2] = headers[2]
 		
 		# prepare to transform the active data to the current view
 		VTM = self.view.build()
 		viewData = self.activeData.copy()
 		rows = viewData.shape[0]
-		
-		# save original z values for coloring
-		zValues = viewData[:, 2].T
 		
 		# transform into view
 		viewData = (VTM * viewData.T).T
@@ -294,11 +301,10 @@ class DisplayApp:
 		zIndicesSorted = np.argsort(viewData[:, 2].T.tolist()[0])
 		
 		# transform sorted data to view and draw on canvas
-		dx = 6.0 #/self.view.extent[0,0] # size of data points
-		dy = 6.0 #/self.view.extent[0,1]
+		#dx = 6.0/self.view.extent[0,0] # size of data points
+		#dy = 6.0/self.view.extent[0,1]
 		for i in zIndicesSorted:
-			self.dataDepth = zValues[0,i]
-			self.drawObject(viewData[i,0], viewData[i,1], dx, dy)
+			self.drawObject(viewData[i,0], viewData[i,1], row=i)
 
 	def buildMenus(self):
 		'''
@@ -454,8 +460,9 @@ class DisplayApp:
 		for obj in self.objects:
 			self.canvas.delete(obj)
 		self.objects = []
-		self.filename = ""
+		self.filename = None
 		self.data = None
+		self.activeData = None
 		self.updateNumObjStrVar()
 		self.xLocation.set("")
 		self.yLocation.set("")
@@ -484,6 +491,7 @@ class DisplayApp:
 		
 		# make points on the canvas
 		self.data = None
+		self.activeData = None
 		self.filename = [["x", "y", "z"], ["numeric", "numeric", "numeric"]]
 		self.filename += [[randFuncX(*randArgsX), 
 						   randFuncY(*randArgsY),
@@ -538,13 +546,24 @@ class DisplayApp:
 		'''
 		dialog.BindingsDialog(self.root, title="Key Bindings")
 	
-	def drawObject(self, x, y, dx=6, dy=6):
+	def drawObject(self, x, y, row=0, dx=6, dy=6):
 		'''
 		add the control selected shape to the canvas at x, y with size dx, dy
 		'''
-		[shapeFunc, coords] = self.getShapeFunction(self.shapeOption.get(), 
-													x, y, dx, dy)
+		dx *= self.sizeData[row, 0]+1
+		dy *= self.sizeData[row, 0]+1
+		if self.shapeModeStr.get() == "s":
+			[shapeFunc, coords] = self.getShapeFunction(self.shapeOption.get(), 
+														x, y, dx, dy)
+		else:
+			shapeDataVal = min(self.shapeData[row, 0], 0.99)
+			numShapes = len(self.shapeFunctions)
+			shapeIndex = int(shapeDataVal*numShapes)
+			shapes = self.shapeFunctions.keys()
+			[shapeFunc, coords] = self.getShapeFunction(shapes[shapeIndex], 
+														x, y, dx, dy)
 		if shapeFunc:
+			self.dataDepth = self.colorData[row, 0] # used for color depending on mode
 			shape = shapeFunc(coords, fill=self.colorMode(), outline='')
 			self.objects.append(shape)
 			self.updateNumObjStrVar()
@@ -575,14 +594,6 @@ class DisplayApp:
 		if rgb in ["black", "#000000"]: rgb = "#000001" # FIXME black causes bad damage rectangle
 		return rgb
 		
-	def getDataAxes(self, event=None):
-		'''
-		return the headers for the current data, return None if not possible
-		'''
-		if not self.data:
-			return None
-		return dialog.PickAxesDialog(self.root, self.data, title="Pick Data Axes").result
-		
 	def getRandomColor(self, event=None):
 		'''
 		set the color channel pickers to three random integers between 0 and 250
@@ -601,45 +612,42 @@ class DisplayApp:
 		'''
 		returns the function and arguments as a tuple for the arguments
 		'''
-		shapeFunctions = {"RECTANGLE":[self.canvas.create_rectangle, 
-								[x-dx, y-dy, 
-								 x+dx, y+dy]],
-						  "OVAL":[self.canvas.create_oval,
-								[x-dx, y-dy, 
-								 x+dx, y+dy]],
-						  "DOWN TRIANGLE":[self.canvas.create_polygon,
-								[x-dx, y-dy, 
-								 x+dx, y-dy, 
-								 x, y+dy]],
-						  "UP TRIANGLE":[self.canvas.create_polygon,
-								[x-dx, y+dy, 
-								 x+dx, y+dy, 
-								 x, y-dy]],
-						  "X":[self.canvas.create_polygon,
-								[x-dx, y+dy, 
-								 x, y+dy/2.0,
-								 x+dx, y+dy, 
-								 x+dx/2.0, y, 
-								 x+dx, y-dy, 
-								 x, y-dy/2.0, 
-								 x-dx, y-dy, 
-								 x-dx/2.0, y]],
-						  "STAR":[self.canvas.create_polygon,
-								[x-dx, y+dy, 
-								 x, y+dy/2.0,
-								 x+dx, y+dy, 
-								 x+dx/2.0, y, 
-								 x+dx, y-dy/2.0, 
-								 x+dx/3.0, y-dy/2.0,
-								 x, y-dy, 
-								 x-dx/3.0, y-dy/2.0,
-								 x-dx, y-dy/2.0, 
-								 x-dx/2.0, y]]
-						  }
-		if shape.upper() in shapeFunctions:
-			return shapeFunctions[shape.upper()]
+		shape = shape.upper()
+		if shape not in self.shapeFunctions:
+			return [None, None]
+			
+		if shape == "STAR":
+			self.shapeFunctions[shape][1] = [x-dx, y+dy, 
+											 x, y+dy/2.0,
+											 x+dx, y+dy, 
+											 x+dx/2.0, y, 
+											 x+dx, y-dy/2.0, 
+											 x+dx/3.0, y-dy/2.0,
+											 x, y-dy, 
+											 x-dx/3.0, y-dy/2.0,
+											 x-dx, y-dy/2.0, 
+											 x-dx/2.0, y]
+		elif shape == "UP TRIANGLE":
+			self.shapeFunctions[shape][1] = [x-dx, y+dy, 
+											 x+dx, y+dy, 
+											 x, y-dy]
+		elif shape == "DOWN TRIANGLE":
+			self.shapeFunctions[shape][1] = [x-dx, y-dy, 
+											 x+dx, y-dy, 
+											 x, y+dy]
+		elif shape == "X":
+			self.shapeFunctions[shape][1] = [x-dx, y+dy, 
+											 x, y+dy/2.0,
+											 x+dx, y+dy, 
+											 x+dx/2.0, y, 
+											 x+dx, y-dy, 
+											 x, y-dy/2.0, 
+											 x-dx, y-dy, 
+											 x-dx/2.0, y]
 		else:
-			return [None,None]
+			self.shapeFunctions[shape][1] = [x-dx, y-dy, 
+											 x+dx, y+dy]
+		return self.shapeFunctions[shape]
 
 	def getUserColor(self, event=None):
 		'''
@@ -748,11 +756,26 @@ class DisplayApp:
 		'''
 		open a dialog for picking data file and read into field
 		'''
-		self.filename = tkf.askopenfilename(parent=self.root, title='Choose a data file', 
+		filename = tkf.askopenfilename(parent=self.root, title='Choose a data file', 
 											initialdir='.' )
-		if self.filename:
+		if filename:
+			nodirfilename = filename.split("/")[-1]
+			self.openFilenames.insert(tk.END, nodirfilename)
+			self.filename2data[nodirfilename] = Data(filename, self.verbose)
+			self.openFilenames.select_clear(first=0, last=tk.END)
+			self.openFilenames.select_set(tk.END)
+			
+	def plotData(self, event=None):
+		'''
+		plot the data associated with the currently selected filename
+		'''
+		try:
+			self.filename = self.openFilenames.get(self.openFilenames.curselection())
 			self.data = None
-			self.buildData()
+			self.activeData = None
+			self.update()
+		except:
+			print("no selected filename")
 
 	def preDefineColors(self):
 		'''
@@ -780,6 +803,48 @@ class DisplayApp:
 		self.randomFunctions["GAMMA"] = [random.gammavariate,[0.5, 0.1]] # alpha, beta
 		self.randomFunctions["WEIBULL"] = [random.weibullvariate,[0.5, 0.5]] #alpha, beta
 		
+	def preDefineShapes(self):
+		'''
+		define the shapes for representing points
+		'''
+		self.shapeFunctions = {"RECTANGLE":[self.canvas.create_rectangle, []],
+							  "OVAL":[self.canvas.create_oval, []],
+							  "DOWN TRIANGLE":[self.canvas.create_polygon, []],
+							  "UP TRIANGLE":[self.canvas.create_polygon, []],
+							  "X":[self.canvas.create_polygon, []],
+							  "STAR":[self.canvas.create_polygon, []]}
+		
+	def setActiveData(self, event=None):
+		'''
+		set the active data, selected by the user
+		'''
+		if not self.filename:
+			return
+		try:
+			self.data = self.filename2data[self.filename] # opened data
+		except:
+			self.data = Data(self.filename, self.verbose) # creating points
+			
+		headers = dialog.PickAxesDialog(self.root, self.data, title="Pick Data Axes").result
+		if not headers:
+			self.filename = None
+			self.data = None
+			self.activeData = None
+			return
+			
+		self.activeData = analysis.normalize_columns_separately(self.data, headers)
+		self.shapeData = self.activeData[:, -1]
+		self.colorData = self.activeData[:, -2]
+		self.sizeData = self.activeData[:, -3]
+		[rows, cols] = self.activeData.shape
+		self.labelStrings[0] = headers[0]
+		self.labelStrings[1] = headers[1]
+		if(cols == 2): # pad missing z data
+			self.activeData = np.column_stack((self.activeData[:, :2], [0]*rows, [1]*rows))
+		else: # pad the homogeneous coordinate
+			self.activeData = np.column_stack((self.activeData[:, :3], [1]*rows))
+			self.labelStrings[2] = headers[2]
+			
 	def setBindings(self):
 		'''
 		set the key bindings for the application
@@ -803,16 +868,16 @@ class DisplayApp:
 		self.root.bind( '<Control-q>', self.handleQuit )
 		
 		# resizing canvas
-		self.root.bind( '<Configure>', self.update )
+		self.root.bind( '<Configure>', self.updateScreen )
 	
 	def setColorMode(self, event=None):
 		'''
 		callback for radio button
 		'''
 		cmstr = self.colorModeStr.get()
-		if cmstr == "c":
+		if cmstr == "s":
 			self.colorMode = self.getCurrentColor
-		else:# cmstr == "z":
+		else:# cmstr == "d":
 			self.colorMode = self.getColorByDepth
 		self.update()
 			
@@ -853,9 +918,8 @@ class DisplayApp:
 		'''
 		update the objects on the canvas with the current vtm 
 		'''
-		self.updateScreen()
-		self.updateAxes()
 		self.buildData()
+		self.updateAxes()
 
 	def updateAxes(self):
 		'''
@@ -887,14 +951,22 @@ class DisplayApp:
 		#if self.verbose: print("updating the number of objects status")
 		self.numObjStrVar.set("%d" % len(self.objects))
 
-	def updateScreen(self):
+	def updateScreen(self, event=None):
 		'''
 		updates the view to the current screen dimensions
 		'''
-		self.view.offset[0, 0] = self.canvas.winfo_width()*0.1
-		self.view.offset[0, 1] = self.canvas.winfo_height()*0.1
-		self.view.screen[0, 0] = self.canvas.winfo_width()*0.8
-		self.view.screen[0, 1] = self.canvas.winfo_height()*0.8
+		if (not (self.width and self.height) or
+			(self.width == self.canvas.winfo_width() and 
+			self.height == self.canvas.winfo_height())):
+			return
+		if self.verbose: print("screen resizing")
+		self.width = self.canvas.winfo_width() 
+		self.height = self.canvas.winfo_height()
+		self.view.offset[0, 0] = self.width*0.1
+		self.view.offset[0, 1] = self.height*0.1
+		self.view.screen[0, 0] = self.width*0.8
+		self.view.screen[0, 1] = self.height*0.8
+		self.update()
 		
 	def viewPreset(self):
 		'''
@@ -902,6 +974,10 @@ class DisplayApp:
 		'''
 		presetStr = self.presetView.get().upper()
 		self.view.reset() # return to xy plane view
+		self.view.offset[0, 0] = self.width*0.1
+		self.view.offset[0, 1] = self.height*0.1
+		self.view.screen[0, 0] = self.width*0.8
+		self.view.screen[0, 1] = self.height*0.8
 		if presetStr == "XZ":
 			self.view.rotateVRC(0, 90)
 		elif presetStr == "YZ":
