@@ -42,8 +42,7 @@ class DisplayApp:
 		self.filename2data = {}
 		self.preDefineColors()
 		self.preDefineDistributions()
-		self.objects = [] # shapes drawn on canvas
-		self.objectsResize = [] # shapes being resized, w/ original sizes
+		self.objects = {} # shapes drawn on canvas and their row in the data
 
 		# create a tk object, which is the root window
 		self.root = tk.Tk()
@@ -257,7 +256,8 @@ class DisplayApp:
 		self.colorOption = tk.StringVar( self.root )
 		self.colorOption.set("Select Color")
 		self.colorMenu = tk.OptionMenu( self.rightcntlframe, self.colorOption, 
-					   *self.colors.keys()).grid( row=row, column=1 )
+					   *self.colors.keys(), command=self.update
+					   ).grid( row=row, column=1 )
 		row+=1
 		
 		# use a label to set the size of the right panel
@@ -308,7 +308,7 @@ class DisplayApp:
 		# clean the data on the canvas
 		for obj in self.objects:
 			self.canvas.delete(obj)
-		self.objects = []
+		self.objects = {}
 		
 		# if the data is not set, set according to filename
 		if not self.data:
@@ -504,7 +504,7 @@ class DisplayApp:
 		if self.verbose: print("clearing data from canvas")
 		for obj in self.objects:
 			self.canvas.delete(obj)
-		self.objects = []
+		self.objects = {}
 		self.filename = None
 		self.data = None
 		self.activeData = None
@@ -554,15 +554,15 @@ class DisplayApp:
 		'''
 		if self.verbose: print('handle ctrl shift button 1: %d %d' % (event.x, event.y))
 		self.baseClick = [event.x, event.y]
-		for obj in reversed(self.objects): # reversed gets front object first
+		for obj in self.objects:
 			[xlow, ylow, xhigh, yhigh] = self.canvas.bbox(obj)
 			if ( (event.x > xlow) and (event.x < xhigh) and
 				 (event.y > ylow) and (event.y < yhigh) ):
 				self.canvas.delete(obj)
-				self.objects.remove(obj)
-				self.updateNumObjStrVar()
-				self.objectsMove = []
-				self.objectsResize = []
+				row = self.objects[obj]
+				del self.objects[obj]
+				self.setActiveData(row)
+				self.update()
 				return
 		
 	def displayAboutApp(self, event=None):
@@ -619,7 +619,7 @@ class DisplayApp:
 		if shapeFunc:
 			self.dataDepth = self.colorData[row, 0] # used for color depending on mode
 			shape = shapeFunc(coords, fill=self.colorMode(), outline='')
-			self.objects.append(shape)
+			self.objects[shape] = row
 			self.updateNumObjStrVar()
 		else:
 			if self.verbose: print("No shape function for %s" % 
@@ -874,39 +874,53 @@ class DisplayApp:
 							  "X":[self.canvas.create_polygon, []],
 							  "STAR":[self.canvas.create_polygon, []]}
 		
-	def setActiveData(self, event=None):
+	def setActiveData(self, excludeRow=None, event=None):
 		'''
 		set the active data, selected by the user
 		'''
-		if not self.filename:
-			return
-		try:
-			self.data = self.filename2data[self.filename] # opened data
-		except:
-			self.data = Data(self.filename, self.verbose) # creating points
+		
+		if excludeRow == None: # this parameter is used to edit active data
+			if not self.filename:
+				return
+			try:
+				self.data = self.filename2data[self.filename] # opened data
+			except:
+				self.data = Data(self.filename, self.verbose) # creating points
 			
-		headers = dialog.PickAxesDialog(self.root, self.data, title="Pick Data Axes").result
-		if not headers:
-			self.filename = None
-			self.data = None
-			self.activeData = None
-			return
+			self.headers = dialog.PickAxesDialog(self.root, self.data, title="Pick Data Axes").result
+			if not self.headers:
+				self.filename = None
+				self.data = None
+				self.activeData = None
+				return
+		
+		if isinstance(excludeRow, (int, long)): # exclude the given row
+			row = excludeRow # rename for convenience
+			self.data = self.data.clone()
+			if(row == self.activeData.shape[0]-1):
+				self.data.matrix_data = self.data.matrix_data[:-1]
+				self.data.raw_data = self.data.raw_data[:-1]
+			else:
+				self.data.matrix_data = np.vstack((self.data.matrix_data[:row],
+											self.data.matrix_data[row+1:]))
+				self.data.raw_data = np.vstack((self.data.raw_data[:row],
+											self.data.raw_data[row+1:]))
 			
-		self.activeData = analysis.normalize_columns_separately(self.data, headers)
+		self.activeData = analysis.normalize_columns_separately(self.data, self.headers)
 		self.shapeData = self.activeData[:, -1]
-		self.shapeField.set(headers[-1])
+		self.shapeField.set(self.headers[-1])
 		self.colorData = self.activeData[:, -2]
-		self.colorField.set(headers[-2])
+		self.colorField.set(self.headers[-2])
 		self.sizeData = self.activeData[:, -3]
-		self.sizeField.set(headers[-3])
+		self.sizeField.set(self.headers[-3])
 		[rows, cols] = self.activeData.shape
-		self.labelStrings[0] = headers[0]
-		self.labelStrings[1] = headers[1]
+		self.labelStrings[0] = self.headers[0]
+		self.labelStrings[1] = self.headers[1]
 		if cols == 2: # pad missing z data
 			self.activeData = np.column_stack((self.activeData[:, :2], [0]*rows, [1]*rows))
 		else: # pad the homogeneous coordinate
 			self.activeData = np.column_stack((self.activeData[:, :3], [1]*rows))
-			self.labelStrings[2] = headers[2]
+			self.labelStrings[2] = self.headers[2]
 			
 	def setBindings(self):
 		'''
@@ -924,14 +938,14 @@ class DisplayApp:
 		self.canvas.bind( '<B3-Motion>', self.handleButton3Motion )
 		self.canvas.bind( '<Control-Shift-Button-1>', self.deletePoint )
 		self.canvas.bind( '<Motion>', self.showObjectPosition )
+		
+		# resizing canvas
+		self.canvas.bind( '<Configure>', self.updateScreen )
 
 		# bind command sequences to the root window
 		self.root.bind( '<Control-n>', self.clearData)
 		self.root.bind( '<Control-o>', self.openData)
 		self.root.bind( '<Control-q>', self.handleQuit )
-		
-		# resizing canvas
-		self.root.bind( '<Configure>', self.updateScreen )
 	
 	def setColorMode(self, event=None):
 		'''
@@ -1028,11 +1042,11 @@ class DisplayApp:
 		set the view to the specified preset
 		'''
 		presetStr = self.presetView.get().upper()
+		curView = self.view.clone()
 		self.view.reset() # return to xy plane view
-		self.view.offset[0, 0] = self.width*0.15
-		self.view.offset[0, 1] = self.height*0.15
-		self.view.screen[0, 0] = self.width*0.7
-		self.view.screen[0, 1] = self.height*0.7
+		self.view.offset = curView.offset.copy()
+		self.view.screen = curView.screen.copy()
+		self.view.extent = curView.extent.copy()
 		if presetStr == "XZ":
 			self.view.rotateVRC(0, 90)
 		elif presetStr == "YZ":
