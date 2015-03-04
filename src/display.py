@@ -168,16 +168,41 @@ class DisplayApp:
 		self.presetView = tk.StringVar( self.root )
 		self.presetView.set("xy")
 		tk.OptionMenu( self.rightcntlframe, self.presetView, 
-					   "xy", "xz", "yz"
+					   "xy", "xz", "yz", command=self.viewPreset
 					   ).grid( row=row, column=1 )
 		row+=1
 
 		# make a reset button in the frame
-		tk.Button( self.rightcntlframe, text="Preset", 
+		tk.Button( self.rightcntlframe, text="Reset", 
 				   command=self.viewPreset, width=10
 				   ).grid( row=row, column=1 )
 		row+=1
 
+		# size selector
+		tk.Label( self.rightcntlframe, text="\nSize"
+					   ).grid( row=row, column=1 )
+		row+=1
+
+		# make a size mode selector in the frame
+		colorModes = [
+			("Size By Data", "d"),
+			("Selected Size", "s")
+		]
+		self.sizeModeStr = tk.StringVar()
+		self.sizeModeStr.set("d") # initialize
+		for text, mode in colorModes:
+			b = tk.Radiobutton(self.rightcntlframe, text=text,
+							variable=self.sizeModeStr, value=mode, command=self.update)
+			b.grid( row=row, column=1 )
+			row+=1
+			
+		# User selected size
+		self.sizeOption = tk.StringVar( self.root )
+		self.sizeOption.set("7")
+		tk.OptionMenu( self.rightcntlframe, self.sizeOption, command=self.update,
+					   *range(1,31)).grid( row=row, column=1 )
+		row+=1
+		
 		# shape selector
 		tk.Label( self.rightcntlframe, text="\nShape"
 					   ).grid( row=row, column=1 )
@@ -205,7 +230,7 @@ class DisplayApp:
 					   ).grid( row=row, column=1 )
 		row+=1
 
-		# shape selector
+		# color selector
 		tk.Label( self.rightcntlframe, text="\nColor"
 					   ).grid( row=row, column=1 )
 		row+=1
@@ -292,7 +317,6 @@ class DisplayApp:
 		# prepare to transform the active data to the current view
 		VTM = self.view.build()
 		viewData = self.activeData.copy()
-		rows = viewData.shape[0]
 		
 		# transform into view
 		viewData = (VTM * viewData.T).T
@@ -401,11 +425,30 @@ class DisplayApp:
 				 ).grid(row=0, column=cols)
 		self.numObjStrVar = tk.StringVar( self.root )
 		self.numObjStrVar.set("0")
-
-		# display the current distributions
 		tk.Label(bottomstatusframe, textvariable=self.numObjStrVar
 				 ).grid(row=1, column=cols)
 		cols+=1
+
+		# display the current color fields
+		tk.Label(bottomstatusframe, text="\tsize field:"
+				 ).grid(row=0, column=cols)
+		tk.Label(bottomstatusframe, text="\tcolor field:"
+				 ).grid(row=1, column=cols)
+		tk.Label(bottomstatusframe, text="\tshape field:"
+				 ).grid(row=2, column=cols)
+		cols+=1
+		self.sizeField = tk.StringVar( self.root, value="" )
+		tk.Label(bottomstatusframe, textvariable=self.sizeField
+				 ).grid(row=0, column=cols)
+		self.colorField = tk.StringVar( self.root, value="" )
+		tk.Label(bottomstatusframe, textvariable=self.colorField
+				 ).grid(row=1, column=cols)
+		self.shapeField = tk.StringVar( self.root, value="" )
+		tk.Label(bottomstatusframe, textvariable=self.shapeField
+				 ).grid(row=2, column=cols)
+		cols+=1		
+
+		# display the current distributions
 		tk.Label(bottomstatusframe, text="\tx distribution:"
 				 ).grid(row=0, column=cols)
 		tk.Label(bottomstatusframe, text="\ty distribution:"
@@ -466,7 +509,11 @@ class DisplayApp:
 		self.updateNumObjStrVar()
 		self.xLocation.set("")
 		self.yLocation.set("")
+		self.colorField.set("")
+		self.sizeField.set("")
+		self.shapeField.set("")
 		self.labelStrings = ["x", "y", "z"]
+		self.updateAxes()
 	
 	def createRandomDataPoints( self, event=None ):
 		'''
@@ -546,22 +593,27 @@ class DisplayApp:
 		'''
 		dialog.BindingsDialog(self.root, title="Key Bindings")
 	
-	def drawObject(self, x, y, row=0, dx=6, dy=6):
+	def drawObject(self, x, y, row=0):
 		'''
 		add the control selected shape to the canvas at x, y with size dx, dy
 		'''
-		dx *= self.sizeData[row, 0]+1
-		dy *= self.sizeData[row, 0]+1
+		dx = int(self.sizeOption.get())
+		dy = int(self.sizeOption.get())
+		if self.sizeModeStr.get() == "d":
+			dx *= self.sizeData[row, 0] + 0.5
+			dy *= self.sizeData[row, 0] + 0.5
+			
 		if self.shapeModeStr.get() == "s":
 			[shapeFunc, coords] = self.getShapeFunction(self.shapeOption.get(), 
 														x, y, dx, dy)
-		else:
+		else: # if self.shapeModeStr.get() == "d"
 			shapeDataVal = min(self.shapeData[row, 0], 0.99)
 			numShapes = len(self.shapeFunctions)
 			shapeIndex = int(shapeDataVal*numShapes)
 			shapes = self.shapeFunctions.keys()
 			[shapeFunc, coords] = self.getShapeFunction(shapes[shapeIndex], 
 														x, y, dx, dy)
+			
 		if shapeFunc:
 			self.dataDepth = self.colorData[row, 0] # used for color depending on mode
 			shape = shapeFunc(coords, fill=self.colorMode(), outline='')
@@ -760,8 +812,13 @@ class DisplayApp:
 											initialdir='.' )
 		if filename:
 			nodirfilename = filename.split("/")[-1]
+			try:
+				self.filename2data[nodirfilename] = Data(filename, self.verbose)
+				print("successfully read data")
+			except:
+				print("failed to read data")
+				return
 			self.openFilenames.insert(tk.END, nodirfilename)
-			self.filename2data[nodirfilename] = Data(filename, self.verbose)
 			self.openFilenames.select_clear(first=0, last=tk.END)
 			self.openFilenames.select_set(tk.END)
 			
@@ -788,6 +845,7 @@ class DisplayApp:
 		self.colors["blue"] = "blue"
 		self.colors["red"] = "red"
 		self.colors["green"] = "green"
+		self.colors["purple"] = "purple"
 		
 	def preDefineDistributions(self):
 		'''
@@ -834,12 +892,15 @@ class DisplayApp:
 			
 		self.activeData = analysis.normalize_columns_separately(self.data, headers)
 		self.shapeData = self.activeData[:, -1]
+		self.shapeField.set(headers[-1])
 		self.colorData = self.activeData[:, -2]
+		self.colorField.set(headers[-2])
 		self.sizeData = self.activeData[:, -3]
+		self.sizeField.set(headers[-3])
 		[rows, cols] = self.activeData.shape
 		self.labelStrings[0] = headers[0]
 		self.labelStrings[1] = headers[1]
-		if(cols == 2): # pad missing z data
+		if cols == 2: # pad missing z data
 			self.activeData = np.column_stack((self.activeData[:, :2], [0]*rows, [1]*rows))
 		else: # pad the homogeneous coordinate
 			self.activeData = np.column_stack((self.activeData[:, :3], [1]*rows))
@@ -968,7 +1029,7 @@ class DisplayApp:
 		self.view.screen[0, 1] = self.height*0.8
 		self.update()
 		
-	def viewPreset(self):
+	def viewPreset(self, event=None):
 		'''
 		set the view to the specified preset
 		'''

@@ -54,7 +54,7 @@ class Data:
 			# build data fields from the given filename
 			with open( filename, 'rU' ) as fp: # rU for 'read' and 'universal end of line'
 				lines = fp.readlines()
-			print("file found,reading data")
+			print("file found, reading data")
 			reader = csv.reader(lines)
 		except:
 			print("File not found, assuming input is list of lists of data")
