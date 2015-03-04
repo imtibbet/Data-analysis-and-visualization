@@ -359,7 +359,7 @@ class DisplayApp:
 		menulist.append([colormenu,
 						[['Random Color', self.getRandomColor],
 						 ['Create Color', self.getUserColor],
-						 ['Update Color', self.updateColor]
+						 ['', None]
 						 ]])
 
 		# create another menu for color
@@ -997,14 +997,6 @@ class DisplayApp:
 			self.canvas.coords(self.labels[i], labelPts[i, 0], labelPts[i, 1])
 			self.canvas.itemconfigure(self.labels[i], text=self.labelStrings[i])
 		
-	def updateColor(self, event=None):
-		'''
-		update all the objects on the canvas to the current color
-		'''
-		if self.verbose: print("updating color of canvas objects")
-		for obj in self.objects:
-			self.canvas.itemconfig(obj, fill=self.getCurrentColor())
-
 	def updateNumObjStrVar(self):
 		'''
 		update the status bar to reflect the current number of objects
