@@ -3,13 +3,15 @@ Ian Tibbetts
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 '''
-import os
-import sys
 import csv
-import numpy as np
+import os
+import re
+import sys
+
 import analysis
 import datetime as dt
-import re
+import numpy as np
+
 
 class Data:
 	
@@ -327,6 +329,10 @@ if __name__ == "__main__":
 	print(analysis.mean(d, headers))
 	print("analysis.stdev(d, headers)")
 	print(analysis.stdev(d, headers))
+	print("analysis.medion(d, headers)")
+	print(analysis.median(d, headers))
+	print("analysis.mode(d, headers)")
+	print(analysis.mode(d, headers))
 	print("analysis.normalize_columns_separately(d, headers)")
 	print(analysis.normalize_columns_separately(d, headers))
 	print("analysis.normalize_columns_together(d, headers)")

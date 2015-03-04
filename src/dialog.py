@@ -4,6 +4,8 @@ Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 '''
 from photos import photos, descriptions
+
+
 try:
 	import tkinter as tk # python 3
 except ImportError:

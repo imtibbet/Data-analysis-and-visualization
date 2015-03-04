@@ -3,6 +3,8 @@ Ian Tibbetts
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 '''
+from scipy import stats
+
 import numpy as np
 
 def data_range(data, colHeaders):
@@ -32,7 +34,27 @@ def stdev(data, colHeaders):
 	returns a list of the standard deviation for each specified column. 
 	'''
 	return np.std(data.get_data(colHeaders), axis=0).tolist()[0]
-		
+	
+def median(data, colHeaders):
+	'''
+	Takes in a list of column headers and the Data object and 
+	returns a list of the median values for each column. 
+	'''
+	return np.median(data.get_data(colHeaders), axis=0).tolist()[0]
+	
+def mode(data, colHeaders):
+	'''
+	Takes in a list of column headers and the Data object and 
+	returns a list of the mean values for each column. 
+	'''
+	# for use if no scipy
+	#modes = []
+	#data = data.get_data(colHeaders).T
+	#for datacol in data:
+	#	modes.append(collections.Counter(datacol.tolist()[0]).most_common(1)[0][0])
+	#return modes
+	return stats.mode(data.get_data(colHeaders))[0].tolist()[0]
+	
 def normalize_columns_separately(data, colHeaders):
 	'''
 	Takes in a list of column headers and the Data object 

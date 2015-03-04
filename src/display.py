@@ -3,15 +3,17 @@ Ian Tibbetts
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 '''
-import types
+from collections import OrderedDict
+from optparse import OptionParser
 import random
-import numpy as np
+import types
+
 import analysis
 from data import Data
-from view import View
 import dialog
-from optparse import OptionParser
-from collections import OrderedDict
+import numpy as np
+from view import View
+
 
 # use tkinter for GUI elements
 try:
@@ -92,9 +94,9 @@ class DisplayApp:
 	def buildAxes(self, axes=[[0,0,0],[1,0,0],
 							  [0,0,0],[0,1,0],
 							  [0,0,0],[0,0,1]],
-				  axeslabels=[[1.05,0,0],
-							  [0,1.05,0],
-							  [0,0,1.05]]):
+				  axeslabels=[[1.05,-0.05,-0.05],
+							  [-0.05,1.05,-0.05],
+							  [-0.05,-0.05,1.05]]):
 		'''
 		builds the view transformation matrix [VTM], 
 		multiplies the axis endpoints by the VTM, 
@@ -106,8 +108,8 @@ class DisplayApp:
 				axis.append(1) # homogeneous coordinate
 		for axis in axeslabels:
 			if len(axis) < 4:axis.append(1) # homogeneous coordinate
-		self.view = View(offset=[self.width*0.1, self.height*0.1],
-							screen=[self.width*0.8, self.height*0.8])
+		self.view = View(offset=[self.width*0.15, self.height*0.15],
+							screen=[self.width*0.7, self.height*0.7])
 		self.baseView = self.view.clone()
 		VTM = self.view.build()
 		self.axes = np.asmatrix(axes)
@@ -1015,10 +1017,10 @@ class DisplayApp:
 		if self.verbose: print("screen resizing")
 		self.width = self.canvas.winfo_width() 
 		self.height = self.canvas.winfo_height()
-		self.view.offset[0, 0] = self.width*0.1
-		self.view.offset[0, 1] = self.height*0.1
-		self.view.screen[0, 0] = self.width*0.8
-		self.view.screen[0, 1] = self.height*0.8
+		self.view.offset[0, 0] = self.width*0.15
+		self.view.offset[0, 1] = self.height*0.15
+		self.view.screen[0, 0] = self.width*0.7
+		self.view.screen[0, 1] = self.height*0.7
 		self.update()
 		
 	def viewPreset(self, event=None):
@@ -1027,10 +1029,10 @@ class DisplayApp:
 		'''
 		presetStr = self.presetView.get().upper()
 		self.view.reset() # return to xy plane view
-		self.view.offset[0, 0] = self.width*0.1
-		self.view.offset[0, 1] = self.height*0.1
-		self.view.screen[0, 0] = self.width*0.8
-		self.view.screen[0, 1] = self.height*0.8
+		self.view.offset[0, 0] = self.width*0.15
+		self.view.offset[0, 1] = self.height*0.15
+		self.view.screen[0, 0] = self.width*0.7
+		self.view.screen[0, 1] = self.height*0.7
 		if presetStr == "XZ":
 			self.view.rotateVRC(0, 90)
 		elif presetStr == "YZ":
@@ -1058,4 +1060,4 @@ if __name__ == "__main__":
 	[options, args] = parser.parse_args()
 	
 	# run the application
-	DisplayApp(1200, 675, options.filename, options.verbose).main()
+	DisplayApp(1200, 775, options.filename, options.verbose).main()

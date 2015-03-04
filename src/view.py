@@ -3,9 +3,11 @@ Ian Tibbetts
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 '''
+from math import cos, sin, pi
+
 import numpy as np
 import numpy.matlib as npm
-from math import cos, sin, pi
+
 
 def normalize(v):
 	'''
