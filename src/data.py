@@ -59,10 +59,10 @@ class Data:
 			# build data fields from the given filename
 			with open( filename, 'rU' ) as fp: # rU for 'read' and 'universal end of line'
 				lines = fp.readlines()
-			print("file found, reading data")
+			if self.verbose: print("file found, reading data")
 			reader = csv.reader(lines)
 		except:
-			print("File not found, assuming input is list of lists of data")
+			if self.verbose: print("File not found, assuming input is list of lists of data")
 			reader = filename
 			
 		# process given data to populate fields
@@ -115,6 +115,7 @@ class Data:
 					self.raw_data.append([])
 			elif not self.raw_types:
 				for raw_type in line:
+					raw_type = raw_type.upper()
 					self.raw_types.append(raw_type.strip())
 			else:
 				for i, data in enumerate(line):
@@ -122,6 +123,19 @@ class Data:
 		
 		self.raw_data = np.matrix(self.raw_data).T
 		
+	def save(self, wfile):
+		'''
+		saves this data to the given filename, assuming valid filename
+		'''
+		lines = [self.raw_headers, self.raw_types]
+		for row in range(self.raw_data.shape[0]):
+			lines.append([])
+			for col in range(self.raw_data.shape[1]):
+				lines[-1].append(self.raw_data[row, col])
+		lines = [",".join(line) for line in lines]
+		wfile.write("\n".join(lines))
+		wfile.close()
+	
 	def parseDate(self, rawDate):
 		'''
 		parameter rawDate - a generally formatted string month day year
@@ -151,19 +165,19 @@ class Data:
 		rawColIndex = 0
 		for colIndex in range(self.raw_data.shape[1]):
 			rawType = self.raw_types[colIndex]
-			if rawType in ["numeric", "enum", "date"]:
+			if rawType in ["NUMERIC", "ENUM", "DATE"]:
 				rawHeader = self.raw_headers[colIndex]
 				self.numericHeaders.append(rawHeader)
 				self.header2matrix[rawHeader] = rawColIndex
 				rawColIndex += 1
 				
-				if rawType == "numeric":
+				if rawType == "NUMERIC":
 					self.matrix_data.append([])
 					for rawNum in self.raw_data[:, colIndex]:
 						rawNum = rawNum[0,0]
 						self.matrix_data[-1].append(rawNum)
 						
-				elif rawType == "enum":
+				elif rawType == "ENUM":
 					self.matrix_data.append([])
 					enumIndex = 0
 					for rawEnum in self.raw_data[:, colIndex]:
@@ -173,7 +187,7 @@ class Data:
 							enumIndex += 1
 						self.matrix_data[-1].append(self.enum2value[rawEnum])
 						
-				elif rawType == "date":
+				elif rawType == "DATE":
 					self.matrix_data.append([])
 					for rawDate in self.raw_data[:, colIndex]:
 						rawDate = rawDate[0,0]

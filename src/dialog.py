@@ -154,13 +154,14 @@ class AboutBruceDialog(OkDialog):
 class BindingsDialog(OkDialog):
 	def body(self, master):
 		keyBindingDescriptions = [
-["B1-Motion", "pan the axes in the canvas"],
-["B2-Motion", "zoom in on the axes in the canvas"],
-["B3-Motion", "rotate the axes in the canvas"],
-["Ctrl-B1-Motion", "same as B2-Motion"],
-["Ctrl-Shift-B1", "delete an object in the canvas"],
-["Ctrl-Q", "quit the application"],
-["Ctrl-N", "clear the canvas"],
+			["B1-Motion", "pan the axes in the canvas"],
+			["B2-Motion", "zoom in on the axes in the canvas"],
+			["B3-Motion", "rotate the axes in the canvas"],
+			["Ctrl-B1-Motion", "same as B2-Motion"],
+			["Ctrl-Shift-B1", "delete the clicked object from the canvas"],
+			["Ctrl-Q", "quit the application"],
+			["Ctrl-N", "clear the canvas"],
+			["Double-B1", "show the raw data for the clicked object"]
 								  ]
 		for [row, [k, bd]] in enumerate(keyBindingDescriptions):
 			tk.Label(master, text=k, relief=tk.GROOVE, width=20
@@ -263,11 +264,6 @@ class PickAxesDialog(OkCancelDialog):
 		OkCancelDialog.__init__(self, parent, title)
 		
 	def body(self, master):
-	
-		if len(self.headers) < 2:
-			print("not enough headers to plot")
-			self.result = None
-			self.cancel()
 			
 		row=0
 		col=0

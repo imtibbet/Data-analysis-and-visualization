@@ -62,6 +62,9 @@ parameter&nbsp;[verbose]&nbsp;-&nbsp;default&nbsp;true,&nbsp;enable&nbsp;printin
 <dl><dt><a name="Data-buildNumericData"><strong>buildNumericData</strong></a>(self)</dt><dd><tt>Builds&nbsp;the&nbsp;numeric&nbsp;data&nbsp;from&nbsp;the&nbsp;raw&nbsp;file&nbsp;data&nbsp;in&nbsp;fields.<br>
 Raw&nbsp;data&nbsp;is&nbsp;assumed&nbsp;to&nbsp;have&nbsp;each&nbsp;list&nbsp;of&nbsp;lists&nbsp;of&nbsp;column&nbsp;data.</tt></dd></dl>
 
+<dl><dt><a name="Data-clone"><strong>clone</strong></a>(self)</dt><dd><tt>return&nbsp;a&nbsp;clone&nbsp;of&nbsp;this&nbsp;data&nbsp;instance<br>
+clone&nbsp;is&nbsp;only&nbsp;deep&nbsp;for&nbsp;numpy&nbsp;matrices</tt></dd></dl>
+
 <dl><dt><a name="Data-get_data"><strong>get_data</strong></a>(self, colHeaders, rows<font color="#909090">=[]</font>, rowStart<font color="#909090">=None</font>, rowEnd<font color="#909090">=None</font>)</dt><dd><tt>parameter&nbsp;colHeaders&nbsp;-&nbsp;a&nbsp;list&nbsp;of&nbsp;columns&nbsp;headers<br>
 parameter&nbsp;rows,&nbsp;rowStart,&nbsp;rowEnd&nbsp;-&nbsp;optional,&nbsp;rows&nbsp;has&nbsp;priority<br>
 return&nbsp;a&nbsp;matrix&nbsp;with&nbsp;the&nbsp;data&nbsp;for&nbsp;the&nbsp;specified&nbsp;rows&nbsp;and&nbsp;columns.</tt></dd></dl>
@@ -98,6 +101,8 @@ return&nbsp;-&nbsp;a&nbsp;list&nbsp;of&nbsp;integers&nbsp;of&nbsp;the&nbsp;form&
 
 <dl><dt><a name="Data-read"><strong>read</strong></a>(self, reader)</dt><dd><tt>parse&nbsp;data&nbsp;lines&nbsp;in&nbsp;reader&nbsp;into&nbsp;fields&nbsp;for&nbsp;headers,&nbsp;types&nbsp;and&nbsp;raw&nbsp;data<br>
 parameter&nbsp;reader&nbsp;-&nbsp;the&nbsp;lines&nbsp;of&nbsp;the&nbsp;csv&nbsp;file&nbsp;to&nbsp;parse</tt></dd></dl>
+
+<dl><dt><a name="Data-save"><strong>save</strong></a>(self, wfile)</dt><dd><tt>saves&nbsp;this&nbsp;data&nbsp;to&nbsp;the&nbsp;given&nbsp;filename,&nbsp;assuming&nbsp;valid&nbsp;filename</tt></dd></dl>
 
 </td></tr></table></td></tr></table>
 </body></html>

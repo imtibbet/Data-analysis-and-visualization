@@ -13,7 +13,7 @@ from data import Data
 import dialog
 import numpy as np
 from view import View
-
+from matplotlib import pyplot
 
 # use tkinter for GUI elements
 try:
@@ -24,6 +24,7 @@ except ImportError:
 	import Tkinter as tk # python 2
 	import tkFileDialog as tkf
 	from tkColorChooser import askcolor
+	import tkMessageBox
 	
 # create a class to build and manage the display
 class DisplayApp:
@@ -354,8 +355,9 @@ class DisplayApp:
 		self.menu.add_cascade( label = "File", menu = filemenu )
 		menulist.append([filemenu,
 						[['Open, Ctrl-O', self.openData], 
-						 ['Clear  Ctrl-N', self.clearData], 
-						 ['Quit		Ctrl-Q', self.handleQuit]
+						 ['Save, Ctrl-S', self.saveData], 
+						 ['Clear, Ctrl-N', self.clearData], 
+						 ['Quit, Ctrl-Q', self.handleQuit]
 						 ]])
 
 		# create another menu for color
@@ -363,7 +365,7 @@ class DisplayApp:
 		self.menu.add_cascade( label = "Color", menu = colormenu )
 		menulist.append([colormenu,
 						[['Random Color', self.getRandomColor],
-						 ['Create Color', self.getUserColor],
+						 ['Pick Color', self.getUserColor],
 						 ['', None]
 						 ]])
 
@@ -827,6 +829,25 @@ class DisplayApp:
 		zoomSpeed = 0.01
 		self.view.extent = self.baseExtent*min(max(1.0+zoomSpeed*dy, 0.1), 3.0)
 		self.update()
+
+	def handleDoubleButton1(self, event):
+		'''
+		show all the raw data for the point double clicked
+		'''
+		for obj in self.objects:
+			if not self.canvas.bbox(obj): continue
+			[xlow, ylow, xhigh, yhigh] = self.canvas.bbox(obj)
+			if ( (event.x > xlow) and (event.x < xhigh) and
+				 (event.y > ylow) and (event.y < yhigh) ):
+				row = self.objects[obj]
+				msg = []
+				for i in range(self.data.raw_data.shape[1]):
+					msg.append(" | ".join([self.data.raw_headers[i],
+										self.data.raw_types[i],
+										self.data.raw_data[row, i]]))
+				msg = "\n".join(msg)
+				tkMessageBox.showinfo("Data Info", msg, parent=self.root)
+				return
 		
 	def main(self):
 		'''
@@ -845,13 +866,17 @@ class DisplayApp:
 			nodirfilename = filename.split("/")[-1]
 			try:
 				self.filename2data[nodirfilename] = Data(filename, self.verbose)
-				print("successfully read data")
+				if self.verbose: print("successfully read data")
 			except:
-				print("failed to read data")
+				tkMessageBox.showerror("Failed File Read", "Failed to read %s" % filename)
 				return
-			self.openFilenames.insert(tk.END, nodirfilename)
-			self.openFilenames.select_clear(first=0, last=tk.END)
-			self.openFilenames.select_set(tk.END)
+			self.openFilenames.delete(0, tk.END)
+			selIndex = tk.END
+			for i, fname in enumerate(self.filename2data):
+				if fname == nodirfilename:
+					selIndex = i
+				self.openFilenames.insert(tk.END, fname)
+			self.openFilenames.select_set(selIndex)
 			
 	def plotData(self, event=None):
 		'''
@@ -859,11 +884,12 @@ class DisplayApp:
 		'''
 		try:
 			self.filename = self.openFilenames.get(self.openFilenames.curselection())
-			self.data = None
-			self.activeData = None
-			self.update()
 		except:
 			print("no selected filename")
+			return
+		self.data = None
+		self.activeData = None
+		self.update()
 
 	def preDefineColors(self):
 		'''
@@ -902,7 +928,20 @@ class DisplayApp:
 							  "UP TRIANGLE":[self.canvas.create_polygon, []],
 							  "X":[self.canvas.create_polygon, []],
 							  "STAR":[self.canvas.create_polygon, []]}
-		
+	
+	def saveData(self, event=None):
+		'''
+		save the displayed data, prompting for a filename
+		'''
+		if not self.data:
+			tkMessageBox.showerror("No Data", "No data to save")
+			return
+		wfile = tkf.asksaveasfile()
+		if not wfile:
+			return
+		self.data.save(wfile)
+		if self.verbose: print("saved successfully")
+			
 	def setActiveData(self, excludeRow=None, event=None):
 		'''
 		set the active data, selected by the user
@@ -916,14 +955,46 @@ class DisplayApp:
 			except:
 				self.data = Data(self.filename, self.verbose) # creating points
 			
+			# check for missiing data
+			if not self.data.get_headers():
+				tkMessageBox.showerror("Insufficient Data", "Not enough columns of data to plot")
+				self.filename = None
+				self.data = None
+				self.activeData = None
+				return
+			
+			# for only one column of data, make histogram
+			if len(self.data.get_headers()) < 2:
+				xvalues = self.data.matrix_data
+				xlabel = self.data.get_headers()[0]
+				try:
+					ylabel = self.data.raw_types.index("STRING")
+					ylabel = self.data.raw_headers[ylabel]
+				except ValueError:
+					print("no string type data found")
+					ylabel = None
+				self.filename = None
+				self.data = None
+				self.activeData = None
+				if ylabel == None:
+					pyplot.hist(xvalues)
+				else:
+					pyplot.hist(xvalues)
+					pyplot.ylabel(ylabel)
+				pyplot.xlabel(xlabel)
+				pyplot.show()
+				return
+
+			# for more than one column, get headers from the user
 			self.headers = dialog.PickAxesDialog(self.root, self.data, title="Pick Data Axes").result
-			if not self.headers:
+			if not self.headers: # if the user cancels the dialog, abort
 				self.filename = None
 				self.data = None
 				self.activeData = None
 				return
 		
-		if isinstance(excludeRow, (int, long)): # exclude the given row
+		# this limits the data if the method is given a valid row to exclude
+		if isinstance(excludeRow, (int, long)):
 			row = excludeRow # rename for convenience
 			self.data = self.data.clone()
 			if(row == self.activeData.shape[0]-1):
@@ -934,7 +1005,8 @@ class DisplayApp:
 											self.data.matrix_data[row+1:]))
 				self.data.raw_data = np.vstack((self.data.raw_data[:row],
 											self.data.raw_data[row+1:]))
-			
+		
+		# normalize the data and set the fields
 		self.activeData = analysis.normalize_columns_separately(self.data, self.headers)
 		self.shapeData = self.activeData[:, -1]
 		self.shapeField.set(self.headers[-1])
@@ -942,9 +1014,9 @@ class DisplayApp:
 		self.colorField.set(self.headers[-2])
 		self.sizeData = self.activeData[:, -3]
 		self.sizeField.set(self.headers[-3])
-		[rows, cols] = self.activeData.shape
 		self.xLabel.set(self.headers[0])
 		self.yLabel.set(self.headers[1])
+		[rows, cols] = self.activeData.shape
 		if cols == 2: # pad missing z data
 			self.activeData = np.column_stack((self.activeData[:, :2], [0]*rows, [1]*rows))
 		else: # pad the homogeneous coordinate
@@ -958,6 +1030,7 @@ class DisplayApp:
 		if self.verbose: print("setting the key bindings")
 		# bind mouse motions to the canvas
 		self.canvas.bind( '<Button-1>', self.handleButton1 )
+		self.canvas.bind( '<Double-Button-1>', self.handleDoubleButton1 )
 		self.canvas.bind( '<Control-Button-1>', self.handleButton2 ) # same as B2
 		self.canvas.bind( '<Button-2>', self.handleButton2 )
 		self.canvas.bind( '<Button-3>', self.handleButton3 )
@@ -974,6 +1047,7 @@ class DisplayApp:
 		# bind command sequences to the root window
 		self.root.bind( '<Control-n>', self.clearData)
 		self.root.bind( '<Control-o>', self.openData)
+		self.root.bind( '<Control-s>', self.saveData)
 		self.root.bind( '<Control-q>', self.handleQuit )
 	
 	def setColorMode(self, event=None):
@@ -1013,7 +1087,7 @@ class DisplayApp:
 		self.yLocation.set("-"*4)
 		self.zLocation.set("-"*4)
 		for obj in self.objects:
-			if not self.canvas.bbox(obj): break
+			if not self.canvas.bbox(obj): continue
 			[xlow, ylow, xhigh, yhigh] = self.canvas.bbox(obj)
 			if ( (event.x > xlow) and (event.x < xhigh) and
 				 (event.y > ylow) and (event.y < yhigh) ):
