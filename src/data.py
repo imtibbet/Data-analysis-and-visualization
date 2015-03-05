@@ -179,13 +179,15 @@ class Data:
 						
 				elif rawType == "ENUM":
 					self.matrix_data.append([])
+					raw_header = self.raw_headers[colIndex]
+					self.enum2value[raw_header] = {}
 					enumIndex = 0
 					for rawEnum in self.raw_data[:, colIndex]:
 						rawEnum = rawEnum[0,0]
-						if rawEnum not in self.enum2value:
-							self.enum2value[rawEnum] = enumIndex
+						if rawEnum not in self.enum2value[raw_header]:
+							self.enum2value[raw_header][rawEnum] = enumIndex
 							enumIndex += 1
-						self.matrix_data[-1].append(self.enum2value[rawEnum])
+						self.matrix_data[-1].append(self.enum2value[raw_header][rawEnum])
 						
 				elif rawType == "DATE":
 					self.matrix_data.append([])

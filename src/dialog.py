@@ -4,7 +4,7 @@ Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 '''
 from photos import photos, descriptions
-
+import analysis
 
 try:
 	import tkinter as tk # python 3
@@ -256,10 +256,55 @@ class DistributionDialog(OkCancelDialog):
 		z = self.e2.get(self.e3.curselection())
 		self.result = [x.upper(), y.upper(), z.upper()]
 		
+		
+class FilterDataDialog(OkCancelDialog):
+
+	def __init__(self, parent, data, title = None):
+		
+		self.data = data
+		OkCancelDialog.__init__(self, parent, title)
+		
+	def body(self, master):
+		dataRanges = analysis.data_range(self.data, self.data.get_headers())
+		self.mins = []
+		self.maxs = []
+		for row, header in enumerate(self.data.get_headers()):
+			curMin, curMax = dataRanges[row]
+			tk.Label(master, text=header, relief=tk.GROOVE, width=20
+					 ).grid(row=row, column=0)
+			tk.Label(master, text=self.data.raw_types[row], relief=tk.GROOVE, width=20
+					 ).grid(row=row, column=1)
+			tk.Label(master, text="%f -> %f" % (curMin, curMax), relief=tk.GROOVE, width=20
+					 ).grid(row=row, column=2)
+			
+			self.mins.append(tk.StringVar())
+			self.mins[row].set(curMin)
+			tk.Entry(master, textvariable=self.mins[row]).grid(row=row, column=3)
+			tk.Label(master, text="->").grid(row=row, column=4)
+			self.maxs.append(tk.StringVar())
+			self.maxs[row].set(curMax)
+			tk.Entry(master, textvariable=self.maxs[row]).grid(row=row, column=5)
+			
+	def apply(self):
+		try:
+			self.result = []
+			newMins = [float(newMin.get()) for newMin in self.mins]
+			newMaxs = [float(newMax.get()) for newMax in self.maxs]
+		except:
+			self.result = None
+			self.cancel()
+
+		for i in range(len(newMins)): 
+			if newMins[i] >= newMaxs[i]: # verify that min is less than max
+				self.result = None
+				break
+			else:
+				self.result.append([newMins[i], newMaxs[i]])
+			
 class PickAxesDialog(OkCancelDialog):
 
 	def __init__(self, parent, data, title = None):
-
+		
 		self.headers = data.get_headers()
 		OkCancelDialog.__init__(self, parent, title)
 		

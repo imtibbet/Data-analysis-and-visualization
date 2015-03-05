@@ -64,7 +64,10 @@ def normalize_columns_separately(data, colHeaders):
 	colRanges = data_range(data, colHeaders)
 	colData = data.get_data(colHeaders)
 	for i, [colMin, colMax] in enumerate(colRanges):
-		colData[:, i] = (colData[:, i]-colMin)*(1.0/(colMax-colMin))
+		if colMin != colMax:
+			colData[:, i] = (colData[:, i]-colMin)*(1.0/(colMax-colMin))
+		else: # handle data that does not vary to avoid div by zero
+			colData[:, i] -= colMin
 	return colData
 	
 def normalize_columns_together(data, colHeaders):
@@ -77,4 +80,7 @@ def normalize_columns_together(data, colHeaders):
 	colData = data.get_data(colHeaders)
 	mMin = np.min(colData)
 	mMax = np.max(colData)
-	return (colData-mMin)*(1.0/(mMax-mMin))
+	if mMin != mMax:
+		return (colData-mMin)*(1.0/(mMax-mMin))
+	else: # handle data that does not vary to avoid div by zero
+		return colData-mMin

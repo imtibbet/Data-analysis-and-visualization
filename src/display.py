@@ -158,13 +158,19 @@ class DisplayApp:
 		self.openFilenames.grid( row=row, column=1 )
 		row+=1
 
-		# make a clear button in the frame
+		# make a plot button in the frame
 		tk.Button( self.rightcntlframe, text="Plot Selected", 
 				   command=self.plotData, width=10
 				   ).grid( row=row, column=1 )
 		row+=1
 
-		# make an open button in the frame
+		# make a filter button in the frame
+		tk.Button( self.rightcntlframe, text="Filter", 
+				   command=self.filterData, width=10
+				   ).grid( row=row, column=1 )
+		row+=1
+
+		# make a save button in the frame
 		tk.Button( self.rightcntlframe, text="Save", 
 				   command=self.saveData, width=10
 				   ).grid( row=row, column=1 )
@@ -665,6 +671,19 @@ class DisplayApp:
 			if self.verbose: print("No shape function for %s" % 
 								   self.shapeOption.get())
 		
+	def filterData(self, event=None):
+		'''
+		filter the data by getting user bounds
+		'''
+		if not self.data:
+			tkMessageBox.showerror("No Data", "No data to filter")
+			return
+		newRanges = dialog.FilterDataDialog(self.root, self.data, title="Filter Data").result
+		if self.verbose: print("filtering: %s" % newRanges)
+		if not newRanges:
+			tkMessageBox.showerror("Filter Failed", "Data will not be filtered")
+			return
+	
 	def getColorByDepth(self):
 		'''
 		get the color according the given normalized z
@@ -894,7 +913,7 @@ class DisplayApp:
 		try:
 			self.filename = self.openFilenames.get(self.openFilenames.curselection())
 		except:
-			print("no selected filename")
+			tkMessageBox.showerror("No Selected Data", "Select opened data to plot")
 			return
 		self.data = None
 		self.activeData = None
@@ -995,6 +1014,9 @@ class DisplayApp:
 				return
 
 			# for more than one column, get headers from the user
+			if not self.data:
+				tkMessageBox.showerror("No Data", "No data to plot")
+				return
 			self.headers = dialog.PickAxesDialog(self.root, self.data, title="Pick Data Axes").result
 			if not self.headers: # if the user cancels the dialog, abort
 				self.filename = None
@@ -1194,4 +1216,4 @@ if __name__ == "__main__":
 	[options, args] = parser.parse_args()
 	
 	# run the application
-	DisplayApp(1100, 700, options.filename, options.verbose).main()
+	DisplayApp(1200, 800, options.filename, options.verbose).main()
