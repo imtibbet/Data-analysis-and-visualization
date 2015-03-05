@@ -164,6 +164,12 @@ class DisplayApp:
 				   ).grid( row=row, column=1 )
 		row+=1
 
+		# make an open button in the frame
+		tk.Button( self.rightcntlframe, text="Save", 
+				   command=self.saveData, width=10
+				   ).grid( row=row, column=1 )
+		row+=1
+
 		# make a clear button in the frame
 		tk.Button( self.rightcntlframe, text="Clear", 
 				   command=self.clearData, width=10
@@ -540,12 +546,15 @@ class DisplayApp:
 		self.data = None
 		self.activeData = None
 		self.updateNumObjStrVar()
-		self.xLocation.set("")
-		self.yLocation.set("")
+		self.xLocation.set("----")
+		self.yLocation.set("----")
+		self.zLocation.set("----")
+		self.xLabel.set("x")
+		self.yLabel.set("y")
+		self.zLabel.set("z")
 		self.colorField.set("")
 		self.sizeField.set("")
 		self.shapeField.set("")
-		self.labelStrings = ["x", "y", "z"]
 		self.updateAxes()
 	
 	def createRandomDataPoints( self, event=None ):
