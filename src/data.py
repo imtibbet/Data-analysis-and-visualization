@@ -31,8 +31,8 @@ class Data:
 		parameter [verbose] - default true, enable printing to console
 		'''
 		if not filename:
-		    return
-		    
+			return
+			
 		# initialize some fields
 		np.set_printoptions(suppress=True) # make numpy print nicely
 		self.verbose = verbose # enable printing
@@ -78,21 +78,21 @@ class Data:
 		if self.verbose: print(self.matrix_data)
 		
 	def clone(self):
-	    '''
-	    return a clone of this data instance
-	    clone is only deep for numpy matrices
-	    '''
-	    data = Data(None)
-	    data.verbose = self.verbose
-	    data.raw_headers = self.raw_headers
-	    data.header2raw = self.header2raw
-	    data.raw_types = self.raw_types
-	    data.raw_data = self.raw_data.copy()
-	    data.matrix_data = self.matrix_data.copy()
-	    data.numericHeaders = self.numericHeaders
-	    data.header2matrix = self.header2matrix
-	    data.enum2value = self.enum2value
-	    return data
+		'''
+		return a clone of this data instance
+		clone is only deep for numpy matrices
+		'''
+		data = Data(None)
+		data.verbose = self.verbose
+		data.raw_headers = self.raw_headers
+		data.header2raw = self.header2raw
+		data.raw_types = self.raw_types
+		data.raw_data = self.raw_data.copy()
+		data.matrix_data = self.matrix_data.copy()
+		data.numericHeaders = self.numericHeaders
+		data.header2matrix = self.header2matrix
+		data.enum2value = self.enum2value
+		return data
 			
 	def read(self, reader):
 		'''

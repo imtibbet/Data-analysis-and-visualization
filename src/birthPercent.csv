@@ -1,0 +1,60 @@
+#Title: Number of Births,,
+#Timeframe: 2010,,
+#Notes: See http://kff.org/other/state-indicator/number-of-births/#map for notes and sources.,,
+Location,Number of Births
+string,numeric
+United States,1
+Alabama,0.015014805
+Alaska,0.00286819
+Arizona,0.021872607
+Arkansas,0.009636479
+California,0.127569082
+Colorado,0.016591297
+Connecticut,0.009428447
+Delaware,0.002841436
+District of Columbia,0.002291602
+Florida,0.053655736
+Georgia,0.033491891
+Hawaii,0.004747729
+Idaho,0.00580039
+Illinois,0.041306341
+Indiana,0.020988222
+Iowa,0.009681236
+Kansas,0.01016381
+Kentucky,0.013948141
+Louisiana,0.015597144
+Maine,0.003242998
+Maryland,0.018453083
+Massachusetts,0.018219047
+Michigan,0.028637146
+Minnesota,0.017155133
+Mississippi,0.010010537
+Missouri,0.019192696
+Montana,0.003015463
+Nebraska,0.006480495
+Nevada,0.008984879
+New Hampshire,0.003218994
+New Jersey,0.026734604
+New Mexico,0.006963569
+New York,0.061103129
+North Carolina,0.030592196
+North Dakota,0.002276349
+Ohio,0.03478734
+Oklahoma,0.013311543
+Oregon,0.011386748
+Pennsylvania,0.035835751
+Rhode Island,0.002794679
+South Carolina,0.014587739
+South Dakota,0.002953203
+Tennessee,0.019876801
+Texas,0.09654432
+Utah,0.013066506
+Vermont,0.001555989
+Virginia,0.025754453
+Washington,0.021638071
+West Virginia,0.005118286
+Wisconsin,0.017124379
+Wyoming,0.00188929
+Guam,N/A
+Puerto Rico,N/A
+Virgin Islands,N/A

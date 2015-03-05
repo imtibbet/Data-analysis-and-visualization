@@ -115,14 +115,17 @@ class DisplayApp:
 		self.axesLabels = np.asmatrix(axeslabels)
 		axesPts = (VTM * self.axes.T).T
 		labelPts = (VTM * self.axesLabels.T).T
-		self.labelStrings = ["x", "y", "z"]
+		self.xLabel.set("x")
+		self.yLabel.set("y")
+		self.zLabel.set("z")
+		labelVars = [self.xLabel, self.yLabel, self.zLabel]
 		self.lines = []
 		self.labels = []
 		for i in range(3):
 			self.lines.append(self.canvas.create_line(axesPts[2*i, 0], axesPts[2*i, 1], 
 												axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
 			self.labels.append(self.canvas.create_text(labelPts[i, 0], labelPts[i, 1], 
-												font=("Purina", 20), text=self.labelStrings[i]))
+												font=("Purina", 20), text=labelVars[i].get()))
 
 	def buildControlsFrame(self):
 		'''
@@ -418,25 +421,27 @@ class DisplayApp:
 				  ).pack( side=tk.BOTTOM, padx = 2, pady = 2, fill=tk.X)
 		
 		cols = 0;
-		tk.Label(bottomstatusframe, text="Status", padx=20, 
-				 ).grid(row=0, column=cols, rowspan=2)
+		tk.Label(bottomstatusframe, text="Status", 
+				 ).grid(row=0, column=cols, rowspan=3)
 		cols+=1
 		
 		# display the number of objects on the canvas
-		tk.Label(bottomstatusframe, text="num objects on canvas:"
-				 ).grid(row=0, column=cols)
+		tk.Label(bottomstatusframe, text="num objects"
+				 ).grid(row=0, column=cols, padx=50)
+		tk.Label(bottomstatusframe, text="on canvas:"
+				 ).grid(row=1, column=cols)
 		self.numObjStrVar = tk.StringVar( self.root )
 		self.numObjStrVar.set("0")
 		tk.Label(bottomstatusframe, textvariable=self.numObjStrVar
-				 ).grid(row=1, column=cols)
+				 ).grid(row=2, column=cols)
 		cols+=1
 
 		# display the current color fields
-		tk.Label(bottomstatusframe, text="\tsize field:"
+		tk.Label(bottomstatusframe, text="size field:"
 				 ).grid(row=0, column=cols)
-		tk.Label(bottomstatusframe, text="\tcolor field:"
+		tk.Label(bottomstatusframe, text="color field:"
 				 ).grid(row=1, column=cols)
-		tk.Label(bottomstatusframe, text="\tshape field:"
+		tk.Label(bottomstatusframe, text="shape field:"
 				 ).grid(row=2, column=cols)
 		cols+=1
 		self.sizeField = tk.StringVar( self.root, value="" )
@@ -470,24 +475,45 @@ class DisplayApp:
 		cols+=1			   
 		
 		# display the location of the curser
+		self.curserxLocation = tk.StringVar( self.root )
+		self.curseryLocation = tk.StringVar( self.root )
+		'''
 		tk.Label(bottomstatusframe, text="\tx:"
 				 ).grid(row=0, column=cols)
 		tk.Label(bottomstatusframe, text="\ty:"
 				 ).grid(row=1, column=cols)
 		cols+=1
-		self.curserxLocation = tk.StringVar( self.root )
 		tk.Label(bottomstatusframe, textvariable=self.curserxLocation
 				 ).grid(row=0, column=cols)
-		self.curseryLocation = tk.StringVar( self.root )
 		tk.Label(bottomstatusframe, textvariable=self.curseryLocation
 				 ).grid(row=1, column=cols)
 		cols+=1		
+		'''
 		
 		# display the location of the object the curser is over
-		tk.Label(bottomstatusframe, text="\tobject x:"
+		tk.Label(bottomstatusframe, text="\tdata "
 				 ).grid(row=0, column=cols)
-		tk.Label(bottomstatusframe, text="\tobject y:"
+		tk.Label(bottomstatusframe, text="\tdata "
 				 ).grid(row=1, column=cols)
+		tk.Label(bottomstatusframe, text="\tdata "
+				 ).grid(row=2, column=cols)
+		cols+=1
+		self.xLabel = tk.StringVar( self.root )
+		tk.Label(bottomstatusframe, textvariable=self.xLabel
+				 ).grid(row=0, column=cols)
+		self.yLabel = tk.StringVar( self.root )
+		tk.Label(bottomstatusframe, textvariable=self.yLabel
+				 ).grid(row=1, column=cols)
+		self.zLabel = tk.StringVar( self.root )
+		tk.Label(bottomstatusframe, textvariable=self.zLabel
+				 ).grid(row=2, column=cols)
+		cols+=1
+		tk.Label(bottomstatusframe, text=":"
+				 ).grid(row=0, column=cols)
+		tk.Label(bottomstatusframe, text=":"
+				 ).grid(row=1, column=cols)
+		tk.Label(bottomstatusframe, text=":"
+				 ).grid(row=2, column=cols)
 		cols+=1
 		self.xLocation = tk.StringVar( self.root )
 		tk.Label(bottomstatusframe, textvariable=self.xLocation
@@ -495,6 +521,9 @@ class DisplayApp:
 		self.yLocation = tk.StringVar( self.root )
 		tk.Label(bottomstatusframe, textvariable=self.yLocation
 				 ).grid(row=1, column=cols)
+		self.zLocation = tk.StringVar( self.root )
+		tk.Label(bottomstatusframe, textvariable=self.zLocation
+				 ).grid(row=2, column=cols)
 		cols+=1
 	
 	def clearData(self, event=None):
@@ -914,13 +943,13 @@ class DisplayApp:
 		self.sizeData = self.activeData[:, -3]
 		self.sizeField.set(self.headers[-3])
 		[rows, cols] = self.activeData.shape
-		self.labelStrings[0] = self.headers[0]
-		self.labelStrings[1] = self.headers[1]
+		self.xLabel.set(self.headers[0])
+		self.yLabel.set(self.headers[1])
 		if cols == 2: # pad missing z data
 			self.activeData = np.column_stack((self.activeData[:, :2], [0]*rows, [1]*rows))
 		else: # pad the homogeneous coordinate
 			self.activeData = np.column_stack((self.activeData[:, :3], [1]*rows))
-			self.labelStrings[2] = self.headers[2]
+			self.zLabel.set(self.headers[2])
 			
 	def setBindings(self):
 		'''
@@ -982,13 +1011,20 @@ class DisplayApp:
 		self.curseryLocation.set(event.y)
 		self.xLocation.set("-"*4)
 		self.yLocation.set("-"*4)
+		self.zLocation.set("-"*4)
 		for obj in self.objects:
 			if not self.canvas.bbox(obj): break
 			[xlow, ylow, xhigh, yhigh] = self.canvas.bbox(obj)
 			if ( (event.x > xlow) and (event.x < xhigh) and
 				 (event.y > ylow) and (event.y < yhigh) ):
-				self.xLocation.set("%4d" % int((xhigh+xlow)/2.0))
-				self.yLocation.set("%4d" % int((yhigh+ylow)/2.0))
+				row = self.objects[obj]
+				xcol = self.data.header2matrix[self.headers[0]]
+				ycol = self.data.header2matrix[self.headers[1]]
+				if len(self.headers) > 5:
+					zcol = self.data.header2matrix[self.headers[2]]
+					self.zLocation.set("%5.2f" % self.data.matrix_data[row, zcol])
+				self.xLocation.set("%5.2f" % self.data.matrix_data[row, xcol])
+				self.yLocation.set("%5.2f" % self.data.matrix_data[row, ycol])
 				return
 
 	def update(self, event=None):
@@ -1006,12 +1042,13 @@ class DisplayApp:
 		VTM = self.view.build()
 		axesPts = (VTM * self.axes.T).T
 		labelPts = (VTM * self.axesLabels.T).T
+		labelVars = [self.xLabel, self.yLabel, self.zLabel]
 		for i, line in enumerate(self.lines):
 			self.canvas.coords(line, 
 								axesPts[2*i, 0], axesPts[2*i, 1], 
 								axesPts[2*i+1, 0], axesPts[2*i+1, 1])
 			self.canvas.coords(self.labels[i], labelPts[i, 0], labelPts[i, 1])
-			self.canvas.itemconfigure(self.labels[i], text=self.labelStrings[i])
+			self.canvas.itemconfigure(self.labels[i], text=labelVars[i].get())
 		
 	def updateNumObjStrVar(self):
 		'''
@@ -1074,4 +1111,4 @@ if __name__ == "__main__":
 	[options, args] = parser.parse_args()
 	
 	# run the application
-	DisplayApp(1200, 775, options.filename, options.verbose).main()
+	DisplayApp(1100, 700, options.filename, options.verbose).main()
