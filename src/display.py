@@ -7,13 +7,24 @@ from collections import OrderedDict
 from optparse import OptionParser
 import random
 import types
+import sys
 
 import analysis
 from data import Data
 import dialog
 import numpy as np
 from view import View
-from matplotlib import pyplot
+import matplotlib
+matplotlib.use("TkAgg")
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+try:
+	from astropy.io import fits
+except:
+	try:
+		import pyfits as fits
+	except:
+		fits = None
 
 # use tkinter for GUI elements
 try:
@@ -37,13 +48,12 @@ class DisplayApp:
 		self.verbose = verbose
 		self.filename = filename
 		self.data = None
-		self.activeData = None
 		self.width = None
 		self.height = None
 		self.filename2data = {}
 		self.preDefineColors()
 		self.preDefineDistributions()
-		self.objects = {} # shapes drawn on canvas and their row in the data
+		self.objects = {} # shapes drawn on canvas and their row in the data# make a set image file path button in the frame
 
 		# create a tk object, which is the root window
 		self.root = tk.Tk()
@@ -88,8 +98,9 @@ class DisplayApp:
 		# build the axes
 		self.buildAxes()
 		
-		# build the data
-		self.buildData()
+		if filename:
+			self.setData()
+			self.update()
 
 	def buildAxes(self, axes=[[0,0,0],[1,0,0],
 							  [0,0,0],[0,1,0],
@@ -126,7 +137,7 @@ class DisplayApp:
 			self.lines.append(self.canvas.create_line(axesPts[2*i, 0], axesPts[2*i, 1], 
 												axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
 			self.labels.append(self.canvas.create_text(labelPts[i, 0], labelPts[i, 1], 
-												font=("Purina", 20), text=labelVars[i].get()))
+												font=("Purina", 15), text=labelVars[i].get()))
 
 	def buildControlsFrame(self):
 		'''
@@ -147,6 +158,7 @@ class DisplayApp:
 				  ).grid( row=row, column=1 )
 		row+=1
 
+		
 		# make an open button in the frame
 		tk.Button( self.rightcntlframe, text="Open", 
 				   command=self.openData, width=10
@@ -164,6 +176,12 @@ class DisplayApp:
 				   ).grid( row=row, column=1 )
 		row+=1
 
+		# make a plot button in the frame
+		tk.Button( self.rightcntlframe, text="Change Axes", 
+				   command=self.changeDataAxes, width=10
+				   ).grid( row=row, column=1 )
+		row+=1
+		
 		# make a filter button in the frame
 		tk.Button( self.rightcntlframe, text="Filter", 
 				   command=self.filterData, width=10
@@ -185,16 +203,10 @@ class DisplayApp:
 		self.presetView = tk.StringVar( self.root )
 		self.presetView.set("xy")
 		tk.OptionMenu( self.rightcntlframe, self.presetView, 
-					   "xy", "xz", "yz", command=self.viewPreset
+					   "xy", "xz", "yz", command=self.resetViewOrientation
 					   ).grid( row=row, column=1 )
 		row+=1
-
-		# make a reset button in the frame
-		tk.Button( self.rightcntlframe, text="Reset", 
-				   command=self.viewPreset, width=10
-				   ).grid( row=row, column=1 )
-		row+=1
-
+		
 		# size selector
 		tk.Label( self.rightcntlframe, text="\nSize"
 					   ).grid( row=row, column=1 )
@@ -310,31 +322,30 @@ class DisplayApp:
 		self.numPoints = tk.Entry(self.rightcntlframe, width=10)
 		self.numPoints.grid( row=row, column=1 )
 		row+=1
+		
 		tk.Button( self.rightcntlframe, text="Create Points", 
 				   command=self.createRandomDataPoints, width=10 
 				   ).grid( row=row, column=1 )
 		row+=1
+		
 		
 	def buildData(self): 
 		'''
 		build the data on the screen based on the data and filename fields
 		Note: this method is the only one that transforms and draws data
 		'''
+		# if the data is not set, set according to filename
+		if not self.data:
+			return
 		
 		# clean the data on the canvas
 		for obj in self.objects:
 			self.canvas.delete(obj)
 		self.objects = {}
 		
-		# if the data is not set, set according to filename
-		if not self.data:
-			self.setActiveData()
-			if not self.data: 
-				return
-		
 		# prepare to transform the active data to the current view
 		VTM = self.view.build()
-		viewData = self.activeData.copy()
+		viewData = self.normalizedData.copy()
 		
 		# transform into view
 		viewData = (VTM * viewData.T).T
@@ -343,8 +354,6 @@ class DisplayApp:
 		zIndicesSorted = np.argsort(viewData[:, 2].T.tolist()[0])
 		
 		# transform sorted data to view and draw on canvas
-		#dx = 6.0/self.view.extent[0,0] # size of data points
-		#dy = 6.0/self.view.extent[0,1]
 		for i in zIndicesSorted:
 			self.drawObject(viewData[i,0], viewData[i,1], row=i)
 
@@ -367,11 +376,30 @@ class DisplayApp:
 		self.menu.add_cascade( label = "File", menu = filemenu )
 		menulist.append([filemenu,
 						[['Open, Ctrl-O', self.openData], 
-						 ['Save, Ctrl-S', self.saveData], 
-						 ['Clear, Ctrl-N', self.clearData], 
+						 ['Save, Ctrl-S', self.saveData],  
 						 ['Quit, Ctrl-Q', self.handleQuit]
 						 ]])
 
+		# create another menu for color
+		datamenu = tk.Menu( self.menu )
+		self.menu.add_cascade( label = "Data", menu = datamenu )
+		menulist.append([datamenu,
+						[['Filter, Ctrl-F', self.filterData],
+						 ['Change Axes', self.changeDataAxes],
+						 ['Clear, Ctrl-N', self.clearData]
+						 ]])
+
+		# create another menu for color
+		canvasmenu = tk.Menu( self.menu )
+		self.menu.add_cascade( label = "View", menu = canvasmenu )
+		menulist.append([canvasmenu,
+						[['Zoom In', self.zoomIn],
+						 ['Zoom Out', self.zoomOut],
+						 ['Reset Orientation', self.resetViewOrientation],
+						 ['Reset Zoom', self.resetViewZoom],
+						 ['Reset All', self.resetView]
+						 ]])
+		
 		# create another menu for color
 		colormenu = tk.Menu( self.menu )
 		self.menu.add_cascade( label = "Color", menu = colormenu )
@@ -383,10 +411,10 @@ class DisplayApp:
 
 		# create another menu for color
 		distrmenu = tk.Menu( self.menu )
-		self.menu.add_cascade( label = "Distribution", menu = distrmenu )
+		self.menu.add_cascade( label = "Create", menu = distrmenu )
 		menulist.append([distrmenu,
 						[['Set Distribution', self.setDistribution],
-						 ['', None],
+						 ['Create Points', self.createRandomDataPoints],
 						 ['', None]
 						 ]])		
 
@@ -399,7 +427,18 @@ class DisplayApp:
 									['Stephanie', self.displayAboutSteph],
 									['Bruce', self.displayAboutBruce]
 									]],
-						 ['Key Bindings', self.displayBindings]
+						 ['Key Bindings', self.displayBindings],
+						 ['', None]
+						 ]])	
+
+		# create another menu for research		# for astronomy research
+		self.imageFilePath = "/home/imtibbet/Pictures/astro/results/VELA28/results"# "."
+		astromenu = tk.Menu( self.menu )
+		self.menu.add_cascade( label = "Astro", menu = astromenu )
+		menulist.append([astromenu,
+						[['Set Path to Images', self.setImageFilePath],
+						 ['', None],
+						 ['', None]
 						 ]])
 		
 		# build the menu elements and callbacks
@@ -540,6 +579,16 @@ class DisplayApp:
 				 ).grid(row=2, column=cols)
 		cols+=1
 	
+	def changeDataAxes(self, event=None):
+		'''
+		changes the displayed data if any
+		'''
+		if self.data:
+			self.pickDataAxes()
+			self.update()
+		else:
+			tkMessageBox.showerror("No Data Plotted", "No data to change axes")
+		
 	def clearData(self, event=None):
 		'''
 		clear the data from the canvas
@@ -550,7 +599,6 @@ class DisplayApp:
 		self.objects = {}
 		self.filename = None
 		self.data = None
-		self.activeData = None
 		self.updateNumObjStrVar()
 		self.xLocation.set("----")
 		self.yLocation.set("----")
@@ -586,30 +634,13 @@ class DisplayApp:
 		
 		# make points on the canvas
 		self.data = None
-		self.activeData = None
 		self.filename = [["x", "y", "z"], ["numeric", "numeric", "numeric"]]
 		self.filename += [[randFuncX(*randArgsX), 
 						   randFuncY(*randArgsY),
 						   randFuncZ(*randArgsZ)]
 						for _ in range(points)]
+		self.setData()
 		self.update()
-		
-	def deletePoint(self, event):
-		'''
-		delete the top point under the event location
-		'''
-		if self.verbose: print('handle ctrl shift button 1: %d %d' % (event.x, event.y))
-		self.baseClick = [event.x, event.y]
-		for obj in self.objects:
-			[xlow, ylow, xhigh, yhigh] = self.canvas.bbox(obj)
-			if ( (event.x > xlow) and (event.x < xhigh) and
-				 (event.y > ylow) and (event.y < yhigh) ):
-				self.canvas.delete(obj)
-				row = self.objects[obj]
-				del self.objects[obj]
-				self.setActiveData(row)
-				self.update()
-				return
 		
 	def displayAboutApp(self, event=None):
 		'''
@@ -645,8 +676,8 @@ class DisplayApp:
 		'''
 		add the control selected shape to the canvas at x, y with size dx, dy
 		'''
-		dx = int(self.sizeOption.get())
-		dy = int(self.sizeOption.get())
+		dx = int(self.sizeOption.get()) # self.view.extent[0,0]
+		dy = int(self.sizeOption.get()) # self.view.extent[0,1]
 		if self.sizeModeStr.get() == "d":
 			dx *= self.sizeData[row, 0] + 0.5
 			dy *= self.sizeData[row, 0] + 0.5
@@ -668,8 +699,34 @@ class DisplayApp:
 			self.objects[shape] = row
 			self.updateNumObjStrVar()
 		else:
-			if self.verbose: print("No shape function for %s" % 
-								   self.shapeOption.get())
+			if self.verbose: print("No shape function for %s" % self.shapeOption.get())
+		
+	def excludeData(self, exclude):
+		'''
+		this limits the current data if the method is given a valid row to exclude
+		'''
+		try:
+			row = int(exclude)
+			self.data = self.data.clone()
+			self.data.matrix_data = np.delete(self.data.matrix_data, row, 0)
+			self.data.raw_data = np.delete(self.data.raw_data, row, 0)
+			if self.verbose: print("deleted element")
+		except:
+			rows = self.data.matrix_data.shape[0]
+			mask = np.ones(rows, dtype=bool)
+			try:
+				for [col, [newMin, newMax]] in enumerate(exclude):
+					for row in range(rows):
+						if (self.data.matrix_data[row, col] < newMin or
+							self.data.matrix_data[row, col] > newMax):
+							mask[row] = False
+				self.data = self.data.clone()
+				self.data.matrix_data = self.data.matrix_data[mask]
+				self.data.raw_data = self.data.raw_data[mask]
+				if self.verbose: print("applied filter")
+			except:
+				print("Not excluding %s" % exclude)
+				pass
 		
 	def filterData(self, event=None):
 		'''
@@ -682,7 +739,10 @@ class DisplayApp:
 		if self.verbose: print("filtering: %s" % newRanges)
 		if not newRanges:
 			tkMessageBox.showerror("Filter Failed", "Data will not be filtered")
-			return
+		else:
+			self.excludeData(newRanges)
+			self.processData()
+		self.update()
 	
 	def getColorByDepth(self):
 		'''
@@ -857,6 +917,24 @@ class DisplayApp:
 		zoomSpeed = 0.01
 		self.view.extent = self.baseExtent*min(max(1.0+zoomSpeed*dy, 0.1), 3.0)
 		self.update()
+		
+	def handleDelete(self, event):
+		'''
+		delete the top point under the event location
+		'''
+		if self.verbose: print('handle ctrl shift button 1: %d %d' % (event.x, event.y))
+		self.baseClick = [event.x, event.y]
+		for obj in self.objects:
+			[xlow, ylow, xhigh, yhigh] = self.canvas.bbox(obj)
+			if ( (event.x > xlow) and (event.x < xhigh) and
+				 (event.y > ylow) and (event.y < yhigh) ):
+				self.canvas.delete(obj)
+				row = self.objects[obj]
+				del self.objects[obj]
+				self.excludeData(row)
+				self.processData()
+				self.update()
+				return
 
 	def handleDoubleButton1(self, event):
 		'''
@@ -876,6 +954,85 @@ class DisplayApp:
 				msg = "\n".join(msg)
 				tkMessageBox.showinfo("Data Info", msg, parent=self.root)
 				return
+
+	def handleShowData(self, event):
+		'''
+		update the status if the event is over an object on the canvas
+		'''
+		self.curserxLocation.set(event.x)
+		self.curseryLocation.set(event.y)
+		self.xLocation.set("-"*4)
+		self.yLocation.set("-"*4)
+		self.zLocation.set("-"*4)
+		for obj in self.objects:
+			if not self.canvas.bbox(obj): continue
+			[xlow, ylow, xhigh, yhigh] = self.canvas.bbox(obj)
+			if ( (event.x > xlow) and (event.x < xhigh) and
+				 (event.y > ylow) and (event.y < yhigh) ):
+				row = self.objects[obj]
+				xcol = self.data.header2matrix[self.headers[0]]
+				ycol = self.data.header2matrix[self.headers[1]]
+				if len(self.headers) > 5:
+					zcol = self.data.header2matrix[self.headers[2]]
+					self.zLocation.set("%5.2f" % self.data.matrix_data[row, zcol])
+				self.xLocation.set("%5.2f" % self.data.matrix_data[row, xcol])
+				self.yLocation.set("%5.2f" % self.data.matrix_data[row, ycol])
+				return
+			
+	def handleShowImage(self, event):
+		'''
+		show the image of the data point, if any
+		'''
+			
+		# find the object under the mouse click, if any
+		row=None
+		for obj in self.objects:
+			if not self.canvas.bbox(obj): continue
+			[xlow, ylow, xhigh, yhigh] = self.canvas.bbox(obj)
+			if ( (event.x > xlow) and (event.x < xhigh) and
+				 (event.y > ylow) and (event.y < yhigh) ):
+				row = self.objects[obj]
+				break
+		if row == None:
+			return
+		
+		try:
+			col = self.data.get_raw_headers().index("filename")
+			filename = "/".join([self.imageFilePath.rstrip("/"), 
+								self.data.raw_data[row, col]])
+			hdu = fits.open(filename)
+			#fileList = filename.split("_")
+			#filename = "_".join(fileList[:-2]) + "." + fileList[-1].split(".")[-1]
+			#filename = tkf.askopenfilename(initialdir=self.imageFilePath.get())
+			#data = np.log10(fits.open(filename)[1].data)
+		except:
+			if self.verbose: print(sys.exc_info())
+			if self.verbose: print("cant open image. make data column for filename and install astropy")
+			
+		fig = plt.figure()
+		titles = ["Original", "Model"]#, "Residual"]
+		scale = 6 # how much to stretch the data for contrast using log
+		#mMin = np.min(hdu[1].data)
+		for i, title in enumerate(titles, start=1):
+			a = fig.add_subplot(1,len(titles),i)
+			a.set_title(title)
+			data = hdu[i].data
+			data *= 10**scale
+			data += 1
+			data = np.log10(data)
+			implot = plt.imshow(data)
+			implot.set_cmap("hot")
+			implot.set_clim(0.0, scale)
+			cb = plt.colorbar(ticks=range(scale+1), orientation='horizontal')
+			cb.set_label("log10(pixel*$10^%d$+1)" % scale)
+		
+		dialog.MatPlotLibDialog(self.root, fig, filename.split("/")[-1])
+		'''
+		if mMin != mMax:
+			data = (data-mMin)*(1.0/(mMax-mMin))
+		else: # handle data that does not vary to avoid div by zero
+			data -= mMin
+		'''
 		
 	def main(self):
 		'''
@@ -905,20 +1062,39 @@ class DisplayApp:
 					selIndex = i
 				self.openFilenames.insert(tk.END, fname)
 			self.openFilenames.select_set(selIndex)
+		
+	def pickDataAxes(self, event=None):
+		'''
+		pick the data axes and update the displayed data
+		'''
+		self.headers = dialog.PickAxesDialog(self.root, self.data, self.headers,
+											title="Pick Data Axes").result
+		if not self.headers: # if the user cancels the dialog, abort
+			self.filename = None
+			self.data = None
+		else: # sets the active data and normalize it
+			self.processData()
 			
 	def plotData(self, event=None):
 		'''
 		plot the data associated with the currently selected filename
 		'''
+		oldFilename = self.filename
+		oldData = self.data
+		oldNormalizedData = self.normalizedData
 		try:
 			self.filename = self.openFilenames.get(self.openFilenames.curselection())
 		except:
 			tkMessageBox.showerror("No Selected Data", "Select opened data to plot")
 			return
-		self.data = None
-		self.activeData = None
-		self.update()
-
+		self.setData()
+		if self.data:
+			self.update()
+		else:
+			self.filename = oldFilename
+			self.data = oldData
+			self.normalizedData = oldNormalizedData
+			
 	def preDefineColors(self):
 		'''
 		define the initial colors for the color selector control
@@ -956,6 +1132,67 @@ class DisplayApp:
 							  "UP TRIANGLE":[self.canvas.create_polygon, []],
 							  "X":[self.canvas.create_polygon, []],
 							  "STAR":[self.canvas.create_polygon, []]}
+			
+	def processData(self, event=None):
+		'''
+		use the data instance field to set active data fields
+		'''
+		# normalize the data and set the fields
+		self.normalizedData = analysis.normalize_columns_separately(self.data, self.headers)
+		self.shapeData = self.normalizedData[:, -1]
+		self.shapeField.set(self.headers[-1])
+		self.colorData = self.normalizedData[:, -2]
+		self.colorField.set(self.headers[-2])
+		self.sizeData = self.normalizedData[:, -3]
+		self.sizeField.set(self.headers[-3])
+		self.xLabel.set(self.headers[0])
+		self.yLabel.set(self.headers[1])
+		[rows, cols] = self.normalizedData.shape
+		if cols == 2: # pad missing z data
+			self.normalizedData = np.column_stack((self.normalizedData[:, :2], [0]*rows, [1]*rows))
+		else: # pad the homogeneous coordinate
+			self.normalizedData = np.column_stack((self.normalizedData[:, :3], [1]*rows))
+			self.zLabel.set(self.headers[2])
+		
+	def resetViewOrientation(self, event=None):
+		'''
+		set the view to the specified preset
+		'''
+		presetStr = self.presetView.get().upper()
+		curView = self.view.clone()
+		self.view.reset() # return to default view
+		self.view.offset = curView.offset.copy()
+		self.view.screen = curView.screen.copy()
+		self.view.extent = curView.extent.copy()
+		if presetStr == "XZ":
+			self.view.rotateVRC(0, 90)
+		elif presetStr == "YZ":
+			self.view.rotateVRC(90, 90)
+		self.update()
+		
+	def resetViewZoom(self, event=None):
+		'''
+		set the view to the specified preset
+		'''
+		curView = self.view.clone()
+		self.view.reset() # return to default view
+		self.view.offset = curView.offset.copy()
+		self.view.screen = curView.screen.copy()
+		self.view.u = curView.u.copy()
+		self.view.vpn = curView.vpn.copy()
+		self.view.vup = curView.vup.copy()
+		self.view.vrp = curView.vrp.copy()
+		self.update()
+
+	def resetView(self, event=None):
+		'''
+		set the view to the specified preset
+		'''
+		curView = self.view.clone()
+		self.view.reset() # return to default view
+		self.view.offset = curView.offset.copy()
+		self.view.screen = curView.screen.copy()
+		self.update()
 	
 	def saveData(self, event=None):
 		'''
@@ -969,91 +1206,7 @@ class DisplayApp:
 			return
 		self.data.save(wfile)
 		if self.verbose: print("saved successfully")
-			
-	def setActiveData(self, excludeRow=None, event=None):
-		'''
-		set the active data, selected by the user
-		'''
-		
-		if excludeRow == None: # this parameter is used to edit active data
-			if not self.filename:
-				return
-			try:
-				self.data = self.filename2data[self.filename] # opened data
-			except:
-				self.data = Data(self.filename, self.verbose) # creating points
-			
-			# check for missiing data
-			if not self.data.get_headers():
-				tkMessageBox.showerror("Insufficient Data", "Not enough columns of data to plot")
-				self.filename = None
-				self.data = None
-				self.activeData = None
-				return
-			
-			# for only one column of data, make histogram
-			if len(self.data.get_headers()) < 2:
-				xvalues = self.data.matrix_data
-				xlabel = self.data.get_headers()[0]
-				try:
-					ylabel = self.data.raw_types.index("STRING")
-					ylabel = self.data.raw_headers[ylabel]
-				except ValueError:
-					print("no string type data found")
-					ylabel = None
-				self.filename = None
-				self.data = None
-				self.activeData = None
-				if ylabel == None:
-					pyplot.hist(xvalues)
-				else:
-					pyplot.hist(xvalues)
-					pyplot.ylabel(ylabel)
-				pyplot.xlabel(xlabel)
-				pyplot.show()
-				return
 
-			# for more than one column, get headers from the user
-			if not self.data:
-				tkMessageBox.showerror("No Data", "No data to plot")
-				return
-			self.headers = dialog.PickAxesDialog(self.root, self.data, title="Pick Data Axes").result
-			if not self.headers: # if the user cancels the dialog, abort
-				self.filename = None
-				self.data = None
-				self.activeData = None
-				return
-		
-		# this limits the data if the method is given a valid row to exclude
-		if isinstance(excludeRow, (int, long)):
-			row = excludeRow # rename for convenience
-			self.data = self.data.clone()
-			if(row == self.activeData.shape[0]-1):
-				self.data.matrix_data = self.data.matrix_data[:-1]
-				self.data.raw_data = self.data.raw_data[:-1]
-			else:
-				self.data.matrix_data = np.vstack((self.data.matrix_data[:row],
-											self.data.matrix_data[row+1:]))
-				self.data.raw_data = np.vstack((self.data.raw_data[:row],
-											self.data.raw_data[row+1:]))
-		
-		# normalize the data and set the fields
-		self.activeData = analysis.normalize_columns_separately(self.data, self.headers)
-		self.shapeData = self.activeData[:, -1]
-		self.shapeField.set(self.headers[-1])
-		self.colorData = self.activeData[:, -2]
-		self.colorField.set(self.headers[-2])
-		self.sizeData = self.activeData[:, -3]
-		self.sizeField.set(self.headers[-3])
-		self.xLabel.set(self.headers[0])
-		self.yLabel.set(self.headers[1])
-		[rows, cols] = self.activeData.shape
-		if cols == 2: # pad missing z data
-			self.activeData = np.column_stack((self.activeData[:, :2], [0]*rows, [1]*rows))
-		else: # pad the homogeneous coordinate
-			self.activeData = np.column_stack((self.activeData[:, :3], [1]*rows))
-			self.zLabel.set(self.headers[2])
-			
 	def setBindings(self):
 		'''
 		set the key bindings for the application
@@ -1062,6 +1215,8 @@ class DisplayApp:
 		# bind mouse motions to the canvas
 		self.canvas.bind( '<Button-1>', self.handleButton1 )
 		self.canvas.bind( '<Double-Button-1>', self.handleDoubleButton1 )
+		self.canvas.bind( '<Double-Button-2>', self.handleShowImage )
+		self.canvas.bind( '<Double-Button-3>', self.handleShowImage )
 		self.canvas.bind( '<Control-Button-1>', self.handleButton2 ) # same as B2
 		self.canvas.bind( '<Button-2>', self.handleButton2 )
 		self.canvas.bind( '<Button-3>', self.handleButton3 )
@@ -1069,13 +1224,14 @@ class DisplayApp:
 		self.canvas.bind( '<Control-B1-Motion>', self.handleButton2Motion ) # same as B2-Motion
 		self.canvas.bind( '<B2-Motion>', self.handleButton2Motion )
 		self.canvas.bind( '<B3-Motion>', self.handleButton3Motion )
-		self.canvas.bind( '<Control-Shift-Button-1>', self.deletePoint )
-		self.canvas.bind( '<Motion>', self.showObjectPosition )
+		self.canvas.bind( '<Control-Shift-Button-1>', self.handleDelete )
+		self.canvas.bind( '<Motion>', self.handleShowData )
 		
 		# resizing canvas
 		self.canvas.bind( '<Configure>', self.updateScreen )
 
 		# bind command sequences to the root window
+		self.root.bind( '<Control-f>', self.filterData)
 		self.root.bind( '<Control-n>', self.clearData)
 		self.root.bind( '<Control-o>', self.openData)
 		self.root.bind( '<Control-s>', self.saveData)
@@ -1092,6 +1248,55 @@ class DisplayApp:
 			self.colorMode = self.getColorByDepth
 		self.update()
 			
+	def setData(self):
+		'''
+		sets the data field using the filename field, return if filename is None
+		'''
+		try:
+			self.data = self.filename2data[self.filename] # opened data
+		except:
+			self.data = Data(self.filename, self.verbose) # creating points
+		
+		# check for missiing data
+		if not self.data.get_headers():
+			tkMessageBox.showerror("Insufficient Data", "Not enough columns of data to plot")
+			self.filename = None
+			self.data = None
+			return
+		
+		# for only one column of data, make histogram
+		if len(self.data.get_headers()) < 2:
+			xvalues = self.data.matrix_data
+			xlabel = self.data.get_headers()[0]
+			try:
+				ylabel = self.data.raw_types.index("STRING")
+				ylabel = self.data.raw_headers[ylabel]
+			except ValueError:
+				print("no string type data found")
+				ylabel = None
+			title = self.filename
+			# self.clearData()
+			self.filename = None
+			self.data = None
+			fig = plt.figure()
+			if ylabel == None:
+				plt.hist(xvalues)
+			else:
+				plt.hist(xvalues)
+				plt.ylabel(ylabel)
+			plt.xlabel(xlabel)
+			dialog.MatPlotLibDialog(self.root, fig, title)
+			return
+
+		# for more than one column, get headers from the user
+		if not self.data:
+			tkMessageBox.showerror("No Data", "No data to plot")
+		else:
+			self.headers = None
+			self.pickDataAxes()
+			if self.data:
+				self.processData()
+		
 	def setDistribution(self, event=None):
 		'''
 		select the distribution using the dialog and update status
@@ -1108,30 +1313,16 @@ class DisplayApp:
 		self.yDistribution.set(yDistribution)
 		self.zDistribution.set(zDistribution)
 
-	def showObjectPosition(self, event):
+	def setImageFilePath(self):
 		'''
-		update the status if the event is over an object on the canvas
+		setup the path to the image files
 		'''
-		self.curserxLocation.set(event.x)
-		self.curseryLocation.set(event.y)
-		self.xLocation.set("-"*4)
-		self.yLocation.set("-"*4)
-		self.zLocation.set("-"*4)
-		for obj in self.objects:
-			if not self.canvas.bbox(obj): continue
-			[xlow, ylow, xhigh, yhigh] = self.canvas.bbox(obj)
-			if ( (event.x > xlow) and (event.x < xhigh) and
-				 (event.y > ylow) and (event.y < yhigh) ):
-				row = self.objects[obj]
-				xcol = self.data.header2matrix[self.headers[0]]
-				ycol = self.data.header2matrix[self.headers[1]]
-				if len(self.headers) > 5:
-					zcol = self.data.header2matrix[self.headers[2]]
-					self.zLocation.set("%5.2f" % self.data.matrix_data[row, zcol])
-				self.xLocation.set("%5.2f" % self.data.matrix_data[row, xcol])
-				self.yLocation.set("%5.2f" % self.data.matrix_data[row, ycol])
-				return
-
+		if self.verbose: print(self.imageFilePath)
+		path = tkf.askdirectory(parent=self.root, title='Choose a data file', 
+							initialdir=self.imageFilePath )
+		if path:
+			self.imageFilePath = path
+		
 	def update(self, event=None):
 		'''
 		update the objects on the canvas with the current vtm 
@@ -1179,20 +1370,12 @@ class DisplayApp:
 		self.view.screen[0, 1] = self.height*0.7
 		self.update()
 		
-	def viewPreset(self, event=None):
-		'''
-		set the view to the specified preset
-		'''
-		presetStr = self.presetView.get().upper()
-		curView = self.view.clone()
-		self.view.reset() # return to xy plane view
-		self.view.offset = curView.offset.copy()
-		self.view.screen = curView.screen.copy()
-		self.view.extent = curView.extent.copy()
-		if presetStr == "XZ":
-			self.view.rotateVRC(0, 90)
-		elif presetStr == "YZ":
-			self.view.rotateVRC(90, 90)
+	def zoomIn(self):
+		self.view.extent *= 0.9
+		self.update()
+		
+	def zoomOut(self):
+		self.view.extent *= 1.1
 		self.update()
 
 if __name__ == "__main__":

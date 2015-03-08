@@ -123,6 +123,10 @@ class Data:
 		
 		self.raw_data = np.matrix(self.raw_data).T
 		
+		# pad types with numeric for remaining types
+		while len(self.raw_headers) > len(self.raw_types):
+			print("Appending type numeric")
+			self.raw_types.append("NUMERIC")
 	def save(self, wfile):
 		'''
 		saves this data to the given filename, assuming valid filename
@@ -161,10 +165,11 @@ class Data:
 		self.numericHeaders = []
 		self.header2matrix = {} # map header string to col index in matrix data
 		self.enum2value = {} # conversion dictionary between enum keys and index
-		
+		if self.verbose: print("building numeric data")
 		rawColIndex = 0
 		for colIndex in range(self.raw_data.shape[1]):
 			rawType = self.raw_types[colIndex]
+			#if self.verbose: print("raw_type: %s" % rawType)
 			if rawType in ["NUMERIC", "ENUM", "DATE"]:
 				rawHeader = self.raw_headers[colIndex]
 				self.numericHeaders.append(rawHeader)
