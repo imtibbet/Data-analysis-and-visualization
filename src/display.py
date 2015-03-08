@@ -137,7 +137,7 @@ class DisplayApp:
 			self.lines.append(self.canvas.create_line(axesPts[2*i, 0], axesPts[2*i, 1], 
 												axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
 			self.labels.append(self.canvas.create_text(labelPts[i, 0], labelPts[i, 1], 
-												font=("Purina", 15), text=labelVars[i].get()))
+												font=("Purina", 12), text=labelVars[i].get()))
 
 	def buildControlsFrame(self):
 		'''
@@ -707,7 +707,7 @@ class DisplayApp:
 		'''
 		try:
 			row = int(exclude)
-			self.data = self.data.clone()
+			self.data = self.data.clone() # prevent other
 			self.data.matrix_data = np.delete(self.data.matrix_data, row, 0)
 			self.data.raw_data = np.delete(self.data.raw_data, row, 0)
 			if self.verbose: print("deleted element")
@@ -1008,7 +1008,8 @@ class DisplayApp:
 		except:
 			if self.verbose: print(sys.exc_info())
 			if self.verbose: print("cant open image. make data column for filename and install astropy")
-			
+			return
+		
 		fig = plt.figure()
 		titles = ["Original", "Model"]#, "Residual"]
 		scale = 6 # how much to stretch the data for contrast using log
@@ -1080,6 +1081,7 @@ class DisplayApp:
 		plot the data associated with the currently selected filename
 		'''
 		oldFilename = self.filename
+		oldHeaders = self.headers
 		oldData = self.data
 		oldNormalizedData = self.normalizedData
 		try:
@@ -1092,6 +1094,7 @@ class DisplayApp:
 			self.update()
 		else:
 			self.filename = oldFilename
+			self.headers = oldHeaders
 			self.data = oldData
 			self.normalizedData = oldNormalizedData
 			
@@ -1226,16 +1229,15 @@ class DisplayApp:
 		self.canvas.bind( '<B3-Motion>', self.handleButton3Motion )
 		self.canvas.bind( '<Control-Shift-Button-1>', self.handleDelete )
 		self.canvas.bind( '<Motion>', self.handleShowData )
-		
-		# resizing canvas
-		self.canvas.bind( '<Configure>', self.updateScreen )
+		self.canvas.bind( '<Configure>', self.updateScreen ) # resizing canvas
 
 		# bind command sequences to the root window
 		self.root.bind( '<Control-f>', self.filterData)
 		self.root.bind( '<Control-n>', self.clearData)
 		self.root.bind( '<Control-o>', self.openData)
 		self.root.bind( '<Control-s>', self.saveData)
-		self.root.bind( '<Control-q>', self.handleQuit )
+		self.root.bind( '<Control-q>', self.handleQuit)
+		self.root.bind( '<Escape>', self.handleQuit)
 	
 	def setColorMode(self, event=None):
 		'''
@@ -1294,8 +1296,6 @@ class DisplayApp:
 		else:
 			self.headers = None
 			self.pickDataAxes()
-			if self.data:
-				self.processData()
 		
 	def setDistribution(self, event=None):
 		'''
@@ -1339,13 +1339,20 @@ class DisplayApp:
 		axesPts = (VTM * self.axes.T).T
 		labelPts = (VTM * self.axesLabels.T).T
 		labelVars = [self.xLabel, self.yLabel, self.zLabel]
+		if self.data:
+			ranges = analysis.data_range(self.data, self.headers)
+		else:
+			ranges = None
 		for i, line in enumerate(self.lines):
 			self.canvas.coords(line, 
 								axesPts[2*i, 0], axesPts[2*i, 1], 
 								axesPts[2*i+1, 0], axesPts[2*i+1, 1])
 			self.canvas.coords(self.labels[i], labelPts[i, 0], labelPts[i, 1])
-			self.canvas.itemconfigure(self.labels[i], text=labelVars[i].get())
-		
+			axesLabel = labelVars[i].get()
+			if ranges:
+				axesLabel += "\n(%.2f, %.2f)" % tuple(ranges[i])
+			self.canvas.itemconfigure(self.labels[i], text=axesLabel)
+
 	def updateNumObjStrVar(self):
 		'''
 		update the status bar to reflect the current number of objects
