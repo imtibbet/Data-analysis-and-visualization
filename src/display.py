@@ -14,10 +14,7 @@ from data import Data
 import dialog
 import numpy as np
 from view import View
-import matplotlib
-matplotlib.use("TkAgg")
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 try:
 	from astropy.io import fits
 except:
@@ -48,12 +45,13 @@ class DisplayApp:
 		self.verbose = verbose
 		self.filename = filename
 		self.data = None
+		self.completeData = None
 		self.width = None
 		self.height = None
 		self.filename2data = {}
 		self.preDefineColors()
 		self.preDefineDistributions()
-		self.objects = {} # shapes drawn on canvas and their row in the data# make a set image file path button in the frame
+		self.objects = {} # shapes drawn on canvas and their row in the data
 
 		# create a tk object, which is the root window
 		self.root = tk.Tk()
@@ -137,7 +135,8 @@ class DisplayApp:
 			self.lines.append(self.canvas.create_line(axesPts[2*i, 0], axesPts[2*i, 1], 
 												axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
 			self.labels.append(self.canvas.create_text(labelPts[i, 0], labelPts[i, 1], 
-												font=("Purina", 12), text=labelVars[i].get()))
+													font=("Purina", 12), 
+													text=labelVars[i].get()))
 
 	def buildControlsFrame(self):
 		'''
@@ -221,7 +220,7 @@ class DisplayApp:
 		self.sizeModeStr.set("d") # initialize
 		for text, mode in colorModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
-							variable=self.sizeModeStr, value=mode, command=self.update)
+					variable=self.sizeModeStr, value=mode, command=self.update)
 			b.grid( row=row, column=1 )
 			row+=1
 			
@@ -246,7 +245,7 @@ class DisplayApp:
 		self.shapeModeStr.set("d") # initialize
 		for text, mode in colorModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
-							variable=self.shapeModeStr, value=mode, command=self.update)
+					variable=self.shapeModeStr, value=mode, command=self.update)
 			b.grid( row=row, column=1 )
 			row+=1
 		
@@ -385,6 +384,7 @@ class DisplayApp:
 		self.menu.add_cascade( label = "Data", menu = datamenu )
 		menulist.append([datamenu,
 						[['Filter, Ctrl-F', self.filterData],
+						 ['Save Filtered Data', self.saveFilteredData],
 						 ['Change Axes', self.changeDataAxes],
 						 ['Clear, Ctrl-N', self.clearData]
 						 ]])
@@ -694,7 +694,7 @@ class DisplayApp:
 														x, y, dx, dy)
 			
 		if shapeFunc:
-			self.dataDepth = self.colorData[row, 0] # used for color depending on mode
+			self.dataDepth = self.colorData[row, 0] # used for coloring
 			shape = shapeFunc(coords, fill=self.colorMode(), outline='')
 			self.objects[shape] = row
 			self.updateNumObjStrVar()
@@ -705,28 +705,29 @@ class DisplayApp:
 		'''
 		this limits the current data if the method is given a valid row to exclude
 		'''
-		try:
-			row = int(exclude)
-			self.data = self.data.clone() # prevent other
-			self.data.matrix_data = np.delete(self.data.matrix_data, row, 0)
-			self.data.raw_data = np.delete(self.data.raw_data, row, 0)
+		rows = self.data.matrix_data.shape[0]
+		mask = np.ones(rows, dtype=bool)
+		try: # exclude a single row
+			mask[int(exclude)] = False
 			if self.verbose: print("deleted element")
-		except:
-			rows = self.data.matrix_data.shape[0]
-			mask = np.ones(rows, dtype=bool)
-			try:
-				for [col, [newMin, newMax]] in enumerate(exclude):
-					for row in range(rows):
-						if (self.data.matrix_data[row, col] < newMin or
-							self.data.matrix_data[row, col] > newMax):
-							mask[row] = False
-				self.data = self.data.clone()
-				self.data.matrix_data = self.data.matrix_data[mask]
-				self.data.raw_data = self.data.raw_data[mask]
-				if self.verbose: print("applied filter")
-			except:
-				print("Not excluding %s" % exclude)
-				pass
+		except: # exclude a list of rows
+			for [col, [newMin, newMax]] in enumerate(exclude):
+				for row in range(rows):
+					if (self.data.matrix_data[row, col] < newMin or
+						self.data.matrix_data[row, col] > newMax):
+						mask[row] = False
+			if self.verbose: print("applied filter")
+			
+		unmask = np.negative(mask)
+		if not self.filteredData:
+			self.filteredData = self.data.clone()
+			self.filteredData.raw_data = self.data.raw_data[unmask]
+		else:
+			self.filteredData.raw_data = np.vstack((self.filteredData.raw_data, 
+												self.data.raw_data[unmask]))
+		self.data = self.data.clone() # prevent base data from being altered
+		self.data.matrix_data = self.data.matrix_data[mask]
+		self.data.raw_data = self.data.raw_data[mask]
 		
 	def filterData(self, event=None):
 		'''
@@ -735,7 +736,8 @@ class DisplayApp:
 		if not self.data:
 			tkMessageBox.showerror("No Data", "No data to filter")
 			return
-		newRanges = dialog.FilterDataDialog(self.root, self.data, title="Filter Data").result
+		newRanges = dialog.FilterDataDialog(self.root, self.data, 
+										title="Filter Data").result
 		if self.verbose: print("filtering: %s" % newRanges)
 		if not newRanges:
 			tkMessageBox.showerror("Filter Failed", "Data will not be filtered")
@@ -1007,10 +1009,11 @@ class DisplayApp:
 			#data = np.log10(fits.open(filename)[1].data)
 		except:
 			if self.verbose: print(sys.exc_info())
-			if self.verbose: print("cant open image. make data column for filename and install astropy")
+			if self.verbose: print("cant open the astronomy image")
 			return
 		
-		fig = plt.figure()
+		fig = plt.figure(1)
+		plt.clf()
 		titles = ["Original", "Model"]#, "Residual"]
 		scale = 6 # how much to stretch the data for contrast using log
 		#mMin = np.min(hdu[1].data)
@@ -1028,12 +1031,6 @@ class DisplayApp:
 			cb.set_label("log10(pixel*$10^%d$+1)" % scale)
 		
 		dialog.MatPlotLibDialog(self.root, fig, filename.split("/")[-1])
-		'''
-		if mMin != mMax:
-			data = (data-mMin)*(1.0/(mMax-mMin))
-		else: # handle data that does not vary to avoid div by zero
-			data -= mMin
-		'''
 		
 	def main(self):
 		'''
@@ -1080,10 +1077,11 @@ class DisplayApp:
 		'''
 		plot the data associated with the currently selected filename
 		'''
+		oldNormalizedData = self.normalizedData
+		oldFilteredData = self.filteredData
 		oldFilename = self.filename
 		oldHeaders = self.headers
 		oldData = self.data
-		oldNormalizedData = self.normalizedData
 		try:
 			self.filename = self.openFilenames.get(self.openFilenames.curselection())
 		except:
@@ -1093,9 +1091,10 @@ class DisplayApp:
 		if self.data:
 			self.update()
 		else:
-			self.filename = oldFilename
-			self.headers = oldHeaders
 			self.data = oldData
+			self.headers = oldHeaders
+			self.filename = oldFilename
+			self.filteredData = oldFilteredData
 			self.normalizedData = oldNormalizedData
 			
 	def preDefineColors(self):
@@ -1209,6 +1208,19 @@ class DisplayApp:
 			return
 		self.data.save(wfile)
 		if self.verbose: print("saved successfully")
+	
+	def saveFilteredData(self, event=None):
+		'''
+		save the filtered data, prompting for a filename
+		'''
+		if not self.filteredData:
+			tkMessageBox.showerror("No Data", "No data to save")
+			return
+		wfile = tkf.asksaveasfile()
+		if not wfile:
+			return
+		self.filteredData.save(wfile)
+		if self.verbose: print("saved successfully")
 
 	def setBindings(self):
 		'''
@@ -1280,7 +1292,8 @@ class DisplayApp:
 			# self.clearData()
 			self.filename = None
 			self.data = None
-			fig = plt.figure()
+			fig = plt.figure(1)
+			plt.clf()
 			if ylabel == None:
 				plt.hist(xvalues)
 			else:
@@ -1294,6 +1307,7 @@ class DisplayApp:
 		if not self.data:
 			tkMessageBox.showerror("No Data", "No data to plot")
 		else:
+			self.filteredData = None
 			self.headers = None
 			self.pickDataAxes()
 		
