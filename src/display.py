@@ -32,7 +32,7 @@ except ImportError:
 	import Tkinter as tk # python 2
 	import tkFileDialog as tkf
 	from tkColorChooser import askcolor
-	import tkMessageBox
+	import tkMessageBox as tkm
 	
 # create a class to build and manage the display
 class DisplayApp:
@@ -45,6 +45,7 @@ class DisplayApp:
 		self.verbose = verbose
 		self.filename = filename
 		self.data = None
+		self.normalizedData = None
 		self.completeData = None
 		self.width = None
 		self.height = None
@@ -167,6 +168,7 @@ class DisplayApp:
 		
 		self.openFilenames = tk.Listbox(self.rightcntlframe, selectmode=tk.SINGLE, 
 										exportselection=0, height=3)
+		self.openFilenames.bind("<Double-Button-1>", self.plotData)
 		self.openFilenames.grid( row=row, column=1 )
 		row+=1
 
@@ -199,6 +201,12 @@ class DisplayApp:
 				   command=self.clearData, width=10
 				   ).grid( row=row, column=1 )
 		row+=1
+
+		# make a clear button in the frame
+		tk.Button( self.rightcntlframe, text="Reset", 
+				   command=self.resetView, width=10
+				   ).grid( row=row, column=1 )
+		row+=1
 		
 		self.presetView = tk.StringVar( self.root )
 		self.presetView.set("xy")
@@ -227,7 +235,7 @@ class DisplayApp:
 			
 		# User selected size
 		self.sizeOption = tk.StringVar( self.root )
-		self.sizeOption.set("7")
+		self.sizeOption.set("6")
 		tk.OptionMenu( self.rightcntlframe, self.sizeOption, command=self.update,
 					   *range(1,31)).grid( row=row, column=1 )
 		row+=1
@@ -581,15 +589,29 @@ class DisplayApp:
 				 ).grid(row=2, column=cols)
 		cols+=1
 	
+	def captureState(self):
+		'''
+		return the current state of the application's data as a dictionary
+		'''
+		return {"normalized":self.normalizedData,
+				"filtered":self.filteredData,
+				"filename":self.filename,
+				"headers":self.headers,
+				"data":self.data}
+	
 	def changeDataAxes(self, event=None):
 		'''
 		prompts the user to change the displayed data axes if any
 		'''
 		if self.data:
+			state = self.captureState()
 			self.pickDataAxes()
-			self.update()
+			if not self.data:
+				self.restoreState(state)
+			else:
+				self.update()
 		else:
-			tkMessageBox.showerror("No Data Plotted", "No data to change axes")
+			tkm.showerror("No Data Plotted", "No data to change axes")
 		
 	def clearData(self, event=None):
 		'''
@@ -741,13 +763,13 @@ class DisplayApp:
 		filter the data by getting user bounds
 		'''
 		if not self.data:
-			tkMessageBox.showerror("No Data", "No data to filter")
+			tkm.showerror("No Data", "No data to filter")
 			return
 		newRanges = dialog.FilterDataDialog(self.root, self.data, 
 										title="Filter Data").result
 		if self.verbose: print("filtering: %s" % newRanges)
 		if not newRanges:
-			tkMessageBox.showerror("Filter Failed", "Data will not be filtered")
+			tkm.showerror("Filter Failed", "Data will not be filtered")
 		else:
 			self.excludeData(newRanges)
 			self.processData()
@@ -964,7 +986,7 @@ class DisplayApp:
 										self.data.raw_types[i],
 										self.data.raw_data[row, i]]))
 				msg = "\n".join(msg)
-				tkMessageBox.showinfo("Data Info", msg, parent=self.root)
+				tkm.showinfo("Data Info", msg, parent=self.root)
 				return
 
 	def handleShowData(self, event):
@@ -995,7 +1017,6 @@ class DisplayApp:
 		'''
 		show the image of the data point, if any
 		'''
-			
 		# find the object under the mouse click, if any
 		row=None
 		for obj in self.objects:
@@ -1009,7 +1030,7 @@ class DisplayApp:
 			return
 		
 		try:
-			col = self.data.get_raw_headers().index("filename")
+			col = self.data.get_raw_headers().index("FILENAME")
 			filename = "/".join([self.imageFilePath.rstrip("/"), 
 								self.data.raw_data[row, col]])
 			hdu = fits.open(filename)
@@ -1019,23 +1040,28 @@ class DisplayApp:
 			#data = np.log10(fits.open(filename)[1].data)
 		except:
 			if self.verbose: print(sys.exc_info())
-			if self.verbose: print("cant open the astronomy image")
+			print("cant open the astronomy image (verbose to see error)")
 			return
 		
 		fig = plt.figure(1)
 		plt.clf()
-		titles = ["Original", "Model"]#, "Residual"]
+		titles = ["Original", "Model", "Residual"]
 		scale = 6 # how much to stretch the data for contrast using log
-		#mMin = np.min(hdu[1].data)
 		for i, title in enumerate(titles, start=1):
 			a = fig.add_subplot(1,len(titles),i)
 			a.set_title(title)
 			data = hdu[i].data
+			if i == 3: # residual
+				#dMin = np.min(data)
+				#dMax = np.max(data)
+				#data = (data-dMin)/(dMax-dMin) if dMax!=dMin else data-dMin
+				data[data < 0] = 0
+				#scale = 1
 			data *= 10**scale
 			data += 1
 			data = np.log10(data)
 			implot = plt.imshow(data)
-			implot.set_cmap("hot")
+			implot.set_cmap("cubehelix")
 			implot.set_clim(0.0, scale)
 			cb = plt.colorbar(ticks=range(scale+1), orientation='horizontal')
 			cb.set_label("log10(pixel*$10^%d$+1)" % scale)
@@ -1061,7 +1087,7 @@ class DisplayApp:
 				self.filename2data[nodirfilename] = Data(filename, self.verbose)
 				if self.verbose: print("successfully read data")
 			except:
-				tkMessageBox.showerror("Failed File Read", "Failed to read %s" % filename)
+				tkm.showerror("Failed File Read", "Failed to read %s" % filename)
 				return
 			self.openFilenames.delete(0, tk.END)
 			selIndex = tk.END
@@ -1070,6 +1096,7 @@ class DisplayApp:
 					selIndex = i
 				self.openFilenames.insert(tk.END, fname)
 			self.openFilenames.select_set(selIndex)
+			self.openFilenames.bind("<Double-Button-1>", self.plotData)
 		
 	def pickDataAxes(self, event=None):
 		'''
@@ -1087,25 +1114,17 @@ class DisplayApp:
 		'''
 		plot the data associated with the currently selected filename
 		'''
-		oldNormalizedData = self.normalizedData
-		oldFilteredData = self.filteredData
-		oldFilename = self.filename
-		oldHeaders = self.headers
-		oldData = self.data
+		state = self.captureState()
 		try:
 			self.filename = self.openFilenames.get(self.openFilenames.curselection())
 		except:
-			tkMessageBox.showerror("No Selected Data", "Select opened data to plot")
+			tkm.showerror("No Selected Data", "Select opened data to plot")
 			return
 		self.setData()
 		if self.data:
 			self.update()
 		else:
-			self.data = oldData
-			self.headers = oldHeaders
-			self.filename = oldFilename
-			self.filteredData = oldFilteredData
-			self.normalizedData = oldNormalizedData
+			self.restoreState(state)
 			
 	def preDefineColors(self):
 		'''
@@ -1138,12 +1157,14 @@ class DisplayApp:
 		'''
 		define the shapes and canvas functions for representing points
 		'''
-		self.shapeFunctions = {"RECTANGLE":[self.canvas.create_rectangle, []],
-							  "OVAL":[self.canvas.create_oval, []],
-							  "DOWN TRIANGLE":[self.canvas.create_polygon, []],
-							  "UP TRIANGLE":[self.canvas.create_polygon, []],
-							  "X":[self.canvas.create_polygon, []],
-							  "STAR":[self.canvas.create_polygon, []]}
+		if self.verbose: print("defining initial shapes")
+		self.shapeFunctions = OrderedDict()
+		self.shapeFunctions["OVAL"] = [self.canvas.create_oval, []]
+		self.shapeFunctions["RECTANGLE"] = [self.canvas.create_rectangle, []]
+		self.shapeFunctions["DOWN TRIANGLE"] = [self.canvas.create_polygon, []]
+		self.shapeFunctions["UP TRIANGLE"] = [self.canvas.create_polygon, []]
+		self.shapeFunctions["X"] = [self.canvas.create_polygon, []]
+		self.shapeFunctions["STAR"] = [self.canvas.create_polygon, []]
 			
 	def processData(self, event=None):
 		'''
@@ -1157,14 +1178,14 @@ class DisplayApp:
 		self.colorField.set(self.headers[-2])
 		self.sizeData = self.normalizedData[:, -3]
 		self.sizeField.set(self.headers[-3])
-		self.xLabel.set(self.headers[0])
-		self.yLabel.set(self.headers[1])
+		self.xLabel.set(self.headers[0].capitalize())
+		self.yLabel.set(self.headers[1].capitalize())
 		[rows, cols] = self.normalizedData.shape
 		if cols == 2: # pad missing z data
 			self.normalizedData = np.column_stack((self.normalizedData[:, :2], [0]*rows, [1]*rows))
 		else: # pad the homogeneous coordinate
 			self.normalizedData = np.column_stack((self.normalizedData[:, :3], [1]*rows))
-			self.zLabel.set(self.headers[2])
+			self.zLabel.set(self.headers[2].capitalize())
 		
 	def resetViewOrientation(self, event=None):
 		'''
@@ -1205,15 +1226,26 @@ class DisplayApp:
 		self.view.offset = curView.offset.copy()
 		self.view.screen = curView.screen.copy()
 		self.update()
+		
+	def restoreState(self, state):
+		'''
+		using the given state, restore the fields
+		'''
+		self.data = state["data"]
+		self.headers = state["headers"]
+		self.filename = state["filename"]
+		self.filteredData = state["filtered"]
+		self.normalizedData = state["normalized"]
 	
 	def saveData(self, event=None):
 		'''
 		save the displayed data, prompting for a filename
 		'''
 		if not self.data:
-			tkMessageBox.showerror("No Data", "No data to save")
+			tkm.showerror("No Data", "No data to save")
 			return
-		wfile = tkf.asksaveasfile()
+		wfile = tkf.asksaveasfile(defaultextension=".csv",parent=self.root,
+								title="Save Displayed Data")
 		if not wfile:
 			return
 		self.data.save(wfile)
@@ -1224,11 +1256,13 @@ class DisplayApp:
 		save the filtered data, prompting for a filename
 		'''
 		if not self.filteredData:
-			tkMessageBox.showerror("No Data", "No data to save")
+			tkm.showerror("No Data", "No data has been filtered")
 			return
-		wfile = tkf.asksaveasfile()
+		wfile = tkf.asksaveasfile(defaultextension=".csv",parent=self.root,
+								title="Save Filtered Data")
 		if not wfile:
 			return
+		
 		self.filteredData.save(wfile)
 		if self.verbose: print("saved successfully")
 
@@ -1284,7 +1318,7 @@ class DisplayApp:
 		
 		# check for missiing data
 		if not self.data.get_headers():
-			tkMessageBox.showerror("Insufficient Data", "Not enough columns of data to plot")
+			tkm.showerror("Insufficient Data", "Not enough columns of data to plot")
 			self.filename = None
 			self.data = None
 			return
@@ -1316,10 +1350,16 @@ class DisplayApp:
 
 		# for more than one column, get headers from the user
 		if not self.data:
-			tkMessageBox.showerror("No Data", "No data to plot")
+			tkm.showerror("No Data", "No data to plot")
 		else:
 			self.filteredData = None
-			self.headers = None
+			self.headers = ["AGE(GYR)", "PX(PIXELS)", "PY(PIXELS)", 
+						"RAD(PIXELS)","REDSHIFT(Z)","CAMERA"]
+			for header in self.headers:
+				if header not in [h.upper() for h in self.data.get_headers()]:
+					print("not astro data")
+					self.headers = None
+					break
 			self.pickDataAxes()
 		
 	def setDistribution(self, event=None):

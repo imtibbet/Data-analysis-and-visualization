@@ -109,7 +109,7 @@ class Data:
 				if self.verbose: print("comment line")
 			elif not self.raw_headers:
 				for col, header in enumerate(line):
-					header = header.strip()
+					header = header.strip().upper()
 					self.raw_headers.append(header)
 					self.header2raw[header] = col
 					self.raw_data.append([])

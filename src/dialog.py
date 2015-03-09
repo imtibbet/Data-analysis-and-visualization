@@ -345,7 +345,7 @@ class PickAxesDialog(OkCancelDialog):
 	def __init__(self, parent, data, oldHeaders, title = None):
 		
 		self.oldHeaders = oldHeaders
-		self.headers = data.get_headers()
+		self.headers = [h.upper() for h in data.get_headers()]
 		OkCancelDialog.__init__(self, parent, title)
 		
 	def body(self, master):
@@ -355,7 +355,7 @@ class PickAxesDialog(OkCancelDialog):
 		tk.Label(master, text="X Axes:").grid(row=row, column=col)
 		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
 		for header in self.headers:
-			self.e1.insert(tk.END, header)
+			self.e1.insert(tk.END, header.capitalize())
 		if self.oldHeaders:
 			self.e1.select_set(self.headers.index(self.oldHeaders[0]))
 		else:
@@ -366,7 +366,7 @@ class PickAxesDialog(OkCancelDialog):
 		tk.Label(master, text="Y Axes:").grid(row=row, column=col)
 		self.e2 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
 		for header in self.headers:
-			self.e2.insert(tk.END, header)	
+			self.e2.insert(tk.END, header.capitalize())	
 		if self.oldHeaders:
 			self.e2.select_set(self.headers.index(self.oldHeaders[1]))
 		else:
@@ -378,7 +378,7 @@ class PickAxesDialog(OkCancelDialog):
 			tk.Label(master, text="Z Axes:").grid(row=row, column=col)
 			self.e3 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
 			for header in self.headers:
-				self.e3.insert(tk.END, header)
+				self.e3.insert(tk.END, header.capitalize())
 			if self.oldHeaders:
 				self.e3.select_set(self.headers.index(self.oldHeaders[2]))
 			else:
@@ -390,7 +390,7 @@ class PickAxesDialog(OkCancelDialog):
 		tk.Label(master, text="Size:").grid(row=row, column=col)
 		self.e4 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
 		for header in self.headers:
-			self.e4.insert(tk.END, header)
+			self.e4.insert(tk.END, header.capitalize())
 		if self.oldHeaders:
 			self.e4.select_set(self.headers.index(self.oldHeaders[-3]))
 		else:
@@ -401,7 +401,7 @@ class PickAxesDialog(OkCancelDialog):
 		tk.Label(master, text="Color:").grid(row=row, column=col)
 		self.e5 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
 		for header in self.headers:
-			self.e5.insert(tk.END, header)
+			self.e5.insert(tk.END, header.capitalize())
 		if self.oldHeaders:
 			self.e5.select_set(self.headers.index(self.oldHeaders[-2]))
 		else:
@@ -412,7 +412,7 @@ class PickAxesDialog(OkCancelDialog):
 		tk.Label(master, text="Shape:").grid(row=row, column=col)
 		self.e6 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
 		for header in self.headers:
-			self.e6.insert(tk.END, header)	
+			self.e6.insert(tk.END, header.capitalize())	
 		if self.oldHeaders:
 			self.e6.select_set(self.headers.index(self.oldHeaders[-1]))
 		else:
@@ -432,3 +432,4 @@ class PickAxesDialog(OkCancelDialog):
 		else:
 			z = self.e3.get(self.e3.curselection())
 			self.result = [x, y, z, size, color, shape]
+		self.result = [h.upper() for h in self.result]
