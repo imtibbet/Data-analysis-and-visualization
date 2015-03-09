@@ -110,6 +110,7 @@ class DisplayApp:
 		builds the view transformation matrix [VTM], 
 		multiplies the axis endpoints by the VTM, 
 		then creates three new line objects, one for each axis
+		Note: only called once by __init__, then updateAxes used
 		'''
 		if self.verbose: print("building the axes")
 		for axis in axes:
@@ -140,7 +141,7 @@ class DisplayApp:
 
 	def buildControlsFrame(self):
 		'''
-		build the frame and controls
+		build the frame and controls for application
 		'''
 		if self.verbose: print("building the control frame")
 		# make a control frame on the right
@@ -582,7 +583,7 @@ class DisplayApp:
 	
 	def changeDataAxes(self, event=None):
 		'''
-		changes the displayed data if any
+		prompts the user to change the displayed data axes if any
 		'''
 		if self.data:
 			self.pickDataAxes()
@@ -614,7 +615,9 @@ class DisplayApp:
 	
 	def createRandomDataPoints( self, event=None ):
 		'''
-		draw a number of random points on the canvas
+		create a number of random points on the canvas according to the current
+		distributions, storing as data and rendering with view.
+		Data can be filtered and saved like any other data
 		'''
 		if self.verbose: print("creating points on canvas")
 		# parse the number of points from the entry control
@@ -675,7 +678,8 @@ class DisplayApp:
 	
 	def drawObject(self, x, y, row=0):
 		'''
-		add the control selected shape to the canvas at x, y with size dx, dy
+		add the control selected shape to the canvas at x, y with cur color
+		row is used to get data determined shape, color, and size if enabled
 		'''
 		dx = int(self.sizeOption.get()) # self.view.extent[0,0]
 		dy = int(self.sizeOption.get()) # self.view.extent[0,1]
@@ -704,7 +708,9 @@ class DisplayApp:
 		
 	def excludeData(self, exclude):
 		'''
-		this limits the current data if the method is given a valid row to exclude
+		this limits the current data by row(int) or rows(list) given
+		while tracking deletions in the filtered data field
+		leaves the original data instance unchanged by cloning first
 		'''
 		rows = self.data.matrix_data.shape[0]
 		mask = np.ones(rows, dtype=bool)
@@ -749,7 +755,7 @@ class DisplayApp:
 	
 	def getColorByDepth(self):
 		'''
-		get the color according the given normalized z
+		return the color according the given normalized z as hex string
 		'''
 		z = max(min(self.dataDepth, 1.0), 0.0) # in case depth is not normalized
 		
@@ -760,7 +766,7 @@ class DisplayApp:
 		
 	def getCurrentColor(self):
 		'''
-		get the current color selected by the controls
+		get the current color selected by the controls as hex string
 		'''
 		rgb = self.colors[self.colorOption.get()]
 		if not rgb: rgb = ("#%02x%02x%02x" % 
@@ -772,8 +778,8 @@ class DisplayApp:
 		
 	def getRandomColor(self, event=None):
 		'''
-		set the color channel pickers to three random integers between 0 and 250
-		and return the random rgb band values as hex string
+		set the color channel pickers to three random integers between 0 and 255
+		returns the random rgb band values as hex string
 		'''
 		if self.verbose: print("setting random color")
 		rb = random.randint(0,255)
@@ -782,11 +788,13 @@ class DisplayApp:
 		self.redBand.set(str(rb))
 		self.greenBand.set(str(gb))
 		self.blueBand.set(str(bb))
-		return "#%02x%02x%02x" % (rb, gb, bb)
+		rgb = "#%02x%02x%02x" % (rb, gb, bb)
+		if rgb in ["black", "#000000"]: rgb = "#000001" # FIXME black causes bad damage rectangle
+		return rgb
 	
 	def getShapeFunction(self, shape, x, y, dx, dy):
 		'''
-		returns the function and arguments as a tuple for the arguments
+		returns the shape function and arguments as a list [func, args]
 		'''
 		shape = shape.upper()
 		if shape not in self.shapeFunctions:
@@ -827,7 +835,8 @@ class DisplayApp:
 
 	def getUserColor(self, event=None):
 		'''
-		define a new color for the color selector control
+		prompt the user for a color and use selection as the current color
+		returns user selected color as hex string of band values
 		'''
 		if self.verbose: print("creating a new color")
 		#d = dialog.ColorMakerDialog(self.root, title="Create New Color")
@@ -837,7 +846,9 @@ class DisplayApp:
 			self.redBand.set(str(rb))
 			self.greenBand.set(str(gb))
 			self.blueBand.set(str(bb))
-			return result[1]
+			rgb = result[1]
+			if rgb in ["black", "#000000"]: rgb = "#000001" # FIXME black causes bad damage rectangle
+			return rgb
 		return None
 			
 	def handleQuit(self, event=None):
@@ -849,15 +860,14 @@ class DisplayApp:
 
 	def handleButton1(self, event):
 		'''
-		prepare for moving objects on canvas, the first object under the event
-		or all the objects if the event is not over any objects
+		prepare to pan the view by storing the base click
 		'''
 		if self.verbose: print('handle button 1: %d %d' % (event.x, event.y))
 		self.baseClick = [event.x, event.y]
 
 	def handleButton2(self, event):
 		'''
-		prepare to rotate the view by storing click and original view
+		prepare to rotate the view by storing original click and view
 		'''
 		if self.verbose: print('handle button 2: %d %d' % (event.x, event.y))
 		self.baseClick = [event.x, event.y]
@@ -865,8 +875,7 @@ class DisplayApp:
 
 	def handleButton3(self, event):
 		'''
-		prepare for scaling by storing a base click point and the value of the	
-		extent in the view space that does not change while the user moves
+		prepare to zoom the view by storing original click and extent
 		'''
 		if self.verbose: print('handle button 3: %d %d' % (event.x, event.y))
 		self.baseClick = [event.x, event.y]
@@ -1100,7 +1109,7 @@ class DisplayApp:
 			
 	def preDefineColors(self):
 		'''
-		define the initial colors for the color selector control
+		define the colors for the color selector control, keys are displayed
 		'''
 		if self.verbose: print("defining initial colors")
 		self.colors = OrderedDict()
@@ -1113,7 +1122,7 @@ class DisplayApp:
 		
 	def preDefineDistributions(self):
 		'''
-		define the distributions for creating points
+		define the distributions (see builtin random) for creating points
 		'''
 		if self.verbose: print("defining initial distributions")
 		self.randomFunctions = OrderedDict()
@@ -1127,7 +1136,7 @@ class DisplayApp:
 		
 	def preDefineShapes(self):
 		'''
-		define the shapes for representing points
+		define the shapes and canvas functions for representing points
 		'''
 		self.shapeFunctions = {"RECTANGLE":[self.canvas.create_rectangle, []],
 							  "OVAL":[self.canvas.create_oval, []],
@@ -1159,7 +1168,7 @@ class DisplayApp:
 		
 	def resetViewOrientation(self, event=None):
 		'''
-		set the view to the specified preset
+		set the view to the specified preset, maintaining current zoom
 		'''
 		presetStr = self.presetView.get().upper()
 		curView = self.view.clone()
@@ -1175,7 +1184,7 @@ class DisplayApp:
 		
 	def resetViewZoom(self, event=None):
 		'''
-		set the view to the specified preset
+		set the view to the default zoom
 		'''
 		curView = self.view.clone()
 		self.view.reset() # return to default view
@@ -1189,7 +1198,7 @@ class DisplayApp:
 
 	def resetView(self, event=None):
 		'''
-		set the view to the specified preset
+		set the view to the specified preset, including zoom reset
 		'''
 		curView = self.view.clone()
 		self.view.reset() # return to default view
@@ -1255,7 +1264,7 @@ class DisplayApp:
 	
 	def setColorMode(self, event=None):
 		'''
-		callback for radio button
+		callback for radio button, used to change color function for drawing
 		'''
 		cmstr = self.colorModeStr.get()
 		if cmstr == "s":
@@ -1331,7 +1340,7 @@ class DisplayApp:
 
 	def setImageFilePath(self):
 		'''
-		setup the path to the image files
+		setup the path to the image files for astro research
 		'''
 		if self.verbose: print(self.imageFilePath)
 		path = tkf.askdirectory(parent=self.root, title='Choose a data file', 
@@ -1394,10 +1403,16 @@ class DisplayApp:
 		self.update()
 		
 	def zoomIn(self):
+		'''
+		contract the extent of the view by a constant factor
+		'''
 		self.view.extent *= 0.9
 		self.update()
 		
 	def zoomOut(self):
+		'''
+		expand the extent of the view by a constant factor
+		'''
 		self.view.extent *= 1.1
 		self.update()
 
