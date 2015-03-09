@@ -383,7 +383,8 @@ class DisplayApp:
 		datamenu = tk.Menu( self.menu )
 		self.menu.add_cascade( label = "Data", menu = datamenu )
 		menulist.append([datamenu,
-						[['Filter, Ctrl-F', self.filterData],
+						[['Plot Selected, Ctrl-P', self.plotData],
+						 ['Filter, Ctrl-F', self.filterData],
 						 ['Save Filtered Data', self.saveFilteredData],
 						 ['Change Axes', self.changeDataAxes],
 						 ['Clear, Ctrl-N', self.clearData]
@@ -1247,8 +1248,9 @@ class DisplayApp:
 		self.root.bind( '<Control-f>', self.filterData)
 		self.root.bind( '<Control-n>', self.clearData)
 		self.root.bind( '<Control-o>', self.openData)
-		self.root.bind( '<Control-s>', self.saveData)
+		self.root.bind( '<Control-p>', self.plotData)
 		self.root.bind( '<Control-q>', self.handleQuit)
+		self.root.bind( '<Control-s>', self.saveData)
 		self.root.bind( '<Escape>', self.handleQuit)
 	
 	def setColorMode(self, event=None):

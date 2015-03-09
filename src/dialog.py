@@ -170,7 +170,8 @@ class BindingsDialog(OkDialog):
 			["Ctrl-F", "filter the data"],
 			["Ctrl-N", "clear the canvas"],
 			["Ctrl-O", "open a new data file"],
-			["Ctrl-Q", "quit the application"],
+			["Ctrl-F", "plot the selected opened data file"],
+			["Ctrl-Q OR Esc", "quit the application"],
 			["Ctrl-S", "save the displayed data"],
 			["Double-B1", "show the raw data for the clicked object"]
 								  ]
