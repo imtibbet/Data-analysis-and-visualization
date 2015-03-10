@@ -9,7 +9,6 @@ from datetime import datetime
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.pyplot as plt
 
 try:
 	import tkinter as tk # python 3

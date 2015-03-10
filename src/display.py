@@ -3,36 +3,41 @@ Ian Tibbetts
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 '''
+
+# standard with python
 from collections import OrderedDict
 from optparse import OptionParser
 import random
 import types
 import sys
+import numpy as np
+from scipy import stats
+from matplotlib import pyplot as plt
 
+# defined by me for this project
 import analysis
 from data import Data
 import dialog
-import numpy as np
 from view import View
-from matplotlib import pyplot as plt
-try:
+
+try: # astronomy research stuff, optional
 	from astropy.io import fits
-except:
+except ImportError:
 	try:
 		import pyfits as fits
 	except:
 		fits = None
 
 # use tkinter for GUI elements
-try:
-	import tkinter as tk # python 3
-	tkf = tk.filedialog
-	from tk.colorchooser import askcolor
-except ImportError:
-	import Tkinter as tk # python 2
-	import tkFileDialog as tkf
-	from tkColorChooser import askcolor
-	import tkMessageBox as tkm
+#try:
+#	import tkinter as tk # python 3
+#	tkf = tk.filedialog
+#	from tk.colorchooser import askcolor
+#except ImportError:
+import Tkinter as tk # python 2
+import tkFileDialog as tkf
+from tkColorChooser import askcolor
+import tkMessageBox as tkm
 	
 # create a class to build and manage the display
 class DisplayApp:
@@ -46,7 +51,6 @@ class DisplayApp:
 		self.filename = filename
 		self.data = None
 		self.normalizedData = None
-		self.completeData = None
 		self.width = None
 		self.height = None
 		self.filename2data = {}
@@ -98,8 +102,11 @@ class DisplayApp:
 		self.buildAxes()
 		
 		if filename:
-			self.setData()
-			self.update()
+			try: # handle error caused by exiting application with dialog open
+				self.setData()
+				self.update()
+			except tk.TclError:
+				exit()
 
 	def buildAxes(self, axes=[[0,0,0],[1,0,0],
 							  [0,0,0],[0,1,0],
@@ -212,6 +219,14 @@ class DisplayApp:
 		self.presetView.set("xy")
 		tk.OptionMenu( self.rightcntlframe, self.presetView, 
 					   "xy", "xz", "yz", command=self.resetViewOrientation
+					   ).grid( row=row, column=1 )
+		row+=1
+		
+		self.fitPoints = None
+		self.linearRegressionEnabled = tk.IntVar()
+		tk.Checkbutton( self.rightcntlframe, text="2D Linear Regression",
+					variable=self.linearRegressionEnabled,
+					command=self.toggleLinearRegression,
 					   ).grid( row=row, column=1 )
 		row+=1
 		
@@ -1104,6 +1119,7 @@ class DisplayApp:
 		'''
 		self.headers = dialog.PickAxesDialog(self.root, self.data, self.headers,
 											title="Pick Data Axes").result
+		print(self.headers)
 		if not self.headers: # if the user cancels the dialog, abort
 			self.filename = None
 			self.data = None
@@ -1181,8 +1197,9 @@ class DisplayApp:
 		self.xLabel.set(self.headers[0].capitalize())
 		self.yLabel.set(self.headers[1].capitalize())
 		[rows, cols] = self.normalizedData.shape
-		if cols == 2: # pad missing z data
+		if cols < 6: # pad missing z data
 			self.normalizedData = np.column_stack((self.normalizedData[:, :2], [0]*rows, [1]*rows))
+			self.zLabel.set("")
 		else: # pad the homogeneous coordinate
 			self.normalizedData = np.column_stack((self.normalizedData[:, :3], [1]*rows))
 			self.zLabel.set(self.headers[2].capitalize())
@@ -1387,6 +1404,44 @@ class DisplayApp:
 							initialdir=self.imageFilePath )
 		if path:
 			self.imageFilePath = path
+			
+	def toggleLinearRegression(self, event=None):
+		'''
+		allows the user to toggle on/off a linear regression of displayed data
+		'''
+		if not self.data and self.linearRegressionEnabled.get():
+			tkm.showerror("No Data", "No data to apply linear regression")
+			self.linearRegressionEnabled.set(0)
+			return
+		if self.linearRegressionEnabled.get():
+			if self.verbose: print("applying linear regression of x and y")
+			indHeader = self.xLabel.get().upper()
+			depHeader = self.yLabel.get().upper()
+			[slope, intercept, r, p, stderr] = stats.linregress(
+				self.data.get_data([indHeader, depHeader]))
+			ranges = analysis.data_range(self.data, [indHeader, depHeader])
+			[indMin, indMax] = ranges[0]
+			indRange = indMax - indMin
+			[depMin, depMax] = ranges[1]
+			xlow = 0
+			xhigh = 1
+			ylow = (intercept-depMin)/(depMax-depMin)
+			yhigh = ylow + ((slope*indRange)-depMin)/(depMax-depMin)
+			self.fitPoints = np.matrix([[xlow, ylow, 0, 1],
+										[xhigh, yhigh, 0, 1]])
+			VTM = self.view.build()
+			fitPts = (VTM * self.fitPoints.T).T
+			self.fitLine = self.canvas.create_line(	fitPts[0, 0], fitPts[0, 1], 
+													fitPts[1, 0], fitPts[1, 1],
+													fill="red")
+			#print("slope %.2f intercept %.2f r %.2f p %.2f stderr %.2f" %
+			print("slope %f intercept %f r^2 %f p %f stderr %f" %
+				(slope, intercept, r*r, p, stderr))
+			
+		else:
+			if self.verbose: print("removing linear regression of x and y")
+			self.canvas.delete(self.fitLine)
+			self.fitPoints = None
 		
 	def update(self, event=None):
 		'''
@@ -1404,6 +1459,10 @@ class DisplayApp:
 		axesPts = (VTM * self.axes.T).T
 		labelPts = (VTM * self.axesLabels.T).T
 		labelVars = [self.xLabel, self.yLabel, self.zLabel]
+		if self.fitPoints != None:
+			fitPts = (VTM * self.fitPoints.T).T
+			self.canvas.coords(self.fitLine, 	fitPts[0, 0], fitPts[0, 1], 
+												fitPts[1, 0], fitPts[1, 1])
 		if self.data:
 			ranges = analysis.data_range(self.data, self.headers)
 		else:
@@ -1414,7 +1473,7 @@ class DisplayApp:
 								axesPts[2*i+1, 0], axesPts[2*i+1, 1])
 			self.canvas.coords(self.labels[i], labelPts[i, 0], labelPts[i, 1])
 			axesLabel = labelVars[i].get()
-			if ranges:
+			if ranges and len(self.headers) > 5:
 				axesLabel += "\n(%.2f, %.2f)" % tuple(ranges[i])
 			self.canvas.itemconfigure(self.labels[i], text=axesLabel)
 
