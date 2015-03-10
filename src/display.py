@@ -1415,20 +1415,35 @@ class DisplayApp:
 			return
 		if self.linearRegressionEnabled.get():
 			if self.verbose: print("applying linear regression of x and y")
-			indHeader = self.xLabel.get().upper()
-			depHeader = self.yLabel.get().upper()
+			curView = self.presetView.get()
+			if curView == "xy" or not self.zLabel.get():
+				indHeader = self.xLabel.get().upper()
+				depHeader = self.yLabel.get().upper()
+			elif curView == "yz":
+				indHeader = self.yLabel.get().upper()
+				depHeader = self.zLabel.get().upper()
+			else: # curView == "xz":
+				indHeader = self.xLabel.get().upper()
+				depHeader = self.zLabel.get().upper()
 			[slope, intercept, r, p, stderr] = stats.linregress(
 				self.data.get_data([indHeader, depHeader]))
 			ranges = analysis.data_range(self.data, [indHeader, depHeader])
 			[indMin, indMax] = ranges[0]
 			indRange = indMax - indMin
 			[depMin, depMax] = ranges[1]
-			xlow = 0
-			xhigh = 1
-			ylow = (intercept-depMin)/(depMax-depMin)
-			yhigh = ylow + ((slope*indRange)-depMin)/(depMax-depMin)
-			self.fitPoints = np.matrix([[xlow, ylow, 0, 1],
-										[xhigh, yhigh, 0, 1]])
+			indlow = 0
+			indhigh = 1
+			deplow = (intercept-depMin)/(depMax-depMin)
+			dephigh = deplow + ((slope*indRange)-depMin)/(depMax-depMin)
+			if curView == "xy" or not self.zLabel.get():
+				self.fitPoints = np.matrix([[indlow, deplow, 0, 1],
+											[indhigh, dephigh, 0, 1]])
+			elif curView == "yz":
+				self.fitPoints = np.matrix([[0, indlow, deplow, 1],
+											[0, indhigh, dephigh, 1]])
+			else: #  curView == "xz":
+				self.fitPoints = np.matrix([[indlow, 0, deplow, 1],
+											[indhigh, 0, dephigh, 1]])
 			VTM = self.view.build()
 			fitPts = (VTM * self.fitPoints.T).T
 			self.fitLine = self.canvas.create_line(	fitPts[0, 0], fitPts[0, 1], 
