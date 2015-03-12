@@ -39,9 +39,11 @@ import tkFileDialog as tkf
 from tkColorChooser import askcolor
 import tkMessageBox as tkm
 	
-# create a class to build and manage the display
 class DisplayApp:
-
+	'''
+	class to build and manage the display
+	'''
+	
 	def __init__(self, width, height, filename=None, verbose=True):
 		'''
 		Constructor for the display application
