@@ -1067,11 +1067,7 @@ class DisplayApp:
 			a.set_title(title)
 			data = hdu[i].data
 			if i == 3: # residual
-				#dMin = np.min(data)
-				#dMax = np.max(data)
-				#data = (data-dMin)/(dMax-dMin) if dMax!=dMin else data-dMin
 				data[data < 0] = 0
-				#scale = 1
 			data *= 10**scale
 			data += 1
 			data = np.log10(data)
@@ -1119,7 +1115,6 @@ class DisplayApp:
 		'''
 		self.headers = dialog.PickAxesDialog(self.root, self.data, self.headers,
 											title="Pick Data Axes").result
-		print(self.headers)
 		if not self.headers: # if the user cancels the dialog, abort
 			self.filename = None
 			self.data = None
@@ -1374,7 +1369,7 @@ class DisplayApp:
 						"RAD(PIXELS)","REDSHIFT(Z)","CAMERA"]
 			for header in self.headers:
 				if header not in [h.upper() for h in self.data.get_headers()]:
-					print("not astro data")
+					if self.verbose: print("not astro data")
 					self.headers = None
 					break
 			self.pickDataAxes()

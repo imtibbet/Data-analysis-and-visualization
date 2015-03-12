@@ -127,14 +127,16 @@ class Data:
 		while len(self.raw_headers) > len(self.raw_types):
 			print("Appending type numeric")
 			self.raw_types.append("NUMERIC")
+			
 	def save(self, wfile):
 		'''
 		saves this data to the given filename, assuming valid filename
 		'''
 		lines = [self.raw_headers, self.raw_types]
-		for row in range(self.raw_data.shape[0]):
+		rows, cols = self.raw_data.shape
+		for row in range(rows):
 			lines.append([])
-			for col in range(self.raw_data.shape[1]):
+			for col in range(cols):
 				lines[-1].append(self.raw_data[row, col])
 		lines = [",".join(line) for line in lines]
 		wfile.write("\n".join(lines))
@@ -378,11 +380,12 @@ if __name__ == "__main__":
 	print(analysis.normalize_columns_separately(d, headers))
 	print("analysis.normalize_columns_together(d, headers)")
 	print(analysis.normalize_columns_together(d, headers))
-	
-	print("\nadding a column")
-	d.addColumn("newThing", "date", ["Mar 3, 2014"]*d.get_raw_num_rows())
-	d.addColumn("newThing", "date", ["Mar/3/80"]*d.get_raw_num_rows())
-	print(d.raw_data)
-	print(type(d.raw_data))
-	print(d.matrix_data)
-	print(type(d.matrix_data))
+	print("analysis.linear_regression(d, headers[:-1], headers[-1])")
+	results = analysis.linear_regression(d, headers[:-1], headers[-1])
+	print("m0 %.3f" % results[0][0])
+	print("m1 %.3f" % results[0][1])
+	print("b %.3f" % results[0][2])
+	print("sse: %.3f" % results[1])
+	print("R2: %.3f" % results[2])
+	print("t: %s" % results[3])
+	print("p: %s" % results[4])
