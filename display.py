@@ -50,6 +50,8 @@ class DisplayApp:
 		self.verbose = verbose
 		self.filename = filename
 		self.data = None
+		self.headers = None
+		self.filteredData = None
 		self.normalizedData = None
 		self.width = None
 		self.height = None
