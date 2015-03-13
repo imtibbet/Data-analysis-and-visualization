@@ -382,9 +382,9 @@ if __name__ == "__main__":
 	print(analysis.normalize_columns_together(d, headers))
 	print("analysis.linear_regression(d, headers[:-1], headers[-1])")
 	results = analysis.linear_regression(d, headers[:-1], headers[-1])
-	print("m0 %.3f" % results[0][0])
-	print("m1 %.3f" % results[0][1])
-	print("b %.3f" % results[0][2])
+	for header, slope in zip(headers[:-1], results[0][:-1]):
+		print("m%s %.3f" % (header, slope))
+	print("b %.3f" % results[0][-1])
 	print("sse: %.3f" % results[1])
 	print("R2: %.3f" % results[2])
 	print("t: %s" % results[3])

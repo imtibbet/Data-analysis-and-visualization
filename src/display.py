@@ -226,11 +226,20 @@ class DisplayApp:
 					   ).grid( row=row, column=1 )
 		row+=1
 		
+		# linear regression control
 		self.fitPoints = None
 		self.linearRegressionEnabled = tk.IntVar()
 		tk.Checkbutton( self.rightcntlframe, text="2D Linear Regression",
 					variable=self.linearRegressionEnabled,
 					command=self.toggleLinearRegression,
+					   ).grid( row=row, column=1 )
+		row+=1
+		
+		# connecting lines control
+		self.dataLines = []
+		self.linePlot = tk.IntVar()
+		tk.Checkbutton( self.rightcntlframe, text="Line Plot",
+					variable=self.linePlot, command=self.update
 					   ).grid( row=row, column=1 )
 		row+=1
 		
@@ -366,9 +375,7 @@ class DisplayApp:
 			return
 		
 		# clean the data on the canvas
-		for obj in self.objects:
-			self.canvas.delete(obj)
-		self.objects = {}
+		self.clearObjects()
 		
 		# prepare to transform the active data to the current view
 		VTM = self.view.build()
@@ -381,8 +388,14 @@ class DisplayApp:
 		zIndicesSorted = np.argsort(viewData[:, 2].T.tolist()[0])
 		
 		# transform sorted data to view and draw on canvas
-		for i in zIndicesSorted:
-			self.drawObject(viewData[i,0], viewData[i,1], row=i)
+		for row in zIndicesSorted:
+			x, y = [viewData[row, col] for col in range(2)]
+			self.drawObject(x, y, row=row)
+			nextRow = row + 1
+			if self.linePlot.get() and nextRow < len(zIndicesSorted):
+				xh, yh = [viewData[nextRow, col] for col in range(2)]
+				line = self.canvas.create_line(x, y, xh, yh)
+				self.dataLines.append(line)
 
 	def buildMenus(self):
 		'''
@@ -404,7 +417,7 @@ class DisplayApp:
 		menulist.append([filemenu,
 						[['Open, Ctrl-O', self.openData], 
 						 ['Save, Ctrl-S', self.saveData],  
-						 ['Quit, Ctrl-Q', self.handleQuit]
+						 ['Quit, Ctrl-Q OR Esc', self.handleQuit]
 						 ]])
 
 		# create another menu for color
@@ -637,9 +650,7 @@ class DisplayApp:
 		clear the data from the canvas
 		'''
 		if self.verbose: print("clearing data from canvas")
-		for obj in self.objects:
-			self.canvas.delete(obj)
-		self.objects = {}
+		self.clearObjects()
 		self.filename = None
 		self.data = None
 		self.updateNumObjStrVar()
@@ -654,6 +665,17 @@ class DisplayApp:
 		self.shapeField.set("")
 		self.updateAxes()
 	
+	def clearObjects(self):
+		'''
+		clear the objects from the canvas
+		'''
+		for obj in self.objects:
+			self.canvas.delete(obj)
+		self.objects = {}
+		for line in self.dataLines:
+			self.canvas.delete(line)
+		self.dataLines = []
+		
 	def createRandomDataPoints( self, event=None ):
 		'''
 		create a number of random points on the canvas according to the current
@@ -981,9 +1003,7 @@ class DisplayApp:
 			[xlow, ylow, xhigh, yhigh] = self.canvas.bbox(obj)
 			if ( (event.x > xlow) and (event.x < xhigh) and
 				 (event.y > ylow) and (event.y < yhigh) ):
-				self.canvas.delete(obj)
 				row = self.objects[obj]
-				del self.objects[obj]
 				self.excludeData(row)
 				self.processData()
 				self.update()
