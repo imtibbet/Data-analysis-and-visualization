@@ -21,6 +21,11 @@ from data import Data
 import dialog
 from view import View
 
+try: # used for saving canvas as png, not necessary
+	from PIL import Image 
+except ImportError:
+	pass
+
 try: # astronomy research stuff, optional
 	from astropy.io import fits
 except ImportError:
@@ -1318,6 +1323,14 @@ class DisplayApp:
 		if not filename:
 			return
 		self.canvas.postscript(file=filename, colormode='color')
+		if self.verbose: print("saved canvas as %s" % filename)
+		try:
+			img = Image.open(filename)
+			img.save(".".join(filename.split(".")[:-1]+["png"]),"png")
+			os.remove(filename)
+			if self.verbose: print("changed saved canvas to a png")
+		except:
+			if self.verbose: print("need PIL to change saved canvas to a png")
 		
 	def saveData(self, event=None):
 		'''
