@@ -76,6 +76,8 @@ class DisplayApp:
 		
 		# set the canvas field to grant access to shape functions
 		self.canvas = tk.Canvas( self.root, width=width, height=height )
+		self.canvasBG = self.canvas.create_rectangle(0, 0, 10000, 10000,
+													fill="white")
 		self.preDefineShapes()
 
 		# setup the menus
@@ -203,8 +205,14 @@ class DisplayApp:
 		row+=1
 
 		# make a save button in the frame
-		tk.Button( self.rightcntlframe, text="Save", 
+		tk.Button( self.rightcntlframe, text="Save Data", 
 				   command=self.saveData, width=10
+				   ).grid( row=row, columnspan=3 )
+		row+=1
+
+		# make a save button in the frame
+		tk.Button( self.rightcntlframe, text="Save Canvas", 
+				   command=self.saveCanvas, width=10
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
@@ -457,7 +465,7 @@ class DisplayApp:
 		menulist.append([colormenu,
 						[['Random Color', self.getRandomColor],
 						 ['Pick Color', self.getUserColor],
-						 ['', None]
+						 ['Canvas Color', self.setCanvasColor]
 						 ]])
 
 		# create another menu for color
@@ -1299,6 +1307,18 @@ class DisplayApp:
 		self.filteredData = state["filtered"]
 		self.normalizedData = state["normalized"]
 	
+	def saveCanvas(self, event=None):
+		'''
+		saves the canvas to a postscript file
+		'''
+		filename = tkf.asksaveasfilename(defaultextension=".ps",
+										parent=self.root,
+										initialdir="..",
+										title="Save Displayed Data")
+		if not filename:
+			return
+		self.canvas.postscript(file=filename, colormode='color')
+		
 	def saveData(self, event=None):
 		'''
 		save the displayed data, prompting for a filename
@@ -1306,7 +1326,12 @@ class DisplayApp:
 		if not self.data:
 			tkm.showerror("No Data", "No data to save")
 			return
-		wfile = tkf.asksaveasfile(defaultextension=".csv",parent=self.root,
+		initDir = "../csv"
+		if not os.path.isdir(initDir):
+			initDir = "."
+		wfile = tkf.asksaveasfile(defaultextension=".csv",
+								parent=self.root,
+								initialdir=initDir,
 								title="Save Displayed Data")
 		if not wfile:
 			return
@@ -1320,7 +1345,12 @@ class DisplayApp:
 		if not self.filteredData:
 			tkm.showerror("No Data", "No data has been filtered")
 			return
-		wfile = tkf.asksaveasfile(defaultextension=".csv",parent=self.root,
+		initDir = "../csv"
+		if not os.path.isdir(initDir):
+			initDir = "."
+		wfile = tkf.asksaveasfile(defaultextension=".csv",
+								parent=self.root,
+								initialdir=initDir,
 								title="Save Filtered Data")
 		if not wfile:
 			return
@@ -1357,6 +1387,16 @@ class DisplayApp:
 		self.root.bind( '<Control-q>', self.handleQuit)
 		self.root.bind( '<Control-s>', self.saveData)
 		self.root.bind( '<Escape>', self.handleQuit)
+	
+	def setCanvasColor(self, event=None):
+		'''
+		sets the canvas color according to a user selected color
+		'''
+		if self.verbose: print("setting canvas color")
+		#d = dialog.ColorMakerDialog(self.root, title="Create New Color")
+		result = askcolor()
+		if result[0]:
+			self.canvas.itemconfig(self.canvasBG, fill=result[1])
 	
 	def setColorMode(self, event=None):
 		'''
