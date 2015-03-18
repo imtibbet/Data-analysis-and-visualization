@@ -31,6 +31,17 @@ Professors&nbsp;Stephanie&nbsp;Taylor&nbsp;and&nbsp;Bruce&nbsp;Maxwell</tt></p>
 <td width="100%"><dl><dt><a name="-data_range"><strong>data_range</strong></a>(data, colHeaders)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;list&nbsp;of&nbsp;column&nbsp;headers&nbsp;and&nbsp;the&nbsp;Data&nbsp;object&nbsp;<br>
 returns&nbsp;a&nbsp;list&nbsp;of&nbsp;2-element&nbsp;lists&nbsp;with&nbsp;the&nbsp;minimum&nbsp;and&nbsp;maximum&nbsp;values&nbsp;for<br>
 each&nbsp;column.&nbsp;The&nbsp;function&nbsp;is&nbsp;required&nbsp;to&nbsp;work&nbsp;only&nbsp;on&nbsp;numeric&nbsp;data&nbsp;types.</tt></dd></dl>
+ <dl><dt><a name="-linear_regression"><strong>linear_regression</strong></a>(d, ind, dep)</dt><dd><tt>linear&nbsp;regression&nbsp;for&nbsp;one&nbsp;or&nbsp;more&nbsp;independent&nbsp;variables<br>
+&nbsp;<br>
+Parameters:<br>
+d&nbsp;-&nbsp;data&nbsp;set<br>
+ind&nbsp;-&nbsp;list&nbsp;of&nbsp;headers&nbsp;for&nbsp;the&nbsp;independent&nbsp;variables<br>
+dep&nbsp;-&nbsp;single&nbsp;header&nbsp;(not&nbsp;list)&nbsp;for&nbsp;the&nbsp;dependent&nbsp;variable&nbsp;<br>
+&nbsp;<br>
+Returns&nbsp;[b,&nbsp;sse,&nbsp;r^2,&nbsp;t,&nbsp;p]<br>
+the&nbsp;values&nbsp;of&nbsp;the&nbsp;fit&nbsp;(b),&nbsp;the&nbsp;sum-squared&nbsp;error&nbsp;(sse),&nbsp;the<br>
+R^2&nbsp;fit&nbsp;quality,&nbsp;the&nbsp;t-statistic,&nbsp;and&nbsp;the&nbsp;probability&nbsp;of&nbsp;a<br>
+random&nbsp;relationship&nbsp;(p).</tt></dd></dl>
  <dl><dt><a name="-mean"><strong>mean</strong></a>(data, colHeaders)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;list&nbsp;of&nbsp;column&nbsp;headers&nbsp;and&nbsp;the&nbsp;Data&nbsp;object&nbsp;and&nbsp;<br>
 returns&nbsp;a&nbsp;list&nbsp;of&nbsp;the&nbsp;mean&nbsp;values&nbsp;for&nbsp;each&nbsp;column.</tt></dd></dl>
  <dl><dt><a name="-median"><strong>median</strong></a>(data, colHeaders)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;list&nbsp;of&nbsp;column&nbsp;headers&nbsp;and&nbsp;the&nbsp;Data&nbsp;object&nbsp;and&nbsp;<br>
