@@ -50,7 +50,7 @@ def linear_regression(d, ind, dep):
 	#	The matrix A.T * A is the covariance matrix of the independent
 	#	data, and we will use it for computing the standard error of the 
 	#	linear regression fit below.
-	AAinv = np.linalg.inv( np.dot(A.T, A))
+	AAinv = np.linalg.inv(np.dot(A.T, A))
 	
 	# assign to x the result of calling nump.linalg.lstsq( A, y )
 	#	This solves the equation y = Ab, where A is a matrix of the 
@@ -124,12 +124,6 @@ def mode(data, colHeaders):
 	Takes in a list of column headers and the Data object and 
 	returns a list of the mean values for each column. 
 	'''
-	# for use if no scipy
-	#modes = []
-	#data = data.get_data(colHeaders).T
-	#for datacol in data:
-	#	modes.append(collections.Counter(datacol.tolist()[0]).most_common(1)[0][0])
-	#return modes
 	return stats.mode(data.get_data(colHeaders))[0].tolist()[0]
 	
 def normalize_columns_separately(data, colHeaders):

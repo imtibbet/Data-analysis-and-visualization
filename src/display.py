@@ -10,6 +10,7 @@ from optparse import OptionParser
 import random
 import types
 import sys
+import os
 import numpy as np
 from scipy import stats
 from matplotlib import pyplot as plt
@@ -138,9 +139,9 @@ class DisplayApp:
 		self.axesLabels = np.asmatrix(axeslabels)
 		axesPts = (VTM * self.axes.T).T
 		labelPts = (VTM * self.axesLabels.T).T
-		self.xLabel.set("x")
-		self.yLabel.set("y")
-		self.zLabel.set("z")
+		self.xLabel.set("X")
+		self.yLabel.set("Y")
+		self.zLabel.set("Z")
 		labelVars = [self.xLabel, self.yLabel, self.zLabel]
 		self.lines = []
 		self.labels = []
@@ -167,63 +168,69 @@ class DisplayApp:
 		row=0
 		# use a label to set the size of the right panel
 		tk.Label( self.rightcntlframe, text="Data"
-				  ).grid( row=row, column=1 )
+				  ).grid( row=row, columnspan=3 )
 		row+=1
 
 		
 		# make an open button in the frame
 		tk.Button( self.rightcntlframe, text="Open", 
 				   command=self.openData, width=10
-				   ).grid( row=row, column=1 )
+				   ).grid( row=row, columnspan=3 )
 		row+=1
 		
 		self.openFilenames = tk.Listbox(self.rightcntlframe, selectmode=tk.SINGLE, 
 										exportselection=0, height=3)
 		self.openFilenames.bind("<Double-Button-1>", self.plotData)
-		self.openFilenames.grid( row=row, column=1 )
+		self.openFilenames.grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a plot button in the frame
 		tk.Button( self.rightcntlframe, text="Plot Selected", 
 				   command=self.plotData, width=10
-				   ).grid( row=row, column=1 )
+				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a plot button in the frame
 		tk.Button( self.rightcntlframe, text="Change Axes", 
 				   command=self.changeDataAxes, width=10
-				   ).grid( row=row, column=1 )
+				   ).grid( row=row, columnspan=3 )
 		row+=1
 		
 		# make a filter button in the frame
 		tk.Button( self.rightcntlframe, text="Filter", 
 				   command=self.filterData, width=10
-				   ).grid( row=row, column=1 )
+				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a save button in the frame
 		tk.Button( self.rightcntlframe, text="Save", 
 				   command=self.saveData, width=10
-				   ).grid( row=row, column=1 )
+				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a clear button in the frame
 		tk.Button( self.rightcntlframe, text="Clear", 
 				   command=self.clearData, width=10
-				   ).grid( row=row, column=1 )
+				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a clear button in the frame
 		tk.Button( self.rightcntlframe, text="Reset", 
 				   command=self.resetView, width=10
-				   ).grid( row=row, column=1 )
+				   ).grid( row=row, columnspan=3 )
 		row+=1
 		
 		self.presetView = tk.StringVar( self.root )
 		self.presetView.set("xy")
 		tk.OptionMenu( self.rightcntlframe, self.presetView, 
 					   "xy", "xz", "yz", command=self.resetViewOrientation
-					   ).grid( row=row, column=1 )
+					   ).grid( row=row, columnspan=3 )
+		row+=1
+
+		# make a plot button in the frame
+		tk.Button( self.rightcntlframe, text="Multiple Linear Regression", 
+				   command=self.multiLinearRegression,
+				   ).grid( row=row, columnspan=3 )
 		row+=1
 		
 		# linear regression control
@@ -232,7 +239,7 @@ class DisplayApp:
 		tk.Checkbutton( self.rightcntlframe, text="2D Linear Regression",
 					variable=self.linearRegressionEnabled,
 					command=self.toggleLinearRegression,
-					   ).grid( row=row, column=1 )
+					   ).grid( row=row, columnspan=3 )
 		row+=1
 		
 		# connecting lines control
@@ -240,12 +247,12 @@ class DisplayApp:
 		self.linePlot = tk.IntVar()
 		tk.Checkbutton( self.rightcntlframe, text="Line Plot",
 					variable=self.linePlot, command=self.update
-					   ).grid( row=row, column=1 )
+					   ).grid( row=row, columnspan=3 )
 		row+=1
 		
 		# size selector
 		tk.Label( self.rightcntlframe, text="\nSize"
-					   ).grid( row=row, column=1 )
+					   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a size mode selector in the frame
@@ -258,19 +265,19 @@ class DisplayApp:
 		for text, mode in colorModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
 					variable=self.sizeModeStr, value=mode, command=self.update)
-			b.grid( row=row, column=1 )
+			b.grid( row=row, columnspan=3 )
 			row+=1
 			
 		# User selected size
 		self.sizeOption = tk.StringVar( self.root )
 		self.sizeOption.set("6")
 		tk.OptionMenu( self.rightcntlframe, self.sizeOption, command=self.update,
-					   *range(1,31)).grid( row=row, column=1 )
+					   *range(1,31)).grid( row=row, columnspan=3 )
 		row+=1
 		
 		# shape selector
 		tk.Label( self.rightcntlframe, text="\nShape"
-					   ).grid( row=row, column=1 )
+					   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a shape mode selector in the frame
@@ -283,7 +290,7 @@ class DisplayApp:
 		for text, mode in colorModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
 					variable=self.shapeModeStr, value=mode, command=self.update)
-			b.grid( row=row, column=1 )
+			b.grid( row=row, columnspan=3 )
 			row+=1
 		
 		# User selected shape
@@ -292,12 +299,12 @@ class DisplayApp:
 		tk.OptionMenu( self.rightcntlframe, self.shapeOption, 
 					   *[shape.capitalize() for shape in self.shapeFunctions],
 					   command=self.update
-					   ).grid( row=row, column=1 )
+					   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# color selector
 		tk.Label( self.rightcntlframe, text="\nColor"
-					   ).grid( row=row, column=1 )
+					   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a color mode selector in the frame
@@ -312,7 +319,7 @@ class DisplayApp:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
 							variable=self.colorModeStr, value=mode, 
 							command=self.setColorMode)
-			b.grid( row=row, column=1 )
+			b.grid( row=row, columnspan=3 )
 			row+=1
 
 		# make a button for selecting predefined colors
@@ -321,12 +328,12 @@ class DisplayApp:
 		self.colorOption.set("Select Color")
 		self.colorMenu = tk.OptionMenu( self.rightcntlframe, self.colorOption, 
 					   *self.colors.keys(), command=self.update
-					   ).grid( row=row, column=1 )
+					   ).grid( row=row, columnspan=3 )
 		row+=1
 		
 		# use a label to set the size of the right panel
 		tk.Label( self.rightcntlframe, text="OR"
-				  ).grid( row=row, column=1 )
+				  ).grid( row=row, columnspan=3 )
 		row+=1
 		
 		# make a an integer selector for each color band
@@ -353,15 +360,15 @@ class DisplayApp:
 		self.numPointsDesc.set("\nNumber of Points")
 		self.numPointsLabel = tk.Label(self.rightcntlframe, 
 									   textvariable=self.numPointsDesc)
-		self.numPointsLabel.grid( row=row, column=1 )
+		self.numPointsLabel.grid( row=row, columnspan=3 )
 		row+=1
 		self.numPoints = tk.Entry(self.rightcntlframe, width=10)
-		self.numPoints.grid( row=row, column=1 )
+		self.numPoints.grid( row=row, columnspan=3 )
 		row+=1
 		
 		tk.Button( self.rightcntlframe, text="Create Points", 
 				   command=self.createRandomDataPoints, width=10 
-				   ).grid( row=row, column=1 )
+				   ).grid( row=row, columnspan=3 )
 		row+=1
 		
 		
@@ -391,6 +398,8 @@ class DisplayApp:
 		for row in zIndicesSorted:
 			x, y = [viewData[row, col] for col in range(2)]
 			self.drawObject(x, y, row=row)
+			
+			# TODO: line plotting, currently ordered according to csv
 			nextRow = row + 1
 			if self.linePlot.get() and nextRow < len(zIndicesSorted):
 				xh, yh = [viewData[nextRow, col] for col in range(2)]
@@ -950,7 +959,6 @@ class DisplayApp:
 		'''
 		# calculate the differential motion
 		[dx, dy] = [ event.x - self.baseClick[0], event.y - self.baseClick[1] ]
-		if self.verbose: print('handle button 1 motion %d %d' % (dx, dy))
 		self.baseClick = [event.x, event.y] # update click location
 		
 		# Divide the differential motion by the screen size
@@ -972,9 +980,7 @@ class DisplayApp:
 		'''
 		# calculate the differential motion
 		[dx, dy] = [ event.x - self.baseClick[0], event.y - self.baseClick[1] ]
-		if self.verbose: print('handle button 2 motion %d %d' % (dx, dy))
-		
-		# update the view
+		# rotate the view
 		rotSpeed = 0.5
 		self.view = self.baseView.clone()
 		self.view.rotateVRC(-rotSpeed*dx, rotSpeed*dy)
@@ -986,7 +992,6 @@ class DisplayApp:
 		'''
 		# calculate the difference
 		dy = event.y - self.baseClick[1] # only zoom with vertical motion
-		if self.verbose: print('handle button 3 motion %d' % dy)
 
 		# update the extent
 		zoomSpeed = 0.01
@@ -1110,12 +1115,33 @@ class DisplayApp:
 		if self.verbose: print('Entering main loop')
 		self.root.mainloop()
 		
+	def multiLinearRegression(self, event=None):
+		'''
+		Run a multiple linear regression
+		'''
+		if self.verbose: print("running multiple linear regression")
+		headers = dialog.MultiLinearRegression(self.root, self.data,
+										title="Pick Regression Axes").result
+		if not headers:
+			return
+		results = analysis.linear_regression(self.data, headers[:-1], headers[-1])
+		for header, slope in zip(headers[:-1], results[0][:-1]):
+			print("m%s %.3f" % (header, slope))
+		print("b %.3f" % results[0][-1])
+		print("sse: %.3f" % results[1])
+		print("R2: %.3f" % results[2])
+		print("t: %s" % results[3])
+		print("p: %s" % results[4])	
+		
 	def openData(self, event=None):
 		'''
 		open a dialog for picking data file and read into field
 		'''
+		initDir = "../csv"
+		if not os.path.isdir(initDir):
+			initDir = "."
 		filename = tkf.askopenfilename(parent=self.root, title='Choose a data file', 
-											initialdir='.' )
+											initialdir=initDir )
 		if filename:
 			nodirfilename = filename.split("/")[-1]
 			try:
@@ -1432,8 +1458,13 @@ class DisplayApp:
 			tkm.showerror("No Data", "No data to apply linear regression")
 			self.linearRegressionEnabled.set(0)
 			return
-		if self.linearRegressionEnabled.get():
-			if self.verbose: print("applying linear regression of x and y")
+		if not self.linearRegressionEnabled.get():
+			if self.verbose: print("removing linear regression")
+			self.canvas.delete(self.fitLine)
+			self.fitPoints = None
+		else:
+			
+			# do the regression on the current view if data has 3 dimensions
 			curView = self.presetView.get()
 			if curView == "xy" or not self.zLabel.get():
 				indHeader = self.xLabel.get().upper()
@@ -1444,16 +1475,24 @@ class DisplayApp:
 			else: # curView == "xz":
 				indHeader = self.xLabel.get().upper()
 				depHeader = self.zLabel.get().upper()
-			[slope, intercept, r, p, stderr] = stats.linregress(
+			if self.verbose: print("applying linear regression of %s and %s" %
+								(indHeader, depHeader))
+				
+			# perform linear regression in data space
+			slope, intercept, r, p, stderr = stats.linregress(
 				self.data.get_data([indHeader, depHeader]))
+			
+			# use resulting intercept and slope to get normalized endpoints
 			ranges = analysis.data_range(self.data, [indHeader, depHeader])
-			[indMin, indMax] = ranges[0]
+			indMin, indMax = ranges[0]
 			indRange = indMax - indMin
-			[depMin, depMax] = ranges[1]
+			depMin, depMax = ranges[1]
 			indlow = 0
 			indhigh = 1
 			deplow = (intercept-depMin)/(depMax-depMin)
-			dephigh = deplow + ((slope*indRange)-depMin)/(depMax-depMin)
+			dephigh = ((intercept+slope*indRange)-depMin)/(depMax-depMin)
+			
+			# the normalized endpoints are interpreted based on current view
 			if curView == "xy" or not self.zLabel.get():
 				self.fitPoints = np.matrix([[indlow, deplow, 0, 1],
 											[indhigh, dephigh, 0, 1]])
@@ -1463,6 +1502,8 @@ class DisplayApp:
 			else: #  curView == "xz":
 				self.fitPoints = np.matrix([[indlow, 0, deplow, 1],
 											[indhigh, 0, dephigh, 1]])
+				
+			# use the view to tranform from normalized to screen
 			VTM = self.view.build()
 			fitPts = (VTM * self.fitPoints.T).T
 			self.fitLine = self.canvas.create_line(	fitPts[0, 0], fitPts[0, 1], 
@@ -1471,11 +1512,6 @@ class DisplayApp:
 			#print("slope %.2f intercept %.2f r %.2f p %.2f stderr %.2f" %
 			print("slope %f intercept %f r^2 %f p %f stderr %f" %
 				(slope, intercept, r*r, p, stderr))
-			
-		else:
-			if self.verbose: print("removing linear regression of x and y")
-			self.canvas.delete(self.fitLine)
-			self.fitPoints = None
 		
 	def update(self, event=None):
 		'''
@@ -1488,7 +1524,6 @@ class DisplayApp:
 		'''
 		updates the axes line objects with the current vtm
 		'''
-		if self.verbose: print("updating axes")
 		VTM = self.view.build()
 		axesPts = (VTM * self.axes.T).T
 		labelPts = (VTM * self.axesLabels.T).T
@@ -1507,7 +1542,7 @@ class DisplayApp:
 								axesPts[2*i+1, 0], axesPts[2*i+1, 1])
 			self.canvas.coords(self.labels[i], labelPts[i, 0], labelPts[i, 1])
 			axesLabel = labelVars[i].get()
-			if ranges and len(self.headers) > 5:
+			if ranges and (i < 2 or len(self.headers) > 5):
 				axesLabel += "\n(%.2f, %.2f)" % tuple(ranges[i])
 			self.canvas.itemconfigure(self.labels[i], text=axesLabel)
 
@@ -1570,4 +1605,4 @@ if __name__ == "__main__":
 	[options, args] = parser.parse_args()
 	
 	# run the application
-	DisplayApp(1200, 800, options.filename, options.verbose).main()
+	DisplayApp(1200, 900, options.filename, options.verbose).main()

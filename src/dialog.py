@@ -339,6 +339,41 @@ class MatPlotLibDialog(OkDialog):
 		canvas = FigureCanvasTkAgg(self.figure, master=master)
 		canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 			
+class MultiLinearRegression(OkCancelDialog):
+
+	def __init__(self, parent, data, title = None):
+		
+		self.headers = [h.upper() for h in data.get_headers()]
+		OkCancelDialog.__init__(self, parent, title)
+		if len(self.headers) < 2:
+			self.cancel()
+		
+	def body(self, master):
+			
+		row=0
+		col=0
+		tk.Label(master, text="Independent:").grid(row=row, column=col)
+		self.e1 = tk.Listbox(master, selectmode=tk.MULTIPLE, exportselection=0)
+		for header in self.headers:
+			self.e1.insert(tk.END, header.capitalize())
+		self.e1.select_set(0)
+		self.e1.grid(row=row+1, column=col)
+		
+		col+=1
+		tk.Label(master, text="Dependent:").grid(row=row, column=col)
+		self.e2 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
+		for header in self.headers:
+			self.e2.insert(tk.END, header.capitalize())	
+		self.e2.select_set(1)
+		self.e2.grid(row=row+1, column=col)
+		
+		return None # initial focus
+
+	def apply(self):
+		self.result = [self.e1.get(sel) for sel in self.e1.curselection()]
+		self.result.append(self.e2.get(self.e2.curselection()))
+		self.result = [h.upper() for h in self.result]
+		
 class PickAxesDialog(OkCancelDialog):
 
 	def __init__(self, parent, data, oldHeaders, title = None):

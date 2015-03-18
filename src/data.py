@@ -306,7 +306,7 @@ if __name__ == "__main__":
 	else:
 		print("File not found")
 		print(usage)
-		#exit()
+		exit() # comment to use below data instead of reading from file
 		d = Data([["header1", "header2", "header3"], 
 				  ["numeric", "numeric", "numeric"], 
 				  ["1", "2", "3"], ["4", "5", "6"], 
