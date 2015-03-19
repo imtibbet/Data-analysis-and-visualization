@@ -14,7 +14,7 @@ import os
 import numpy as np
 from scipy import stats
 import matplotlib
-matplotlib.use()
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import matplotlib.image as image
 
@@ -1335,11 +1335,14 @@ class DisplayApp:
 		if not filename:
 			return
 		self.canvas.postscript(file=filename, colormode='color')
-		img = image.imread(filename)
-		newFilename = ".".join(filename.split(".")[:-1]+["png"])
-		image.imsave(newFilename,img)
-		os.remove(filename)
-		if self.verbose: print("saved canvas as %s" % newFilename)
+		try:
+			img = image.imread(filename)
+			newFilename = ".".join(filename.split(".")[:-1]+["png"])
+			image.imsave(newFilename,img)
+			os.remove(filename)
+			if self.verbose: print("saved canvas as %s" % newFilename)
+		except:
+			if self.verbose: print("saved canvas as %s" % filename)
 		
 	def saveData(self, event=None):
 		'''
