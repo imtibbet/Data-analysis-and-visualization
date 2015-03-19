@@ -13,18 +13,16 @@ import sys
 import os
 import numpy as np
 from scipy import stats
-from matplotlib import pyplot as plt
+import matplotlib
+matplotlib.use()
+import matplotlib.pyplot as plt
+import matplotlib.image as image
 
 # defined by me for this project
 import analysis
 from data import Data
 import dialog
 from view import View
-
-try: # used for saving canvas as png, not necessary
-	from PIL import Image 
-except ImportError:
-	pass
 
 try: # astronomy research stuff, optional
 	from astropy.io import fits
@@ -685,6 +683,7 @@ class DisplayApp:
 		self.colorField.set("")
 		self.sizeField.set("")
 		self.shapeField.set("")
+		self.removeFit()
 		self.updateAxes()
 	
 	def clearObjects(self):
@@ -1182,6 +1181,7 @@ class DisplayApp:
 			self.filename = None
 			self.data = None
 		else: # sets the active data and normalize it
+			self.removeFit()
 			self.processData()
 			
 	def plotData(self, event=None):
@@ -1262,6 +1262,15 @@ class DisplayApp:
 			self.normalizedData = np.column_stack((self.normalizedData[:, :3], [1]*rows))
 			self.zLabel.set(self.headers[2].capitalize())
 		
+	def removeFit(self):
+		'''
+		remove the linear fit from the canvas if there is one
+		'''
+		if self.fitPoints != None:
+			self.linearRegressionEnabled.set(0)
+			self.canvas.delete(self.fitLine)
+			self.fitPoints = None
+		
 	def resetViewOrientation(self, event=None):
 		'''
 		set the view to the specified preset, maintaining current zoom
@@ -1316,21 +1325,21 @@ class DisplayApp:
 		'''
 		saves the canvas to a postscript file
 		'''
+		initDir = "../images"
+		if not os.path.isdir(initDir):
+			initDir = ".."
 		filename = tkf.asksaveasfilename(defaultextension=".ps",
 										parent=self.root,
-										initialdir="..",
+										initialdir=initDir,
 										title="Save Displayed Data")
 		if not filename:
 			return
 		self.canvas.postscript(file=filename, colormode='color')
-		if self.verbose: print("saved canvas as %s" % filename)
-		try:
-			img = Image.open(filename)
-			img.save(".".join(filename.split(".")[:-1]+["png"]),"png")
-			os.remove(filename)
-			if self.verbose: print("changed saved canvas to a png")
-		except:
-			if self.verbose: print("need PIL to change saved canvas to a png")
+		img = image.imread(filename)
+		newFilename = ".".join(filename.split(".")[:-1]+["png"])
+		image.imsave(newFilename,img)
+		os.remove(filename)
+		if self.verbose: print("saved canvas as %s" % newFilename)
 		
 	def saveData(self, event=None):
 		'''
@@ -1513,8 +1522,7 @@ class DisplayApp:
 			return
 		if not self.linearRegressionEnabled.get():
 			if self.verbose: print("removing linear regression")
-			self.canvas.delete(self.fitLine)
-			self.fitPoints = None
+			self.removeFit()
 		else:
 			
 			# do the regression on the current view if data has 3 dimensions
