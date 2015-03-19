@@ -12,10 +12,9 @@ import analysis
 import datetime as dt
 import numpy as np
 
-
 class Data:
 	
-	def __init__(self, filename, verbose=True):
+	def __init__(self, filename, delimiter=",", verbose=True):
 		'''
 		constructor for the Data class
 		parameter filename - either an existing csv filename or
@@ -60,7 +59,9 @@ class Data:
 			with open( filename, 'rU' ) as fp: # rU for 'read' and 'universal end of line'
 				lines = fp.readlines()
 			if self.verbose: print("file found, reading data")
-			reader = csv.reader(lines)
+			dialect = csv.excel_tab()
+			dialect.delimiter = delimiter
+			reader = csv.reader(lines, dialect=dialect)
 		except:
 			if self.verbose: print("File not found, assuming input is list of lists of data")
 			reader = filename

@@ -166,6 +166,7 @@ class BindingsDialog(OkDialog):
 			["B3-Motion", "rotate the axes in the canvas"],
 			["Ctrl-B1-Motion", "same as B2-Motion"],
 			["Ctrl-Shift-B1", "delete the clicked object from the canvas"],
+			["Ctrl-D", "change the delimiter for reading data files"],
 			["Ctrl-F", "filter the data"],
 			["Ctrl-N", "clear the canvas"],
 			["Ctrl-O", "open a new data file"],

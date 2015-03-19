@@ -40,8 +40,9 @@ except ImportError:
 #except ImportError:
 import Tkinter as tk # python 2
 import tkFileDialog as tkf
-from tkColorChooser import askcolor
 import tkMessageBox as tkm
+import tkSimpleDialog as tks
+from tkColorChooser import askcolor
 	
 class DisplayApp:
 	'''
@@ -56,6 +57,7 @@ class DisplayApp:
 		self.verbose = verbose
 		self.filename = filename
 		self.data = None
+		self.delimiter = ","
 		self.headers = None
 		self.filteredData = None
 		self.normalizedData = None
@@ -182,7 +184,6 @@ class DisplayApp:
 				   command=self.openData, width=10
 				   ).grid( row=row, columnspan=3 )
 		row+=1
-		
 		self.openFilenames = tk.Listbox(self.rightcntlframe, selectmode=tk.SINGLE, 
 										exportselection=0, height=3)
 		self.openFilenames.bind("<Double-Button-1>", self.plotData)
@@ -366,23 +367,6 @@ class DisplayApp:
 					   *range(256)).grid( row=row, column=2 )
 		row+=1
 		
-		# make a create points button in the frame
-		self.numPointsDesc = tk.StringVar( self.root )
-		self.numPointsDesc.set("\nNumber of Points")
-		self.numPointsLabel = tk.Label(self.rightcntlframe, 
-									   textvariable=self.numPointsDesc)
-		self.numPointsLabel.grid( row=row, columnspan=3 )
-		row+=1
-		self.numPoints = tk.Entry(self.rightcntlframe, width=10)
-		self.numPoints.grid( row=row, columnspan=3 )
-		row+=1
-		
-		tk.Button( self.rightcntlframe, text="Create Points", 
-				   command=self.createRandomDataPoints, width=10 
-				   ).grid( row=row, columnspan=3 )
-		row+=1
-		
-		
 	def buildData(self): 
 		'''
 		build the data on the screen based on the data and filename fields
@@ -444,7 +428,8 @@ class DisplayApp:
 		datamenu = tk.Menu( self.menu )
 		self.menu.add_cascade( label = "Data", menu = datamenu )
 		menulist.append([datamenu,
-						[['Plot Selected, Ctrl-P', self.plotData],
+						[['Select Delimiter', self.setDelimiter],
+						 ['Plot Selected, Ctrl-P', self.plotData],
 						 ['Filter, Ctrl-F', self.filterData],
 						 ['Save Filtered Data', self.saveFilteredData],
 						 ['Change Axes', self.changeDataAxes],
@@ -705,16 +690,12 @@ class DisplayApp:
 		'''
 		if self.verbose: print("creating points on canvas")
 		# parse the number of points from the entry control
-		pointsStr = self.numPoints.get()
-		points = 100
-		if pointsStr.isdigit():
-			self.numPointsDesc.set("\nNumber of Points")
-			self.numPointsLabel.config(fg="black")
-			points = int(pointsStr)
-		elif pointsStr:
-			self.numPointsDesc.set("\nNAN, default 100")
-			self.numPointsLabel.config(fg="red")
-			
+		points = tks.askinteger("Number of Points", 
+							"Enter the number of points to be created",
+							parent=self.root, initialvalue=100,
+							minvalue=1, maxvalue=9999)
+		if not points:
+			return
 		# position the points randomly according to current distribution
 		[randFuncX, randArgsX] = self.randomFunctions[self.xDistribution.get().upper()]
 		[randFuncY, randArgsY] = self.randomFunctions[self.yDistribution.get().upper()]
@@ -1090,10 +1071,6 @@ class DisplayApp:
 			filename = "/".join([self.imageFilePath.rstrip("/"), 
 								self.data.raw_data[row, col]])
 			hdu = fits.open(filename)
-			#fileList = filename.split("_")
-			#filename = "_".join(fileList[:-2]) + "." + fileList[-1].split(".")[-1]
-			#filename = tkf.askopenfilename(initialdir=self.imageFilePath.get())
-			#data = np.log10(fits.open(filename)[1].data)
 		except:
 			if self.verbose: print(sys.exc_info())
 			print("cant open the astronomy image (verbose to see error)")
@@ -1152,12 +1129,17 @@ class DisplayApp:
 		initDir = "../csv"
 		if not os.path.isdir(initDir):
 			initDir = "."
-		filename = tkf.askopenfilename(parent=self.root, title='Choose a data file', 
-											initialdir=initDir )
+		filename = tkf.askopenfilename(parent=self.root, 
+									title='Choose a data file', 
+									initialdir=initDir,
+									filetypes=[("All Files","*"),
+											("Data files", "*.csv")])
 		if filename:
 			nodirfilename = filename.split("/")[-1]
 			try:
-				self.filename2data[nodirfilename] = Data(filename, self.verbose)
+				self.filename2data[nodirfilename] = Data(filename, 
+														self.delimiter, 
+														self.verbose)
 				if self.verbose: print("successfully read data")
 			except:
 				tkm.showerror("Failed File Read", "Failed to read %s" % filename)
@@ -1335,14 +1317,15 @@ class DisplayApp:
 		if not filename:
 			return
 		self.canvas.postscript(file=filename, colormode='color')
+		if self.verbose: print("saved canvas as %s" % filename)
 		try:
 			img = image.imread(filename)
 			newFilename = ".".join(filename.split(".")[:-1]+["png"])
 			image.imsave(newFilename,img)
-			os.remove(filename)
+			#os.remove(filename) # comment to keep ps file
 			if self.verbose: print("saved canvas as %s" % newFilename)
 		except:
-			if self.verbose: print("saved canvas as %s" % filename)
+			pass
 		
 	def saveData(self, event=None):
 		'''
@@ -1405,6 +1388,7 @@ class DisplayApp:
 		self.canvas.bind( '<Configure>', self.updateScreen ) # resizing canvas
 
 		# bind command sequences to the root window
+		self.root.bind( '<Control-d>', self.setDelimiter)
 		self.root.bind( '<Control-f>', self.filterData)
 		self.root.bind( '<Control-n>', self.clearData)
 		self.root.bind( '<Control-o>', self.openData)
@@ -1441,7 +1425,7 @@ class DisplayApp:
 		try:
 			self.data = self.filename2data[self.filename] # opened data
 		except:
-			self.data = Data(self.filename, self.verbose) # creating points
+			self.data = Data(self.filename, self.delimiter, self.verbose) # creating points
 		
 		# check for missiing data
 		if not self.data.get_headers():
@@ -1488,6 +1472,18 @@ class DisplayApp:
 					self.headers = None
 					break
 			self.pickDataAxes()
+		
+	def setDelimiter(self, event=None):
+		'''
+		set the delimiter used for reading in data files
+		'''
+		delim = tks.askstring("Set Delimiter", 
+							"Input the new delimiter for reading data files",
+							parent=self.root, initialvalue=self.delimiter)
+		if delim and delim != self.delimiter:
+			if self.verbose: print("changing delimiter from '%s' to '%s'" % 
+								(self.delimiter, delim))
+			self.delimiter = delim
 		
 	def setDistribution(self, event=None):
 		'''
