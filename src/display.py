@@ -73,8 +73,8 @@ class DisplayApp:
 		self.linearRegressionEnabled = tk.BooleanVar()
 		self.dataLines = []
 		self.linePlot = tk.BooleanVar()
-		self.disableTicks = tk.BooleanVar()
-
+		self.enableTicks = tk.BooleanVar()
+		self.enableTicks.set(True)
 
 		# set up the geometry for the window
 		self.root.geometry( "%dx%d+50+30" % (width, height) )
@@ -310,8 +310,8 @@ class DisplayApp:
 		row+=1
 		
 		# disable ticks
-		tk.Checkbutton( self.rightcntlframe, text="Disable Ticks",
-					variable=self.disableTicks, command=self.updateAxes
+		tk.Checkbutton( self.rightcntlframe, text="Enable Ticks",
+					variable=self.enableTicks, command=self.updateAxes
 					   ).grid( row=row, columnspan=3 )
 		row+=1
 		
@@ -576,8 +576,8 @@ class DisplayApp:
 								variable=self.linearRegressionEnabled,
 								command=self.toggleLinearRegression)
 		optionsmenu.add_checkbutton(label="Line Plot", variable=self.linePlot)
-		optionsmenu.add_checkbutton(label="Disable Tick Marks", 
-								variable=self.disableTicks,
+		optionsmenu.add_checkbutton(label="Enable Tick Marks", 
+								variable=self.enableTicks,
 								command=self.updateAxes)
 		
 	def buildStatusFrame(self):
@@ -1719,7 +1719,7 @@ class DisplayApp:
 			for j in range(self.numTicks):
 				curTick = self.ticksMarks[self.numTicks*i + j]
 				curLabel = self.ticksLabels[self.numTicks*i + j]
-				if self.disableTicks.get(): 
+				if not self.enableTicks.get(): 
 					state=tk.HIDDEN
 					tickVal = ""
 				else:
