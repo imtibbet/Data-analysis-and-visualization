@@ -160,7 +160,6 @@ class DisplayApp:
 				curLabel[0,i] += 0.04
 				self.ticksLabelsPts.append(curLabel)
 				
-		print(self.ticksLabelsPts)
 		self.axesLabelsPts = np.vstack(self.axesLabelsPts)	
 		self.ticksMarksPts = np.vstack(self.ticksMarksPts)		
 		self.ticksLabelsPts = np.vstack(self.ticksLabelsPts)
@@ -168,7 +167,6 @@ class DisplayApp:
 		self.axesLabelsPts = analysis.appendHomogeneous(self.axesLabelsPts)
 		self.ticksMarksPts = analysis.appendHomogeneous(self.ticksMarksPts)
 		self.ticksLabelsPts = analysis.appendHomogeneous(self.ticksLabelsPts)
-		print(self.ticksLabelsPts)
 		
 		VTM = self.view.build()
 		axesPts = (VTM * self.axesPts.T).T
@@ -200,7 +198,7 @@ class DisplayApp:
 					ticksLabelsPts[self.numTicks*i + j, 0], 
 					ticksLabelsPts[self.numTicks*i + j, 1], 
 					font=("Purina", 10), 
-					text=str(self.numTicks*i + j)))
+					text=""))#str(self.numTicks*i + j)))
 			
 	def buildControlsFrame(self):
 		'''
@@ -1689,7 +1687,7 @@ class DisplayApp:
 												fitPts[1, 0], fitPts[1, 1])
 		
 		if self.data:
-			ticks = True
+			ticks = True # TODO: make checkbox to enable/disable ticks
 			dataRanges = analysis.data_range(self.data, self.headers)
 			dataRanges = [self.manualDataRanges[header] 
 						if header in self.manualDataRanges else dataRanges[i] 
