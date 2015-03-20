@@ -61,6 +61,7 @@ class DisplayApp:
 		self.headers = None
 		self.filteredData = None
 		self.normalizedData = None
+		self.manualDataRanges = {}
 		self.width = None
 		self.height = None
 		self.filename2data = {}
@@ -110,7 +111,7 @@ class DisplayApp:
 		self.width = self.canvas.winfo_width()
 		self.height = self.canvas.winfo_height()
 		
-		# build the axes
+		# build the axesPts
 		self.buildAxes()
 		
 		if filename:
@@ -122,43 +123,85 @@ class DisplayApp:
 
 	def buildAxes(self, axes=[[0,0,0],[1,0,0],
 							  [0,0,0],[0,1,0],
-							  [0,0,0],[0,0,1]],
-				  axeslabels=[[1.05,-0.05,-0.05],
-							  [-0.05,1.05,-0.05],
-							  [-0.05,-0.05,1.05]]):
+							  [0,0,0],[0,0,1]]):
 		'''
 		builds the view transformation matrix [VTM], 
 		multiplies the axis endpoints by the VTM, 
 		then creates three new line objects, one for each axis
 		Note: only called once by __init__, then updateAxes used
 		'''
-		if self.verbose: print("building the axes")
-		for axis in axes:
-			if len(axis) < 4: 
-				axis.append(1) # homogeneous coordinate
-		for axis in axeslabels:
-			if len(axis) < 4:axis.append(1) # homogeneous coordinate
+		if self.verbose: print("building the axesPts")
 		self.view = View(offset=[self.width*0.15, self.height*0.15],
 							screen=[self.width*0.7, self.height*0.7])
-		self.baseView = self.view.clone()
+		self.baseView = self.view.clone() # in case b2 motion happens without click
+		
+		# set up the fields for holding normalized locations of axes objects
+		self.axesPts = np.asmatrix(axes, dtype=np.float)
+		self.axesLabelsPts = []
+		self.numTicks = 5
+		self.ticksMarksPts = []
+		self.ticksLabelsPts = []
+		for i in range(3):
+			low = self.axesPts[2*i] 
+			high = self.axesPts[2*i+1]
+			self.axesLabelsPts.append(high.copy())
+			self.axesLabelsPts[-1] -= 0.06
+			self.axesLabelsPts[-1][0,i] += 0.12
+			step = (high-low)/(self.numTicks-1.0)
+			for j in range(self.numTicks):
+				cur = low + j*step
+				curLow = cur - 0.02
+				curLow[0,i] += 0.02
+				curHigh = cur + 0.02
+				curHigh[0,i] -= 0.02
+				self.ticksMarksPts.append(curLow)
+				self.ticksMarksPts.append(curHigh)
+				curLabel = cur - 0.04
+				curLabel[0,i] += 0.04
+				self.ticksLabelsPts.append(curLabel)
+				
+		print(self.ticksLabelsPts)
+		self.axesLabelsPts = np.vstack(self.axesLabelsPts)	
+		self.ticksMarksPts = np.vstack(self.ticksMarksPts)		
+		self.ticksLabelsPts = np.vstack(self.ticksLabelsPts)
+		self.axesPts = analysis.appendHomogeneous(self.axesPts)
+		self.axesLabelsPts = analysis.appendHomogeneous(self.axesLabelsPts)
+		self.ticksMarksPts = analysis.appendHomogeneous(self.ticksMarksPts)
+		self.ticksLabelsPts = analysis.appendHomogeneous(self.ticksLabelsPts)
+		print(self.ticksLabelsPts)
+		
 		VTM = self.view.build()
-		self.axes = np.asmatrix(axes)
-		self.axesLabels = np.asmatrix(axeslabels)
-		axesPts = (VTM * self.axes.T).T
-		labelPts = (VTM * self.axesLabels.T).T
+		axesPts = (VTM * self.axesPts.T).T
+		axesLabelsPts = (VTM * self.axesLabelsPts.T).T
+		ticksMarksPts = (VTM * self.ticksMarksPts.T).T
+		ticksLabelsPts = (VTM * self.ticksLabelsPts.T).T
+		self.axes = []
+		self.axesLabels = []
+		self.ticksMarks = []
+		self.ticksLabels = []
 		self.xLabel.set("X")
 		self.yLabel.set("Y")
 		self.zLabel.set("Z")
 		labelVars = [self.xLabel, self.yLabel, self.zLabel]
-		self.lines = []
-		self.labels = []
 		for i in range(3):
-			self.lines.append(self.canvas.create_line(axesPts[2*i, 0], axesPts[2*i, 1], 
-												axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
-			self.labels.append(self.canvas.create_text(labelPts[i, 0], labelPts[i, 1], 
-													font=("Purina", 12), 
-													text=labelVars[i].get()))
-
+			self.axes.append(self.canvas.create_line(
+				axesPts[2*i, 0], axesPts[2*i, 1], 
+				axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
+			self.axesLabels.append(self.canvas.create_text(
+				axesLabelsPts[i, 0], axesLabelsPts[i, 1], 
+				font=("Purina", 12), text=labelVars[i].get()))
+			for j in range(self.numTicks):
+				self.ticksMarks.append(self.canvas.create_line(
+					ticksMarksPts[self.numTicks*2*i + 2*j, 0], 
+					ticksMarksPts[self.numTicks*2*i + 2*j, 1], 
+					ticksMarksPts[self.numTicks*2*i + 2*j+1, 0], 
+					ticksMarksPts[self.numTicks*2*i + 2*j+1, 1]))
+				self.ticksLabels.append(self.canvas.create_text(
+					ticksLabelsPts[self.numTicks*i + j, 0], 
+					ticksLabelsPts[self.numTicks*i + j, 1], 
+					font=("Purina", 10), 
+					text=str(self.numTicks*i + j)))
+			
 	def buildControlsFrame(self):
 		'''
 		build the frame and controls for application
@@ -199,6 +242,12 @@ class DisplayApp:
 		# make a plot button in the frame
 		tk.Button( self.rightcntlframe, text="Change Axes", 
 				   command=self.changeDataAxes, width=10
+				   ).grid( row=row, columnspan=3 )
+		row+=1
+
+		# make a plot button in the frame
+		tk.Button( self.rightcntlframe, text="Change Ranges", 
+				   command=self.changeRanges, width=10
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 		
@@ -254,7 +303,7 @@ class DisplayApp:
 					   ).grid( row=row, columnspan=3 )
 		row+=1
 		
-		# connecting lines control
+		# connecting axes control
 		self.dataLines = []
 		self.linePlot = tk.IntVar()
 		tk.Checkbutton( self.rightcntlframe, text="Line Plot",
@@ -394,7 +443,7 @@ class DisplayApp:
 			x, y = [viewData[row, col] for col in range(2)]
 			self.drawObject(x, y, row=row)
 			
-			# TODO: line plotting, currently ordered according to csv
+			# line plotting, currently ordered according to csv
 			nextRow = row + 1
 			if self.linePlot.get() and nextRow < len(zIndicesSorted):
 				xh, yh = [viewData[nextRow, col] for col in range(2)]
@@ -425,21 +474,31 @@ class DisplayApp:
 						 ]])
 
 		# create another menu for color
-		datamenu = tk.Menu( self.menu )
-		self.menu.add_cascade( label = "Data", menu = datamenu )
-		menulist.append([datamenu,
-						[['Select Delimiter', self.setDelimiter],
-						 ['Plot Selected, Ctrl-P', self.plotData],
-						 ['Filter, Ctrl-F', self.filterData],
-						 ['Save Filtered Data', self.saveFilteredData],
-						 ['Change Axes', self.changeDataAxes],
+		canvasmenu = tk.Menu( self.menu )
+		self.menu.add_cascade( label = "Canvas", menu = canvasmenu )
+		menulist.append([canvasmenu,
+						[['Save Canvas', self.saveCanvas],
+						 ['Set Canves Color', self.setCanvasColor],
 						 ['Clear, Ctrl-N', self.clearData]
 						 ]])
 
 		# create another menu for color
-		canvasmenu = tk.Menu( self.menu )
-		self.menu.add_cascade( label = "View", menu = canvasmenu )
-		menulist.append([canvasmenu,
+		datamenu = tk.Menu( self.menu )
+		self.menu.add_cascade( label = "Data", menu = datamenu )
+		menulist.append([datamenu,
+						[['Set Delimiter, Ctrl-D', self.setDelimiter],
+						 ['Plot Selected, Ctrl-P', self.plotData],
+						 ['Filter, Ctrl-F', self.filterData],
+						 ['Save Filtered Data', self.saveFilteredData],
+						 ['Change Axes', self.changeDataAxes],
+						 ['Change Ranges', self.changeRanges],
+						 ['Multiple Linear Regression', self.multiLinearRegression],
+						 ]])
+
+		# create another menu for color
+		viewmenu = tk.Menu( self.menu )
+		self.menu.add_cascade( label = "View", menu = viewmenu )
+		menulist.append([viewmenu,
 						[['Zoom In', self.zoomIn],
 						 ['Zoom Out', self.zoomOut],
 						 ['Reset Orientation', self.resetViewOrientation],
@@ -453,7 +512,7 @@ class DisplayApp:
 		menulist.append([colormenu,
 						[['Random Color', self.getRandomColor],
 						 ['Pick Color', self.getUserColor],
-						 ['Canvas Color', self.setCanvasColor]
+						 ['', None]
 						 ]])
 
 		# create another menu for color
@@ -496,7 +555,7 @@ class DisplayApp:
 				if not item[0]:
 					menu.add_separator()
 				
-				# sub cascade (TODO: could be recursive, only depth 1 now)
+				# sub cascade (could be recursive, only depth 1 now)
 				elif isinstance(item[1], types.ListType):
 					submenu = tk.Menu(self.menu)
 					for subitem in item[1]:
@@ -509,7 +568,7 @@ class DisplayApp:
 		
 	def buildStatusFrame(self):
 		'''
-		build the frame and the status labels
+		build the frame and the status axesLabels
 		'''
 		if self.verbose: print("building the status frame")
 		# make a status frame on the bottom
@@ -638,17 +697,42 @@ class DisplayApp:
 	
 	def changeDataAxes(self, event=None):
 		'''
-		prompts the user to change the displayed data axes if any
+		prompts the user to change the displayed data axesPts if any
 		'''
-		if self.data:
-			state = self.captureState()
-			self.pickDataAxes()
-			if not self.data:
-				self.restoreState(state)
-			else:
-				self.update()
+		if not self.data:
+			tkm.showerror("No Data Plotted", "No data to change axesPts")
+			return
+		state = self.captureState()
+		self.pickDataAxes()
+		if not self.data:
+			self.restoreState(state)
 		else:
-			tkm.showerror("No Data Plotted", "No data to change axes")
+			self.update()
+			
+	def changeRanges(self, event=None):
+		'''
+		set the ranges of the axesPts
+		'''
+		if not self.data:
+			tkm.showerror("No Data Plotted", "No data to change ranges")
+			return
+		if len(self.headers) == 5:
+			headers = self.headers[:2]
+		else:
+			headers = self.headers[:3]
+		newRanges = dialog.SetDataRanges(self.root, self.data, 
+										self.manualDataRanges, headers,
+										"Set Data Ranges").result
+		if self.verbose: print("changing ranges: %s" % newRanges)
+		if not newRanges:
+			tkm.showerror("Range Change Failed", "Data will not be changed")
+			return
+		# use new ranges to update manual data ranges dictionary
+		for header, newRange in zip(headers, newRanges):
+			self.manualDataRanges[header] = newRange
+		# TODO: self.excludeData(newRanges) would eliminate data outside new range
+		self.processData()
+		self.update()
 		
 	def clearData(self, event=None):
 		'''
@@ -658,6 +742,7 @@ class DisplayApp:
 		self.clearObjects()
 		self.filename = None
 		self.data = None
+		self.manualDataRanges = {}
 		self.updateNumObjStrVar()
 		self.xLocation.set("----")
 		self.yLocation.set("----")
@@ -813,9 +898,9 @@ class DisplayApp:
 		if self.verbose: print("filtering: %s" % newRanges)
 		if not newRanges:
 			tkm.showerror("Filter Failed", "Data will not be filtered")
-		else:
-			self.excludeData(newRanges)
-			self.processData()
+			return
+		self.excludeData(newRanges)
+		self.processData()
 		self.update()
 	
 	def getColorByDepth(self):
@@ -1108,6 +1193,9 @@ class DisplayApp:
 		'''
 		Run a multiple linear regression
 		'''
+		if not self.data:
+			tkm.showerror("No Data", "No data to apply linear regression")
+			return
 		if self.verbose: print("running multiple linear regression")
 		headers = dialog.MultiLinearRegression(self.root, self.data,
 										title="Pick Regression Axes").result
@@ -1155,14 +1243,14 @@ class DisplayApp:
 		
 	def pickDataAxes(self, event=None):
 		'''
-		pick the data axes and update the displayed data
+		pick the data axesPts and update the displayed data
 		'''
 		self.headers = dialog.PickAxesDialog(self.root, self.data, self.headers,
 											title="Pick Data Axes").result
 		if not self.headers: # if the user cancels the dialog, abort
-			self.filename = None
 			self.data = None
 		else: # sets the active data and normalize it
+			self.manualDataRanges = {}
 			self.removeFit()
 			self.processData()
 			
@@ -1227,7 +1315,12 @@ class DisplayApp:
 		use the data instance field to set active data fields
 		'''
 		# normalize the data and set the fields
-		self.normalizedData = analysis.normalize_columns_separately(self.data, self.headers)
+		forceRanges = [self.manualDataRanges[header] 
+					if header in self.manualDataRanges else [] 
+					for header in self.headers]
+		self.normalizedData = analysis.normalize_columns_separately(self.data, 
+																self.headers,
+																forceRanges)
 		self.shapeData = self.normalizedData[:, -1]
 		self.shapeField.set(self.headers[-1])
 		self.colorData = self.normalizedData[:, -2]
@@ -1238,10 +1331,12 @@ class DisplayApp:
 		self.yLabel.set(self.headers[1].capitalize())
 		[rows, cols] = self.normalizedData.shape
 		if cols < 6: # pad missing z data
-			self.normalizedData = np.column_stack((self.normalizedData[:, :2], [0]*rows, [1]*rows))
+			self.normalizedData = np.column_stack((self.normalizedData[:, :2], 
+												np.zeros(rows), np.ones(rows)))
 			self.zLabel.set("")
 		else: # pad the homogeneous coordinate
-			self.normalizedData = np.column_stack((self.normalizedData[:, :3], [1]*rows))
+			self.normalizedData = np.column_stack((self.normalizedData[:, :3], 
+												np.ones(rows)))
 			self.zLabel.set(self.headers[2].capitalize())
 		
 	def removeFit(self):
@@ -1430,7 +1525,6 @@ class DisplayApp:
 		# check for missiing data
 		if not self.data.get_headers():
 			tkm.showerror("Insufficient Data", "Not enough columns of data to plot")
-			self.filename = None
 			self.data = None
 			return
 		
@@ -1446,7 +1540,6 @@ class DisplayApp:
 				ylabel = None
 			title = self.filename
 			# self.clearData()
-			self.filename = None
 			self.data = None
 			fig = plt.figure(1)
 			plt.clf()
@@ -1582,30 +1675,54 @@ class DisplayApp:
 
 	def updateAxes(self):
 		'''
-		updates the axes line objects with the current vtm
+		updates the axesPts line objects with the current vtm
 		'''
 		VTM = self.view.build()
-		axesPts = (VTM * self.axes.T).T
-		labelPts = (VTM * self.axesLabels.T).T
+		axesPts = (VTM * self.axesPts.T).T
+		axesLabelsPts = (VTM * self.axesLabelsPts.T).T
+		ticksMarksPts = (VTM * self.ticksMarksPts.T).T
+		ticksLabelsPts = (VTM * self.ticksLabelsPts.T).T
 		labelVars = [self.xLabel, self.yLabel, self.zLabel]
 		if self.fitPoints != None:
 			fitPts = (VTM * self.fitPoints.T).T
 			self.canvas.coords(self.fitLine, 	fitPts[0, 0], fitPts[0, 1], 
 												fitPts[1, 0], fitPts[1, 1])
+		
 		if self.data:
-			ranges = analysis.data_range(self.data, self.headers)
+			ticks = True
+			dataRanges = analysis.data_range(self.data, self.headers)
+			dataRanges = [self.manualDataRanges[header] 
+						if header in self.manualDataRanges else dataRanges[i] 
+						for i, header in enumerate(self.headers)]
 		else:
-			ranges = None
-		for i, line in enumerate(self.lines):
-			self.canvas.coords(line, 
-								axesPts[2*i, 0], axesPts[2*i, 1], 
-								axesPts[2*i+1, 0], axesPts[2*i+1, 1])
-			self.canvas.coords(self.labels[i], labelPts[i, 0], labelPts[i, 1])
+			ticks = False
+		for i in range(3):
+			self.canvas.coords(self.axes[i], 
+							axesPts[2*i, 0], axesPts[2*i, 1], 
+							axesPts[2*i+1, 0], axesPts[2*i+1, 1])
+			self.canvas.coords(self.axesLabels[i], 
+							axesLabelsPts[i, 0], axesLabelsPts[i, 1])
 			axesLabel = labelVars[i].get()
-			if ranges and (i < 2 or len(self.headers) > 5):
-				axesLabel += "\n(%.2f, %.2f)" % tuple(ranges[i])
-			self.canvas.itemconfigure(self.labels[i], text=axesLabel)
+			self.canvas.itemconfigure(self.axesLabels[i], text=axesLabel)
+			if ticks: dataMin, dataMax = dataRanges[i]
+			for j in range(self.numTicks):
+				self.canvas.coords(self.ticksMarks[self.numTicks*i + j], 
+								ticksMarksPts[self.numTicks*2*i + 2*j, 0], 
+								ticksMarksPts[self.numTicks*2*i + 2*j, 1], 
+								ticksMarksPts[self.numTicks*2*i + 2*j+1, 0], 
+								ticksMarksPts[self.numTicks*2*i + 2*j+1, 1])
+				self.canvas.coords(self.ticksLabels[self.numTicks*i + j], 
+								ticksLabelsPts[self.numTicks*i + j, 0], 
+								ticksLabelsPts[self.numTicks*i + j, 1])
+				if ticks: 
+					tickVal = dataMin + j*(dataMax-dataMin)/(self.numTicks-1.0)
+					tickVal = "%.1f" % tickVal
+				else:
+					tickVal = ""
+				self.canvas.itemconfigure(self.ticksLabels[self.numTicks*i + j],
+										text=tickVal)
 
+			
 	def updateNumObjStrVar(self):
 		'''
 		update the status bar to reflect the current number of objects

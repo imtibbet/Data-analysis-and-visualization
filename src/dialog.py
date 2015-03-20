@@ -286,7 +286,7 @@ class FilterDataDialog(OkCancelDialog):
 		tk.Label(master, text="curMax", width=20).grid(row=0, column=4)
 		tk.Label(master, text="newMin", width=20).grid(row=0, column=5)
 		tk.Label(master, text="newMax", width=20).grid(row=0, column=7)
-		for row, header in enumerate(self.data.get_headers(),start=1):
+		for row, header in enumerate(self.data.get_headers(), start=1):
 			curMin, curMax = dataRanges[row-1]
 			raw_type = self.data.raw_types[self.data.header2raw[header]]
 			tk.Label(master, text=header, relief=tk.GROOVE, width=20
@@ -468,3 +468,49 @@ class PickAxesDialog(OkCancelDialog):
 			z = self.e3.get(self.e3.curselection())
 			self.result = [x, y, z, size, color, shape]
 		self.result = [h.upper() for h in self.result]
+		
+class SetDataRanges(OkCancelDialog):
+
+	def __init__(self, parent, data, manualDataRanges, headers, title = None):		
+		self.data = data
+		self.manualDataRanges = manualDataRanges
+		self.headers = [h.upper() for h in headers]
+		OkCancelDialog.__init__(self, parent, title)
+		
+	def body(self, master):
+		dataRanges = analysis.data_range(self.data, self.headers)
+		dataRanges = [self.manualDataRanges[header] 
+					if header in self.manualDataRanges else dataRanges[i] 
+					for i, header in enumerate(self.headers)]
+		self.mins = []
+		self.maxs = []
+		tk.Label(master, text="min", width=20).grid(row=0, column=1)
+		tk.Label(master, text="max", width=20).grid(row=0, column=2)
+		for row, header in enumerate(self.headers, start=1):
+			curMin, curMax = dataRanges[row-1]
+			tk.Label(master, text=header, relief=tk.GROOVE, width=20
+					 ).grid(row=row, column=0)
+			self.mins.append(tk.StringVar())
+			self.mins[-1].set(curMin)
+			tk.Entry(master, textvariable=self.mins[-1]).grid(row=row, column=1)
+			self.maxs.append(tk.StringVar())
+			self.maxs[-1].set(curMax)
+			tk.Entry(master, textvariable=self.maxs[-1]).grid(row=row, column=2)
+			
+	def apply(self):
+		try:
+			self.result = []
+			newMins = [float(newMin.get()) for newMin in self.mins]
+			newMaxs = [float(newMax.get()) for newMax in self.maxs]
+		except:
+			self.result = None
+			self.cancel()
+
+		for i in range(len(newMins)): 
+			if newMins[i] > newMaxs[i]: # verify that min is less than max
+				self.result = None
+				break
+			else:
+				self.result.append([newMins[i], newMaxs[i]])
+			
+		

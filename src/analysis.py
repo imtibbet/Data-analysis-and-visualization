@@ -7,6 +7,12 @@ from scipy import stats
 
 import numpy as np
 
+def appendHomogeneous(m):
+	'''
+	append the homogeneous coordinate as the last column of given matrix
+	'''
+	return np.column_stack((m, np.ones(m.shape[0])))
+
 def data_range(data, colHeaders):
 	'''
 	Takes in a list of column headers and the Data object 
@@ -44,7 +50,7 @@ def linear_regression(d, ind, dep):
 	# add a column of 1's to A to represent the constant term in the 
 	#	regression equation.  Remember, this is just y = mx + b (even 
 	#	if m and x are vectors).
-	A = np.column_stack((A, [1]*N))
+	A = appendHomogeneous(A)
 	
 	# assign to AAinv the result of calling numpy.linalg.inv( np.dot(A.T, A))
 	#	The matrix A.T * A is the covariance matrix of the independent
@@ -98,12 +104,12 @@ def linear_regression(d, ind, dep):
 	p = (1 - stats.t.cdf(np.abs(t), df_e))
 	
 	# assign to r2, the r^2 coefficient indicating the quality of the fit.
-	r = 1 - error.var() / y.var()
+	r2 = 1 - error.var() / y.var()
 	
 	# Return the values of the fit (b), the sum-squared error, the
 	#	 R^2 fit quality, the t-statistic, and the probability of a
 	#	 random relationship.
-	return [b.T.tolist()[0], sse[0,0], (r*r), t.tolist()[0], p.tolist()[0]]
+	return [b.T.tolist()[0], sse[0,0], r2, t.tolist()[0], p.tolist()[0]]
 
 def mean(data, colHeaders):
 	'''
@@ -126,13 +132,16 @@ def mode(data, colHeaders):
 	'''
 	return stats.mode(data.get_data(colHeaders))[0].tolist()[0]
 	
-def normalize_columns_separately(data, colHeaders):
+def normalize_columns_separately(data, colHeaders, forceRanges=[]):
 	'''
 	Takes in a list of column headers and the Data object 
 	returns a matrix with each column normalized so its minimum value 
 	is mapped to zero and its maximum value is mapped to 1.
 	'''
 	colRanges = data_range(data, colHeaders)
+	for i, forceRange in enumerate(forceRanges):
+		if forceRange:
+			colRanges[i] = forceRange
 	colData = data.get_data(colHeaders)
 	for i, [colMin, colMax] in enumerate(colRanges):
 		if colMin != colMax:
