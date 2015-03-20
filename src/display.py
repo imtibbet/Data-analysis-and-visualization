@@ -68,9 +68,13 @@ class DisplayApp:
 		self.preDefineColors()
 		self.preDefineDistributions()
 		self.objects = {} # shapes drawn on canvas and their row in the data
-
-		# create a tk object, which is the root window
 		self.root = tk.Tk()
+		self.fitPoints = None
+		self.linearRegressionEnabled = tk.BooleanVar()
+		self.dataLines = []
+		self.linePlot = tk.BooleanVar()
+		self.disableTicks = tk.BooleanVar()
+
 
 		# set up the geometry for the window
 		self.root.geometry( "%dx%d+50+30" % (width, height) )
@@ -187,7 +191,7 @@ class DisplayApp:
 				axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
 			self.axesLabels.append(self.canvas.create_text(
 				axesLabelsPts[i, 0], axesLabelsPts[i, 1], 
-				font=("Purina", 12), text=labelVars[i].get()))
+				font=("Purina", 10), text=labelVars[i].get()))
 			for j in range(self.numTicks):
 				self.ticksMarks.append(self.canvas.create_line(
 					ticksMarksPts[self.numTicks*2*i + 2*j, 0], 
@@ -197,7 +201,7 @@ class DisplayApp:
 				self.ticksLabels.append(self.canvas.create_text(
 					ticksLabelsPts[self.numTicks*i + j, 0], 
 					ticksLabelsPts[self.numTicks*i + j, 1], 
-					font=("Purina", 10), 
+					font=("Purina", 8), 
 					text=""))#str(self.numTicks*i + j)))
 			
 	def buildControlsFrame(self):
@@ -293,8 +297,6 @@ class DisplayApp:
 		row+=1
 		
 		# linear regression control
-		self.fitPoints = None
-		self.linearRegressionEnabled = tk.IntVar()
 		tk.Checkbutton( self.rightcntlframe, text="2D Linear Regression",
 					variable=self.linearRegressionEnabled,
 					command=self.toggleLinearRegression,
@@ -302,10 +304,14 @@ class DisplayApp:
 		row+=1
 		
 		# connecting axes control
-		self.dataLines = []
-		self.linePlot = tk.IntVar()
 		tk.Checkbutton( self.rightcntlframe, text="Line Plot",
 					variable=self.linePlot, command=self.update
+					   ).grid( row=row, columnspan=3 )
+		row+=1
+		
+		# disable ticks
+		tk.Checkbutton( self.rightcntlframe, text="Disable Ticks",
+					variable=self.disableTicks, command=self.updateAxes
 					   ).grid( row=row, columnspan=3 )
 		row+=1
 		
@@ -563,6 +569,16 @@ class DisplayApp:
 				# menu command
 				else:
 					menu.add_command( label=item[0], command=item[1] )
+		
+		optionsmenu = tk.Menu( self.menu )
+		self.menu.add_cascade( label = "Options", menu = optionsmenu )
+		optionsmenu.add_checkbutton(label="2D Linear Regression", 
+								variable=self.linearRegressionEnabled,
+								command=self.toggleLinearRegression)
+		optionsmenu.add_checkbutton(label="Line Plot", variable=self.linePlot)
+		optionsmenu.add_checkbutton(label="Disable Tick Marks", 
+								variable=self.disableTicks,
+								command=self.updateAxes)
 		
 	def buildStatusFrame(self):
 		'''
@@ -1687,13 +1703,10 @@ class DisplayApp:
 												fitPts[1, 0], fitPts[1, 1])
 		
 		if self.data:
-			ticks = True # TODO: make checkbox to enable/disable ticks
 			dataRanges = analysis.data_range(self.data, self.headers)
 			dataRanges = [self.manualDataRanges[header] 
 						if header in self.manualDataRanges else dataRanges[i] 
 						for i, header in enumerate(self.headers)]
-		else:
-			ticks = False
 		for i in range(3):
 			self.canvas.coords(self.axes[i], 
 							axesPts[2*i, 0], axesPts[2*i, 1], 
@@ -1702,23 +1715,30 @@ class DisplayApp:
 							axesLabelsPts[i, 0], axesLabelsPts[i, 1])
 			axesLabel = labelVars[i].get()
 			self.canvas.itemconfigure(self.axesLabels[i], text=axesLabel)
-			if ticks: dataMin, dataMax = dataRanges[i]
+			if self.data: dataMin, dataMax = dataRanges[i]
 			for j in range(self.numTicks):
-				self.canvas.coords(self.ticksMarks[self.numTicks*i + j], 
-								ticksMarksPts[self.numTicks*2*i + 2*j, 0], 
-								ticksMarksPts[self.numTicks*2*i + 2*j, 1], 
-								ticksMarksPts[self.numTicks*2*i + 2*j+1, 0], 
-								ticksMarksPts[self.numTicks*2*i + 2*j+1, 1])
-				self.canvas.coords(self.ticksLabels[self.numTicks*i + j], 
-								ticksLabelsPts[self.numTicks*i + j, 0], 
-								ticksLabelsPts[self.numTicks*i + j, 1])
-				if ticks: 
-					tickVal = dataMin + j*(dataMax-dataMin)/(self.numTicks-1.0)
-					tickVal = "%.1f" % tickVal
-				else:
+				curTick = self.ticksMarks[self.numTicks*i + j]
+				curLabel = self.ticksLabels[self.numTicks*i + j]
+				if self.disableTicks.get(): 
+					state=tk.HIDDEN
 					tickVal = ""
-				self.canvas.itemconfigure(self.ticksLabels[self.numTicks*i + j],
-										text=tickVal)
+				else:
+					state=tk.NORMAL
+					self.canvas.coords(curTick, 
+									ticksMarksPts[self.numTicks*2*i + 2*j, 0], 
+									ticksMarksPts[self.numTicks*2*i + 2*j, 1], 
+									ticksMarksPts[self.numTicks*2*i + 2*j+1, 0], 
+									ticksMarksPts[self.numTicks*2*i + 2*j+1, 1])
+					self.canvas.coords(curLabel, 
+									ticksLabelsPts[self.numTicks*i + j, 0], 
+									ticksLabelsPts[self.numTicks*i + j, 1])
+					if self.data:
+						tickVal = dataMin + j*(dataMax-dataMin)/(self.numTicks-1.0)
+						tickVal = "%.1f" % tickVal
+					else:
+						tickVal = ""
+				self.canvas.itemconfig( curTick, state=state )
+				self.canvas.itemconfig( curLabel, text=tickVal )
 
 			
 	def updateNumObjStrVar(self):
