@@ -380,6 +380,7 @@ class PickAxesDialog(OkCancelDialog):
 	def __init__(self, parent, data, oldHeaders, title = None):
 		
 		self.oldHeaders = oldHeaders
+		print(oldHeaders)
 		self.headers = [h.upper() for h in data.get_headers()]
 		OkCancelDialog.__init__(self, parent, title)
 		
@@ -408,18 +409,24 @@ class PickAxesDialog(OkCancelDialog):
 			self.e2.select_set(1)
 		self.e2.grid(row=row+1, column=col)
 		
-		if len(self.headers) > 2:
-			col+=1
-			tk.Label(master, text="Z Axes:").grid(row=row, column=col)
-			self.e3 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
-			for header in self.headers:
-				self.e3.insert(tk.END, header.capitalize())
-			if self.oldHeaders:
-				self.e3.select_set(self.headers.index(self.oldHeaders[2]))
+		col+=1
+		tk.Label(master, text="Z Axes:").grid(row=row, column=col)
+		self.e3 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
+		self.e3.insert(tk.END, "NONE")
+		for header in self.headers:
+			self.e3.insert(tk.END, header.capitalize())
+		if self.oldHeaders:
+			if len(self.oldHeaders) < 6:
+				self.e3.select_set(0)
 			else:
+				self.e3.select_set(self.headers.index(self.oldHeaders[2]))
+		else:
+			if len(self.headers) > 2:
 				self.e3.select_set(2)
-			self.e3.grid(row=row+1, column=col)
-		
+			else:
+				self.e3.select_set(0)
+		self.e3.grid(row=row+1, column=col)
+	
 		row=2
 		col=0
 		tk.Label(master, text="Size:").grid(row=row, column=col)
@@ -459,13 +466,13 @@ class PickAxesDialog(OkCancelDialog):
 	def apply(self):
 		x = self.e1.get(self.e1.curselection())
 		y = self.e2.get(self.e2.curselection())
+		z = self.e3.get(self.e3.curselection())
 		size = self.e4.get(self.e4.curselection())
 		color = self.e5.get(self.e5.curselection())
 		shape = self.e6.get(self.e6.curselection())
-		if len(self.headers) < 3:
+		if z == "NONE":
 			self.result = [x, y, size, color, shape]
 		else:
-			z = self.e3.get(self.e3.curselection())
 			self.result = [x, y, z, size, color, shape]
 		self.result = [h.upper() for h in self.result]
 		

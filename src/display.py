@@ -73,8 +73,14 @@ class DisplayApp:
 		self.linearRegressionEnabled = tk.BooleanVar()
 		self.dataLines = []
 		self.linePlot = tk.BooleanVar()
-		self.enableTicks = tk.BooleanVar()
+		self.enableTicks = tk.BooleanVar()		
 		self.enableTicks.set(True)
+		self.xLabel = tk.StringVar( self.root )
+		self.yLabel = tk.StringVar( self.root )
+		self.zLabel = tk.StringVar( self.root )
+		self.xLabel.set("X")
+		self.yLabel.set("Y")
+		self.zLabel.set("Z")
 
 		# set up the geometry for the window
 		self.root.geometry( "%dx%d+50+30" % (width, height) )
@@ -181,9 +187,6 @@ class DisplayApp:
 		self.axesLabels = []
 		self.ticksMarks = []
 		self.ticksLabels = []
-		self.xLabel.set("X")
-		self.yLabel.set("Y")
-		self.zLabel.set("Z")
 		labelVars = [self.xLabel, self.yLabel, self.zLabel]
 		for i in range(3):
 			self.axes.append(self.canvas.create_line(
@@ -283,7 +286,7 @@ class DisplayApp:
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 		
-		self.presetView = tk.StringVar( self.root )
+		self.presetView = tk.StringVar()
 		self.presetView.set("xy")
 		tk.OptionMenu( self.rightcntlframe, self.presetView, 
 					   "xy", "xz", "yz", command=self.resetViewOrientation
@@ -671,13 +674,10 @@ class DisplayApp:
 		tk.Label(bottomstatusframe, text="\tdata "
 				 ).grid(row=2, column=cols)
 		cols+=1
-		self.xLabel = tk.StringVar( self.root )
 		tk.Label(bottomstatusframe, textvariable=self.xLabel
 				 ).grid(row=0, column=cols)
-		self.yLabel = tk.StringVar( self.root )
 		tk.Label(bottomstatusframe, textvariable=self.yLabel
 				 ).grid(row=1, column=cols)
-		self.zLabel = tk.StringVar( self.root )
 		tk.Label(bottomstatusframe, textvariable=self.zLabel
 				 ).grid(row=2, column=cols)
 		cols+=1
@@ -1708,6 +1708,10 @@ class DisplayApp:
 						if header in self.manualDataRanges else dataRanges[i] 
 						for i, header in enumerate(self.headers)]
 		for i in range(3):
+			if self.data and len(self.headers) == 5 and i == 2:
+				zstate = tk.HIDDEN
+			else:
+				zstate = tk.NORMAL
 			self.canvas.coords(self.axes[i], 
 							axesPts[2*i, 0], axesPts[2*i, 1], 
 							axesPts[2*i+1, 0], axesPts[2*i+1, 1])
@@ -1719,11 +1723,11 @@ class DisplayApp:
 			for j in range(self.numTicks):
 				curTick = self.ticksMarks[self.numTicks*i + j]
 				curLabel = self.ticksLabels[self.numTicks*i + j]
-				if not self.enableTicks.get(): 
-					state=tk.HIDDEN
+				if not self.enableTicks.get() or zstate==tk.HIDDEN: 
+					tickstate=tk.HIDDEN
 					tickVal = ""
 				else:
-					state=tk.NORMAL
+					tickstate=tk.NORMAL
 					self.canvas.coords(curTick, 
 									ticksMarksPts[self.numTicks*2*i + 2*j, 0], 
 									ticksMarksPts[self.numTicks*2*i + 2*j, 1], 
@@ -1737,9 +1741,10 @@ class DisplayApp:
 						tickVal = "%.1f" % tickVal
 					else:
 						tickVal = ""
-				self.canvas.itemconfig( curTick, state=state )
+				self.canvas.itemconfig( curTick, state=tickstate )
 				self.canvas.itemconfig( curLabel, text=tickVal )
-
+		self.canvas.itemconfig(self.axes[2], state=zstate)
+		self.canvas.itemconfig(self.axesLabels[2], state=zstate)
 			
 	def updateNumObjStrVar(self):
 		'''
