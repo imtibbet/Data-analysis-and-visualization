@@ -419,10 +419,10 @@ class PickAxesDialog(OkCancelDialog):
 			if len(self.oldHeaders) < 6:
 				self.e3.select_set(0)
 			else:
-				self.e3.select_set(self.headers.index(self.oldHeaders[2]))
+				self.e3.select_set(self.headers.index(self.oldHeaders[2])+1)
 		else:
 			if len(self.headers) > 2:
-				self.e3.select_set(2)
+				self.e3.select_set(3)
 			else:
 				self.e3.select_set(0)
 		self.e3.grid(row=row+1, column=col)

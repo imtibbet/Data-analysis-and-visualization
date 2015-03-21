@@ -286,11 +286,14 @@ class DisplayApp:
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 		
+		presets = self.getPresets()
+		self.zLabel.trace("w", self.updatePresets)
 		self.presetView = tk.StringVar()
-		self.presetView.set("xy")
-		tk.OptionMenu( self.rightcntlframe, self.presetView, 
-					   "xy", "xz", "yz", command=self.resetViewOrientation
-					   ).grid( row=row, columnspan=3 )
+		self.presetView.set(presets[0])
+		self.presetControl = tk.OptionMenu( self.rightcntlframe, self.presetView, 
+									*presets, command=self.resetViewOrientation)
+		self.presetControlRow = row
+		self.presetControl.grid( row=self.presetControlRow, columnspan=3 )
 		row+=1
 
 		# make a plot button in the frame
@@ -761,9 +764,9 @@ class DisplayApp:
 		self.xLocation.set("----")
 		self.yLocation.set("----")
 		self.zLocation.set("----")
-		self.xLabel.set("x")
-		self.yLabel.set("y")
-		self.zLabel.set("z")
+		self.xLabel.set("X")
+		self.yLabel.set("Y")
+		self.zLabel.set("Z")
 		self.colorField.set("")
 		self.sizeField.set("")
 		self.shapeField.set("")
@@ -927,7 +930,7 @@ class DisplayApp:
 		gb = 0
 		bb = 255 - int(z * 255.0)
 		return "#%02x%02x%02x" % (rb, gb, bb)
-		
+	
 	def getCurrentColor(self):
 		'''
 		get the current color selected by the controls as hex string
@@ -939,6 +942,31 @@ class DisplayApp:
 							  int(self.blueBand.get())))
 		if rgb in ["black", "#000000"]: rgb = "#000001" # FIXME black causes bad damage rectangle
 		return rgb
+
+	def getCurrentPreset(self):
+		'''
+		return the upper case string of the selected preset (XY | YZ | XZ)
+		'''
+		presets = self.getPresets()
+		if self.presetView.get() == presets[0]:
+			return "XY"
+		elif self.presetView.get() == presets[1]:
+			return "YZ"
+		else: # self.presetView.get() == presets[0]:
+			return "XZ"
+	
+	def getPresets(self):
+		'''
+		return the presets for the current x, y, and z labels
+		'''
+		presets = [self.xLabel.get()[:min(5, len(self.xLabel.get()))]+" - "+
+				   self.yLabel.get()[:min(5, len(self.yLabel.get()))], 
+				   self.yLabel.get()[:min(5, len(self.yLabel.get()))]+" - "+
+				   self.zLabel.get()[:min(5, len(self.zLabel.get()))],
+				   self.xLabel.get()[:min(5, len(self.xLabel.get()))]+" - "+
+				   self.zLabel.get()[:min(5, len(self.zLabel.get()))]
+				   ]
+		return presets if self.zLabel.get() else presets[:1]
 		
 	def getRandomColor(self, event=None):
 		'''
@@ -1267,6 +1295,7 @@ class DisplayApp:
 			self.manualDataRanges = {}
 			self.removeFit()
 			self.processData()
+			self.resetViewOrientation()
 			
 	def plotData(self, event=None):
 		'''
@@ -1366,15 +1395,15 @@ class DisplayApp:
 		'''
 		set the view to the specified preset, maintaining current zoom
 		'''
-		presetStr = self.presetView.get().upper()
+		preset = self.getCurrentPreset()
 		curView = self.view.clone()
 		self.view.reset() # return to default view
 		self.view.offset = curView.offset.copy()
 		self.view.screen = curView.screen.copy()
 		self.view.extent = curView.extent.copy()
-		if presetStr == "XZ":
+		if preset == "XZ":
 			self.view.rotateVRC(0, 90)
-		elif presetStr == "YZ":
+		elif preset == "YZ":
 			self.view.rotateVRC(90, 90)
 		self.update()
 		
@@ -1400,6 +1429,7 @@ class DisplayApp:
 		self.view.reset() # return to default view
 		self.view.offset = curView.offset.copy()
 		self.view.screen = curView.screen.copy()
+		self.presetView.set(self.getPresets()[0])
 		self.update()
 		
 	def restoreState(self, state):
@@ -1632,14 +1662,14 @@ class DisplayApp:
 		else:
 			
 			# do the regression on the current view if data has 3 dimensions
-			curView = self.presetView.get()
-			if curView == "xy" or not self.zLabel.get():
+			curView = self.getCurrentPreset()
+			if curView == "XY" or not self.zLabel.get():
 				indHeader = self.xLabel.get().upper()
 				depHeader = self.yLabel.get().upper()
-			elif curView == "yz":
+			elif curView == "YZ":
 				indHeader = self.yLabel.get().upper()
 				depHeader = self.zLabel.get().upper()
-			else: # curView == "xz":
+			else: # curView == "XZ":
 				indHeader = self.xLabel.get().upper()
 				depHeader = self.zLabel.get().upper()
 			if self.verbose: print("applying linear regression of %s and %s" %
@@ -1652,21 +1682,20 @@ class DisplayApp:
 			# use resulting intercept and slope to get normalized endpoints
 			ranges = analysis.data_range(self.data, [indHeader, depHeader])
 			indMin, indMax = ranges[0]
-			indRange = indMax - indMin
 			depMin, depMax = ranges[1]
 			indlow = 0
 			indhigh = 1
-			deplow = (intercept-depMin)/(depMax-depMin)
-			dephigh = ((intercept+slope*indRange)-depMin)/(depMax-depMin)
+			deplow = ((intercept+slope*indMin)-depMin)/(depMax-depMin)
+			dephigh = ((intercept+slope*indMax)-depMin)/(depMax-depMin)
 			
 			# the normalized endpoints are interpreted based on current view
-			if curView == "xy" or not self.zLabel.get():
+			if curView == "XY" or not self.zLabel.get():
 				self.fitPoints = np.matrix([[indlow, deplow, 0, 1],
 											[indhigh, dephigh, 0, 1]])
-			elif curView == "yz":
+			elif curView == "YZ":
 				self.fitPoints = np.matrix([[0, indlow, deplow, 1],
 											[0, indhigh, dephigh, 1]])
-			else: #  curView == "xz":
+			else: #  curView == "XZ":
 				self.fitPoints = np.matrix([[indlow, 0, deplow, 1],
 											[indhigh, 0, dephigh, 1]])
 				
@@ -1752,6 +1781,18 @@ class DisplayApp:
 		'''
 		#if self.verbose: print("updating the number of objects status")
 		self.numObjStrVar.set("%d" % len(self.objects))
+
+	def updatePresets(self, *args):
+		'''
+		update the control for the presets to have current options
+		'''
+		presets = self.getPresets()
+		self.presetView.set(presets[0])
+		self.presetControl.destroy()
+		#if len(presets) > 1: # can disable preset option if 2D
+		self.presetControl = tk.OptionMenu( self.rightcntlframe, self.presetView, 
+									*presets, command=self.resetViewOrientation)
+		self.presetControl.grid( row=self.presetControlRow, columnspan=3 )
 
 	def updateScreen(self, event=None):
 		'''

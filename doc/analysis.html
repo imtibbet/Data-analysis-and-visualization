@@ -28,7 +28,8 @@ Professors&nbsp;Stephanie&nbsp;Taylor&nbsp;and&nbsp;Bruce&nbsp;Maxwell</tt></p>
 <font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
     
 <tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><dl><dt><a name="-data_range"><strong>data_range</strong></a>(data, colHeaders)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;list&nbsp;of&nbsp;column&nbsp;headers&nbsp;and&nbsp;the&nbsp;Data&nbsp;object&nbsp;<br>
+<td width="100%"><dl><dt><a name="-appendHomogeneous"><strong>appendHomogeneous</strong></a>(m)</dt><dd><tt>append&nbsp;the&nbsp;homogeneous&nbsp;coordinate&nbsp;as&nbsp;the&nbsp;last&nbsp;column&nbsp;of&nbsp;given&nbsp;matrix</tt></dd></dl>
+ <dl><dt><a name="-data_range"><strong>data_range</strong></a>(data, colHeaders)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;list&nbsp;of&nbsp;column&nbsp;headers&nbsp;and&nbsp;the&nbsp;Data&nbsp;object&nbsp;<br>
 returns&nbsp;a&nbsp;list&nbsp;of&nbsp;2-element&nbsp;lists&nbsp;with&nbsp;the&nbsp;minimum&nbsp;and&nbsp;maximum&nbsp;values&nbsp;for<br>
 each&nbsp;column.&nbsp;The&nbsp;function&nbsp;is&nbsp;required&nbsp;to&nbsp;work&nbsp;only&nbsp;on&nbsp;numeric&nbsp;data&nbsp;types.</tt></dd></dl>
  <dl><dt><a name="-linear_regression"><strong>linear_regression</strong></a>(d, ind, dep)</dt><dd><tt>linear&nbsp;regression&nbsp;for&nbsp;one&nbsp;or&nbsp;more&nbsp;independent&nbsp;variables<br>
@@ -48,7 +49,7 @@ returns&nbsp;a&nbsp;list&nbsp;of&nbsp;the&nbsp;mean&nbsp;values&nbsp;for&nbsp;ea
 returns&nbsp;a&nbsp;list&nbsp;of&nbsp;the&nbsp;median&nbsp;values&nbsp;for&nbsp;each&nbsp;column.</tt></dd></dl>
  <dl><dt><a name="-mode"><strong>mode</strong></a>(data, colHeaders)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;list&nbsp;of&nbsp;column&nbsp;headers&nbsp;and&nbsp;the&nbsp;Data&nbsp;object&nbsp;and&nbsp;<br>
 returns&nbsp;a&nbsp;list&nbsp;of&nbsp;the&nbsp;mean&nbsp;values&nbsp;for&nbsp;each&nbsp;column.</tt></dd></dl>
- <dl><dt><a name="-normalize_columns_separately"><strong>normalize_columns_separately</strong></a>(data, colHeaders)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;list&nbsp;of&nbsp;column&nbsp;headers&nbsp;and&nbsp;the&nbsp;Data&nbsp;object&nbsp;<br>
+ <dl><dt><a name="-normalize_columns_separately"><strong>normalize_columns_separately</strong></a>(data, colHeaders, forceRanges<font color="#909090">=[]</font>)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;list&nbsp;of&nbsp;column&nbsp;headers&nbsp;and&nbsp;the&nbsp;Data&nbsp;object&nbsp;<br>
 returns&nbsp;a&nbsp;matrix&nbsp;with&nbsp;each&nbsp;column&nbsp;normalized&nbsp;so&nbsp;its&nbsp;minimum&nbsp;value&nbsp;<br>
 is&nbsp;mapped&nbsp;to&nbsp;zero&nbsp;and&nbsp;its&nbsp;maximum&nbsp;value&nbsp;is&nbsp;mapped&nbsp;to&nbsp;1.</tt></dd></dl>
  <dl><dt><a name="-normalize_columns_together"><strong>normalize_columns_together</strong></a>(data, colHeaders)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;list&nbsp;of&nbsp;column&nbsp;headers&nbsp;and&nbsp;the&nbsp;Data&nbsp;object<br>
