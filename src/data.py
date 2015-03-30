@@ -11,10 +11,11 @@ import sys
 import analysis
 import datetime as dt
 import numpy as np
+np.set_printoptions(suppress=True) # make numpy print nicely
 
 class Data:
 	
-	def __init__(self, filename, delimiter=",", verbose=True):
+	def __init__(self, filename=None, delimiter=",", verbose=True):
 		'''
 		constructor for the Data class
 		parameter filename - either an existing csv filename or
@@ -29,29 +30,12 @@ class Data:
 			dataN1, dataN2, ..., dataNN
 		parameter [verbose] - default true, enable printing to console
 		'''
+		# initialize fields
+		self.verbose = verbose # enable printing
+		self.initFields()
+
 		if not filename:
 			return
-			
-		# initialize some fields
-		np.set_printoptions(suppress=True) # make numpy print nicely
-		self.verbose = verbose # enable printing
-		self.monthNames = {"January":1,
-						   "February":2,
-						   "March":3,
-						   "April":4,
-						   "May":5,
-						   "June":6,
-						   "July":7,
-						   "August":8,
-						   "September":9,
-						   "October":10,
-						   "November":11,
-						   "December":12
-						   }
-		# dictionary mapping month string to number
-		# include three letter versions of each month
-		for month in self.monthNames.keys():
-			self.monthNames[month[:3]] = self.monthNames[month]
 		
 		# convert input into list of lists of data
 		try:
@@ -78,19 +62,50 @@ class Data:
 		if self.verbose: print("rows:%d cols:%d" % self.matrix_data.shape)
 		if self.verbose: print(self.matrix_data)
 		
+	def initFields(self):
+		'''
+		initialize fields to default values
+		'''
+		self.monthNames = {"January":1,
+						   "February":2,
+						   "March":3,
+						   "April":4,
+						   "May":5,
+						   "June":6,
+						   "July":7,
+						   "August":8,
+						   "September":9,
+						   "October":10,
+						   "November":11,
+						   "December":12
+						   }
+		# dictionary mapping month string to number
+		# include three letter versions of each month
+		for month in self.monthNames.keys():
+			self.monthNames[month[:3]] = self.monthNames[month]
+			
+		self.raw_headers = [] # list of all header
+		self.header2raw = {} # map header string to col index in raw data
+		self.raw_types = [] # list of all types
+		self.raw_data = np.matrix([]) # matrix of all string data.
+		self.matrix_data = np.matrix([]) # matrix of numeric data
+		self.numeric_headers = [] # list of numeric column headers
+		self.header2matrix = {} # map header string to col index in matrix data
+		self.enum2value = {} # conversion dictionary between enum keys and index
+		
 	def clone(self):
 		'''
 		return a clone of this data instance
 		clone is only deep for numpy matrices
 		'''
-		data = Data(None)
+		data = Data()
 		data.verbose = self.verbose
 		data.raw_headers = self.raw_headers
 		data.header2raw = self.header2raw
 		data.raw_types = self.raw_types
 		data.raw_data = self.raw_data.copy()
 		data.matrix_data = self.matrix_data.copy()
-		data.numericHeaders = self.numericHeaders
+		data.numeric_headers = self.numeric_headers
 		data.header2matrix = self.header2matrix
 		data.enum2value = self.enum2value
 		return data
@@ -100,10 +115,7 @@ class Data:
 		parse data lines in reader into fields for headers, types and raw data
 		parameter reader - the lines of the csv file to parse
 		'''
-		self.raw_headers = [] # list of all header
-		self.header2raw = {} # map header string to col index in raw data
-		self.raw_types = [] # list of all types
-		self.raw_data = [] # list of lists of all string data.
+		self.raw_data = [] # use Python list temporarily
 		for line in reader:
 			line = [str(item) for item in line]
 			if line[0].lstrip()[0] == "#":
@@ -122,7 +134,7 @@ class Data:
 				for i, data in enumerate(line):
 					self.raw_data[i].append(data)
 		
-		self.raw_data = np.matrix(self.raw_data).T
+		self.raw_data = np.matrix(self.raw_data).T # construct matrix
 		
 		# pad types with numeric for remaining types
 		while len(self.raw_headers) > len(self.raw_types):
@@ -164,10 +176,11 @@ class Data:
 		Builds the numeric data from the raw file data in fields.
 		Raw data is assumed to have each list of lists of column data.
 		'''
-		self.matrix_data = [] # matrix of numeric data
-		self.numericHeaders = []
-		self.header2matrix = {} # map header string to col index in matrix data
-		self.enum2value = {} # conversion dictionary between enum keys and index
+		# reset numeric fields
+		self.matrix_data = [] # use Python list temporarily
+		self.numeric_headers = []
+		self.header2matrix = {}
+		self.enum2value = {}
 		if self.verbose: print("building numeric data")
 		rawColIndex = 0
 		for colIndex in range(self.raw_data.shape[1]):
@@ -175,7 +188,7 @@ class Data:
 			#if self.verbose: print("raw_type: %s" % rawType)
 			if rawType in ["NUMERIC", "ENUM", "DATE"]:
 				rawHeader = self.raw_headers[colIndex]
-				self.numericHeaders.append(rawHeader)
+				self.numeric_headers.append(rawHeader)
 				self.header2matrix[rawHeader] = rawColIndex
 				rawColIndex += 1
 				
@@ -266,7 +279,7 @@ class Data:
 		'''
 		return list of headers of columns with numeric data
 		'''
-		return self.numericHeaders
+		return self.numeric_headers
 	
 	def get_num_columns(self):
 		'''
@@ -299,6 +312,69 @@ class Data:
 			return (self.matrix_data[rows])[:, colIndices].copy()
 		else:
 			return self.matrix_data[rowStart:rowEnd, colIndices].copy()
+	
+class PCAData(Data):
+	'''
+	extension of the Data class to hold the results of a PCA analysis
+	'''
+
+	def __init__(self, projectedHeaders, projectedData,
+				eigvals, eigvecs, means, verbose=False):
+		'''
+		constructor for a PCA analysis
+		'''
+		Data.__init__(self, verbose=verbose)
+		
+		# set other parent fields
+		self.matrix_data = np.asmatrix(projectedData)
+		self.raw_data = self.matrix_data.astype(np.str)
+
+		# make up headers
+		cols = self.matrix_data.shape[1]
+		self.raw_headers = []
+		self.numeric_headers = []
+		for i in range(cols):
+			curHeader = "PC%d" % i
+			self.raw_headers.append(curHeader)
+			self.numeric_headers.append(curHeader)
+			self.header2raw[curHeader] = i
+			self.header2matrix[curHeader] = i
+
+		# all data is numeric		
+		self.raw_types = ["NUMERIC"]*cols
+		
+		# set new fields
+		self.eigvals = np.asmatrix(eigvals)
+		self.eigvecs = np.asmatrix(eigvecs)
+		self.means = np.asmatrix(means)
+		self.projectedHeaders = projectedHeaders
+		
+	def get_eigenvalues(self):
+		'''
+		returns a copy of the eigenvalues as a single-row numpy matrix.
+		'''
+		return self.eigvals.copy()
+	
+	def get_eigenvectors(self):
+		'''
+		returns a copy of the eigenvectors 
+		as a numpy matrix with the eigenvectors as rows.
+    	'''
+		return self.eigvecs.copy()
+	
+	def get_data_means(self):
+		'''
+		returns the means for each column in the original data 
+		as a single row numpy matrix.
+		'''
+		return self.means.copy()
+
+	def get_data_headers(self):
+		'''
+		returns a copy of the list of the headers from the original data 
+		used to generate the projected data.
+		'''
+		return [header for header in self.projectedHeaders]
 	
 if __name__ == "__main__":
 	usage = "Usage: python %s <csv_filename>" % sys.argv[0]
