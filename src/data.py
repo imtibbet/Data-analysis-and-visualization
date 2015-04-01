@@ -8,14 +8,13 @@ import os
 import re
 import sys
 
-import analysis
 import datetime as dt
 import numpy as np
 np.set_printoptions(suppress=True) # make numpy print nicely
 
 class Data:
 	
-	def __init__(self, filename=None, delimiter=",", verbose=True):
+	def __init__(self, filename=None, delimiter=",", verbose=False):
 		'''
 		constructor for the Data class
 		parameter filename - either an existing csv filename or
@@ -36,7 +35,6 @@ class Data:
 
 		if not filename:
 			return
-		
 		# convert input into list of lists of data
 		try:
 			# build data fields from the given filename
@@ -443,6 +441,7 @@ if __name__ == "__main__":
 	print(d.get_data(headers[0:1],rowEnd=2).shape)
 	
 	print("\nanalysis test")
+	import analysis
 	print("analysis.data_range(d, headers)")
 	print(analysis.data_range(d, headers))
 	print("analysis.mean(d, headers)")

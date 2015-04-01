@@ -4,7 +4,7 @@ Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 '''
 from scipy import stats
-
+from data import PCAData
 import numpy as np
 
 def appendHomogeneous(m):
@@ -165,6 +165,34 @@ def normalize_columns_together(data, colHeaders):
 	else: # handle data that does not vary to avoid div by zero
 		return colData-mMin
 	
+def pca(data, colHeaders, prenorm=True, verbose=False):
+	'''
+	perform a PCA analysis on the data for the given headers
+	returns a PCAData object with the source column headers, projected data, 
+			eigenvalues, eigenvectors, and source data means within it
+	'''
+	
+	# get data from parameters, use to compute eigenvectors/values
+	A = (normalize_columns_separately(data, colHeaders) if prenorm 
+		else data.get_data(colHeaders))
+	C = np.cov(A, rowvar=0)
+	W, V = np.linalg.eig(C)
+	
+	# sort the eigenvectors V and eigenvalues W to be in descending order 
+	oW = np.empty_like(W)
+	oV = np.empty_like(V)
+	for i, j in enumerate(reversed(np.argsort(W))):
+		oW[i] = W[j]
+		oV[:,i] = V[:,j]
+	W = np.asmatrix(oW)
+	V = np.asmatrix(oV).T
+	
+	# project the data onto the eigenvectors
+	m = np.mean(A, axis=0)
+	D = A - m
+	projData = (V * D.T).T
+	return PCAData(colHeaders, projData, W, V, m, verbose=verbose)
+
 def stdev(data, colHeaders):
 	'''
 	Takes in a list of column headers and the Data object and 

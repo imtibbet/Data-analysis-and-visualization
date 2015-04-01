@@ -6,6 +6,7 @@ Professors Stephanie Taylor and Bruce Maxwell
 from photos import photos, descriptions
 import analysis
 from datetime import datetime
+import numpy as np
 import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -129,7 +130,9 @@ class OkDialog(OkCancelDialog):
 
 class AboutAppDialog(OkDialog):
 	def body(self, master):
-		tk.Label(master, text=header).pack(side=tk.TOP)
+		title = "DAPPER"
+		desc = "Data Analysis and Plotting for Portraying Exceptional Results"
+		tk.Label(master, text="\n".join([title, desc, header])).pack(side=tk.TOP)
 
 class AboutMeDialog(OkDialog):
 	def body(self, master):
@@ -345,16 +348,17 @@ class MultiLinearRegression(OkCancelDialog):
 	def __init__(self, parent, data, title = None):
 		
 		self.headers = [h.upper() for h in data.get_headers()]
-		OkCancelDialog.__init__(self, parent, title)
 		if len(self.headers) < 2:
-			self.cancel()
+			self.result = None
+			return
+		OkCancelDialog.__init__(self, parent, title)
 		
 	def body(self, master):
 			
 		row=0
 		col=0
 		tk.Label(master, text="Independent:").grid(row=row, column=col)
-		self.e1 = tk.Listbox(master, selectmode=tk.MULTIPLE, exportselection=0)
+		self.e1 = tk.Listbox(master, selectmode=tk.EXTENDED, exportselection=0)
 		for header in self.headers:
 			self.e1.insert(tk.END, header.capitalize())
 		self.e1.select_set(0)
@@ -520,4 +524,88 @@ class SetDataRanges(OkCancelDialog):
 			else:
 				self.result.append([newMins[i], newMaxs[i]])
 			
+class RunPCA(OkCancelDialog):
+
+	def __init__(self, parent, data, title = None):
+		
+		self.headers = [h.upper() for h in data.get_headers()]
+		if len(self.headers) < 2:
+			self.result = None
+			return
+		OkCancelDialog.__init__(self, parent, title)
+		
+	def body(self, master):
+			
+		tk.Label(master, text="Select Headers:").pack(side=tk.TOP)
+		self.e1 = tk.Listbox(master, selectmode=tk.EXTENDED, exportselection=0)
+		for header in self.headers:
+			self.e1.insert(tk.END, header.capitalize())
+		self.e1.select_set(0)
+		self.e1.pack(side=tk.TOP)
+		
+		tk.Button(master, text="Select All", width=10,
+				command=lambda: self.e1.select_set(0, tk.END)).pack(side=tk.TOP)
+		tk.Button(master, text="Select One", width=10,
+				command=lambda: self.e1.select_clear(1, tk.END)).pack(side=tk.TOP)
+				
+		self.normalize = tk.BooleanVar()
+		tk.Checkbutton(master, text="Normalize", variable=self.normalize
+					).pack(side=tk.TOP)
+		
+		return None # initial focus
+
+	def apply(self):
+		self.result = [self.e1.get(sel) for sel in self.e1.curselection()]
+		self.result = [h.upper() for h in self.result]
+		self.result.append(self.normalize.get())
+			
+class ShowPCA(OkDialog):
+
+	def __init__(self, parent, data, title = None):
+		
+		self.data = data
+		try: # verify that the data is a PCAData instance
+			self.data.means
+		except:
+			print("Not PCA data, cancelling")
+			self.result = None
+			return
+		OkDialog.__init__(self, parent, title)
+		
+	def body(self, master):
+			
+		frames = []
+		frames.append(tk.Frame(master))
+		frames[-1].pack(side=tk.LEFT, padx=2, pady=2, fill=tk.Y)
+		tk.Label(frames[-1], text="E-vec").pack(side=tk.TOP)
+		for eigvechead in self.data.get_headers():
+			tk.Label(frames[-1], text=eigvechead).pack(side=tk.TOP)
+		
+		frames.append(tk.Frame(master))
+		frames[-1].pack(side=tk.LEFT, padx=2, pady=2, fill=tk.Y)
+		tk.Label(frames[-1], text="E-val").pack(side=tk.TOP)
+		eigvals = self.data.get_eigenvalues()
+		for i in range(eigvals.shape[1]):
+			tk.Label(frames[-1], text="%.4f" % eigvals[0,i]).pack(side=tk.TOP)
+		
+		frames.append(tk.Frame(master))
+		frames[-1].pack(side=tk.LEFT, padx=2, pady=2, fill=tk.Y)
+		tk.Label(frames[-1], text="Cumulative").pack(side=tk.TOP)
+		eigvalsum = np.sum(eigvals)
+		curSum = 0
+		for i in range(eigvals.shape[1]):
+			curSum += eigvals[0,i]/eigvalsum
+			tk.Label(frames[-1], text="%.4f" % curSum).pack(side=tk.TOP)
+		
+		for col, header in enumerate(self.data.get_data_headers()):
+			
+			frames.append(tk.Frame(master))
+			frames[-1].pack(side=tk.LEFT, padx=2, pady=2, fill=tk.Y)
+			tk.Label(frames[-1], text=header).pack(side=tk.TOP)
+			eigvecs = self.data.get_eigenvectors()
+			for row in range(eigvecs.shape[0]):
+				curVal = eigvecs[row, col]
+				tk.Label(frames[-1], text="%.4f" % curVal).pack(side=tk.TOP)
+			
+		return None # initial focus
 		

@@ -86,7 +86,10 @@ class DisplayApp:
 		self.root.geometry( "%dx%d+50+30" % (width, height) )
 		
 		# set the title of the window
-		self.root.title("Tibbetts GUI")
+		# PICKUP: Plotting by Ingenious Computer Kid in an Undergraduate Program
+		# PLAD: Plotting and Analysis of Data
+		# DAPPER: Data Analysis and Plotting for Producing/Portraying Exceptional Results
+		self.root.title("DAPPER") # TODO: better name
 		# set the maximum size of the window for resizing
 		self.root.maxsize( 1600, 900 )
 		
@@ -236,6 +239,10 @@ class DisplayApp:
 										exportselection=0, height=3)
 		self.openFilenames.bind("<Double-Button-1>", self.plotData)
 		self.openFilenames.grid( row=row, columnspan=3 )
+		row+=1
+		tk.Button( self.rightcntlframe, text="Delete", 
+				   command=self.openFilesDelete, width=10
+				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a plot button in the frame
@@ -492,17 +499,27 @@ class DisplayApp:
 						 ['Clear, Ctrl-N', self.clearData]
 						 ]])
 
-		# create another menu for color
+		# create another menu for data
 		datamenu = tk.Menu( self.menu )
 		self.menu.add_cascade( label = "Data", menu = datamenu )
 		menulist.append([datamenu,
-						[['Set Delimiter, Ctrl-D', self.setDelimiter],
+						[['Save Data', self.saveData],
 						 ['Plot Selected, Ctrl-P', self.plotData],
+						 ['Set Delimiter, Ctrl-D', self.setDelimiter],
 						 ['Filter, Ctrl-F', self.filterData],
 						 ['Save Filtered Data', self.saveFilteredData],
 						 ['Change Axes', self.changeDataAxes],
 						 ['Change Ranges', self.changeRanges],
 						 ['Multiple Linear Regression', self.multiLinearRegression],
+						 ]])
+		
+		# create another menu for analysis
+		anamenu = tk.Menu( self.menu )
+		self.menu.add_cascade( label = "Analysis", menu = anamenu )
+		menulist.append([anamenu,
+						[['Run PCA', self.pcaRun],
+						 ['Show PCA', self.pcaShow],
+						 ['Save PCA', self.pcaSave]
 						 ]])
 
 		# create another menu for color
@@ -1235,15 +1252,18 @@ class DisplayApp:
 		'''
 		Run a multiple linear regression
 		'''
-		if not self.data:
-			tkm.showerror("No Data", "No data to apply linear regression")
+		try:
+			curFilename = self.openFilenames.get(self.openFilenames.curselection())
+		except:
+			print("No open files")
 			return
+		data = self.filename2data[curFilename]
 		if self.verbose: print("running multiple linear regression")
-		headers = dialog.MultiLinearRegression(self.root, self.data,
+		headers = dialog.MultiLinearRegression(self.root, data,
 										title="Pick Regression Axes").result
 		if not headers:
 			return
-		results = analysis.linear_regression(self.data, headers[:-1], headers[-1])
+		results = analysis.linear_regression(data, headers[:-1], headers[-1])
 		for header, slope in zip(headers[:-1], results[0][:-1]):
 			print("m%s %.3f" % (header, slope))
 		print("b %.3f" % results[0][-1])
@@ -1267,21 +1287,77 @@ class DisplayApp:
 		if filename:
 			nodirfilename = filename.split("/")[-1]
 			try:
-				self.filename2data[nodirfilename] = Data(filename, 
-														self.delimiter, 
-														self.verbose)
+				newData = Data(filename, self.delimiter, self.verbose)
 				if self.verbose: print("successfully read data")
 			except:
 				tkm.showerror("Failed File Read", "Failed to read %s" % filename)
 				return
-			self.openFilenames.delete(0, tk.END)
-			selIndex = tk.END
-			for i, fname in enumerate(self.filename2data):
-				if fname == nodirfilename:
-					selIndex = i
-				self.openFilenames.insert(tk.END, fname)
-			self.openFilenames.select_set(selIndex)
-			self.openFilenames.bind("<Double-Button-1>", self.plotData)
+		self.openFilesAppend(nodirfilename, newData)
+
+	def openFilesAppend(self, filename, data):
+		'''
+		append to the listbox displaying open filenames
+		'''
+		self.filename2data[filename] = data
+		self.openFilenames.delete(0, tk.END)
+		selIndex = tk.END
+		for i, fname in enumerate(self.filename2data):
+			if fname == filename:
+				selIndex = i
+			self.openFilenames.insert(tk.END, fname)
+		self.openFilenames.select_set(selIndex)
+
+	def openFilesDelete(self):
+		'''
+		delete selected item from the listbox displaying open filenames
+		'''
+		try:
+			self.openFilenames.delete(self.openFilenames.curselection())
+		except:
+			print("No open files")
+		try:
+			self.openFilenames.select_set(0)
+		except:
+			pass
+	
+	def pcaRun(self):
+		'''
+		perform a pca analysis
+		'''
+		try:
+			curFilename = self.openFilenames.get(self.openFilenames.curselection())
+		except:
+			print("No open files")
+			return
+		data = self.filename2data[curFilename]
+		result = dialog.RunPCA(self.root, data).result
+		if not result:
+			return
+		colHeaders = result[:-1]
+		normBool = result[-1]
+		pcaData = analysis.pca(data, colHeaders, normBool, self.verbose)
+		filename = curFilename + ":"
+		for header in colHeaders:
+			filename += header[0]
+		self.openFilesAppend(filename, pcaData)
+		
+	def pcaSave(self):
+		'''
+		save the selected pca to a file	
+		'''
+		print("Not implemented")
+		return
+	
+	def pcaShow(self):
+		'''
+		show a pca analysis
+		'''
+		try:
+			curFilename = self.openFilenames.get(self.openFilenames.curselection())
+		except:
+			print("No open files")
+			return
+		dialog.ShowPCA(self.root, self.filename2data[curFilename])
 		
 	def pickDataAxes(self, event=None):
 		'''
@@ -1441,7 +1517,7 @@ class DisplayApp:
 		self.filename = state["filename"]
 		self.filteredData = state["filtered"]
 		self.normalizedData = state["normalized"]
-	
+		
 	def saveCanvas(self, event=None):
 		'''
 		saves the canvas to a postscript file
@@ -1781,7 +1857,7 @@ class DisplayApp:
 		'''
 		#if self.verbose: print("updating the number of objects status")
 		self.numObjStrVar.set("%d" % len(self.objects))
-
+	
 	def updatePresets(self, *args):
 		'''
 		update the control for the presets to have current options
