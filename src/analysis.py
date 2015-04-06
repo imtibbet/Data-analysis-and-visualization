@@ -7,6 +7,7 @@ from scipy import stats
 from data import PCAData
 import numpy as np
 import scipy.cluster.vq as vq
+from random import sample
 
 def appendHomogeneous(m):
 	'''
@@ -27,6 +28,49 @@ def data_range(data, colHeaders):
 	for i in range(colMins.shape[1]):
 		colRanges.append([colMins[0,i], colMaxs[0,i]])
 	return colRanges
+
+def kmeans_classify( d, means ):
+	'''
+	take in the data and cluster means
+	return a matrix of ID values and distances
+	The IDs should be the index of the closest cluster mean to the data point. 
+	The distances should be the Euclidean distance to the nearest cluster mean. 
+	'''
+	return
+
+def kmeans_init( d, K, categories=[] ):
+	'''
+	take in the data, the number of clusters K, and an optional set of categories
+	return a numpy matrix with K rows, each one repesenting a cluster mean. 
+	If no categories are given choose K random data points to be the means.
+	'''
+	data = d.get_data(d.get_headers())
+	rows = data.shape[0]
+	if len(categories):
+		means = []
+		for i in range(K):
+			means.append(np.mean(data[np.where(categories == i)], axis=0))
+		means = np.hstack(means)
+	else:
+		means = data[sample(xrange(rows), K)]
+	return means
+
+def kmeans_numpy( d, headers, K, whiten = True):
+	'''
+    Takes in a Data object, a set of headers, and the number of clusters to create
+    Computes and returns the codebook, codes, and representation error.
+    '''
+
+	# assign to A the result of getting the data from your Data object
+	A = d.get_data(headers)
+	# assign to W the result of calling vq.whiten on A
+	W = vq.whiten(A)
+	# assign to codebook, bookerror the result of calling vq.kmeans with W and K
+	codebook, bookerror = vq.kmeans(W, K)
+	# assign to codes, error the result of calling vq.vq with W and the codebook
+	codes, error = vq.vq(W, codebook)
+	# return codebook, codes, and error
+	return [codebook, codes, error]
 
 def linear_regression(d, ind, dep):
 	'''
