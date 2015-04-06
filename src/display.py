@@ -1216,7 +1216,6 @@ class DisplayApp:
 								self.data.raw_data[row, col]])
 			hdu = fits.open(filename)
 		except:
-			if self.verbose: print(sys.exc_info())
 			print("cant open the astronomy image (verbose to see error)")
 			return
 		
@@ -1292,7 +1291,7 @@ class DisplayApp:
 			except:
 				tkm.showerror("Failed File Read", "Failed to read %s" % filename)
 				return
-		self.openFilesAppend(nodirfilename, newData)
+			self.openFilesAppend(nodirfilename, newData)
 
 	def openFilesAppend(self, filename, data):
 		'''
@@ -1345,8 +1344,25 @@ class DisplayApp:
 		'''
 		save the selected pca to a file	
 		'''
-		print("Not implemented")
-		return
+		try:
+			filename = self.openFilenames.get(self.openFilenames.curselection())
+		except:
+			tkm.showerror("No Selected Data", "Select opened data to save")
+			return
+		try: # verify that the data is a PCAData instance
+			self.filename2data[filename].means
+		except:
+			print("Not PCA data, cancelling")
+			return
+		initDir = "../csv"
+		if not os.path.isdir(initDir):
+			initDir = "."
+		wfile = tkf.asksaveasfile(defaultextension=".csv",
+								parent=self.root,
+								initialdir=initDir,
+								title="Save Displayed Data")
+		if wfile:
+			self.filename2data[filename].save(wfile)
 	
 	def pcaShow(self):
 		'''

@@ -373,6 +373,27 @@ class PCAData(Data):
 		used to generate the projected data.
 		'''
 		return [header for header in self.projectedHeaders]
+			
+	def save(self, wfile):
+		'''
+		saves this data to the given filename, assuming valid filename
+		'''
+		lines = [self.get_data_headers(), self.get_headers()]
+		lines.append(["Means"])
+		lines.append(self.get_means().astype(str).tolist()[0])
+		lines.append(["Eigenvalues"])
+		lines.append(self.get_eigenvalues().astype(str).tolist()[0])
+		lines.append(["Eigenvectors"])
+		lines.append(self.get_eigenvectors().astype(str).tolist()[0])
+		lines.append(["Projected Data"])
+		rows, cols = self.raw_data.shape
+		for row in range(rows):
+			lines.append([])
+			for col in range(cols):
+				lines[-1].append(self.raw_data[row, col])
+		lines = [",".join(line) for line in lines]
+		wfile.write("\n".join(lines))
+		wfile.close()
 	
 if __name__ == "__main__":
 	usage = "Usage: python %s <csv_filename>" % sys.argv[0]

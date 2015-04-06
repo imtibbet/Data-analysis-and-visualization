@@ -131,7 +131,7 @@ class OkDialog(OkCancelDialog):
 class AboutAppDialog(OkDialog):
 	def body(self, master):
 		title = "DAPPER"
-		desc = "Data Analysis and Plotting for Portraying Exceptional Results"
+		desc = "Data Analysis and Plotting for Presenting Exceptional Results"
 		tk.Label(master, text="\n".join([title, desc, header])).pack(side=tk.TOP)
 
 class AboutMeDialog(OkDialog):
@@ -590,19 +590,26 @@ class ShowPCA(OkDialog):
 		
 		frames.append(tk.Frame(master))
 		frames[-1].pack(side=tk.LEFT, padx=2, pady=2, fill=tk.Y)
-		tk.Label(frames[-1], text="Cumulative").pack(side=tk.TOP)
+		tk.Label(frames[-1], text="Energy").pack(side=tk.TOP)
 		eigvalsum = np.sum(eigvals)
+		for i in range(eigvals.shape[1]):
+			curEnergy = eigvals[0,i]/eigvalsum
+			tk.Label(frames[-1], text="%.4f" % curEnergy).pack(side=tk.TOP)
+		
+		frames.append(tk.Frame(master))
+		frames[-1].pack(side=tk.LEFT, padx=2, pady=2, fill=tk.Y)
+		tk.Label(frames[-1], text="Cumulative").pack(side=tk.TOP)
 		curSum = 0
 		for i in range(eigvals.shape[1]):
 			curSum += eigvals[0,i]/eigvalsum
 			tk.Label(frames[-1], text="%.4f" % curSum).pack(side=tk.TOP)
 		
+		# Eigenvectors
+		eigvecs = self.data.get_eigenvectors()
 		for col, header in enumerate(self.data.get_data_headers()):
-			
 			frames.append(tk.Frame(master))
 			frames[-1].pack(side=tk.LEFT, padx=2, pady=2, fill=tk.Y)
-			tk.Label(frames[-1], text=header).pack(side=tk.TOP)
-			eigvecs = self.data.get_eigenvectors()
+			tk.Label(frames[-1], text=header.capitalize()).pack(side=tk.TOP)
 			for row in range(eigvecs.shape[0]):
 				curVal = eigvecs[row, col]
 				tk.Label(frames[-1], text="%.4f" % curVal).pack(side=tk.TOP)
