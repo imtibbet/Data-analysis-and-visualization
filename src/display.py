@@ -9,7 +9,6 @@ from collections import OrderedDict
 from optparse import OptionParser
 import random
 import types
-import sys
 import os
 import numpy as np
 from scipy import stats
@@ -240,15 +239,20 @@ class DisplayApp:
 		self.openFilenames.bind("<Double-Button-1>", self.plotData)
 		self.openFilenames.grid( row=row, columnspan=3 )
 		row+=1
-		tk.Button( self.rightcntlframe, text="Delete", 
-				   command=self.openFilesDelete, width=10
-				   ).grid( row=row, columnspan=3 )
-		row+=1
 
 		# make a plot button in the frame
-		tk.Button( self.rightcntlframe, text="Plot Selected", 
-				   command=self.plotData, width=10
-				   ).grid( row=row, columnspan=3 )
+		tk.Button( self.rightcntlframe, text="Plot", 
+				   command=self.plotData, width=5
+				   ).grid( row=row, column=0 )
+		tk.Button( self.rightcntlframe, text="Delete", 
+				   command=self.openFilesDelete, width=5
+				   ).grid( row=row, column=1 )
+		tk.Button( self.rightcntlframe, text="Rename", 
+				   command=self.openFilesRename, width=5
+				   ).grid( row=row, column=2 )
+		row+=1
+		tk.Frame( self.rightcntlframe, height=2, bd=1, relief=tk.SUNKEN
+				  ).grid( row=row, columnspan=3, pady = 10, sticky=tk.EW)
 		row+=1
 
 		# make a plot button in the frame
@@ -270,7 +274,7 @@ class DisplayApp:
 		row+=1
 
 		# make a save button in the frame
-		tk.Button( self.rightcntlframe, text="Save Data", 
+		tk.Button( self.rightcntlframe, text="Save Displayed", 
 				   command=self.saveData, width=10
 				   ).grid( row=row, columnspan=3 )
 		row+=1
@@ -503,7 +507,7 @@ class DisplayApp:
 		datamenu = tk.Menu( self.menu )
 		self.menu.add_cascade( label = "Data", menu = datamenu )
 		menulist.append([datamenu,
-						[['Save Data', self.saveData],
+						[['Save Displayed Data', self.saveData],
 						 ['Plot Selected, Ctrl-P', self.plotData],
 						 ['Set Delimiter, Ctrl-D', self.setDelimiter],
 						 ['Filter, Ctrl-F', self.filterData],
@@ -1314,11 +1318,36 @@ class DisplayApp:
 			self.openFilenames.delete(self.openFilenames.curselection())
 		except:
 			print("No open files")
+			return
 		try:
 			self.openFilenames.select_set(0)
 		except:
 			pass
-	
+
+	def openFilesRename(self):
+		'''
+		rename selected item from the listbox displaying open filenames
+		'''
+		try:
+			filename = self.openFilenames.get(self.openFilenames.curselection())
+		except:
+			print("No open files")
+			return
+		newfn = tks.askstring("Rename File", 
+							"Input the new filename",
+							parent=self.root, initialvalue=filename)
+		if not newfn or newfn == filename:
+			return
+		self.filename2data[newfn] = self.filename2data[filename]
+		del(self.filename2data[filename])
+		self.openFilenames.delete(0, tk.END)
+		selIndex = tk.END
+		for i, fname in enumerate(self.filename2data):
+			if fname == newfn:
+				selIndex = i
+			self.openFilenames.insert(tk.END, fname)
+		self.openFilenames.select_set(selIndex)
+		
 	def pcaRun(self):
 		'''
 		perform a pca analysis
@@ -1332,12 +1361,14 @@ class DisplayApp:
 		result = dialog.RunPCA(self.root, data).result
 		if not result:
 			return
-		colHeaders = result[:-1]
-		normBool = result[-1]
+		filename = result[0]
+		normBool = result[1]
+		colHeaders = result[2]
 		pcaData = analysis.pca(data, colHeaders, normBool, self.verbose)
-		filename = curFilename + ":"
-		for header in colHeaders:
-			filename += header[0]
+		if not filename:
+			filename = curFilename + ":"
+			for header in colHeaders:
+				filename += header[0]
 		self.openFilesAppend(filename, pcaData)
 		
 	def pcaSave(self):
@@ -1360,6 +1391,7 @@ class DisplayApp:
 		wfile = tkf.asksaveasfile(defaultextension=".csv",
 								parent=self.root,
 								initialdir=initDir,
+								initialfile=filename,
 								title="Save Displayed Data")
 		if wfile:
 			self.filename2data[filename].save(wfile)
@@ -1397,7 +1429,7 @@ class DisplayApp:
 		try:
 			self.filename = self.openFilenames.get(self.openFilenames.curselection())
 		except:
-			tkm.showerror("No Selected Data", "Select opened data to plot")
+			print("No open files")
 			return
 		self.setData()
 		if self.data:

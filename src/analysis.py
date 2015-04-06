@@ -6,6 +6,7 @@ Professors Stephanie Taylor and Bruce Maxwell
 from scipy import stats
 from data import PCAData
 import numpy as np
+import scipy.cluster.vq as vq
 
 def appendHomogeneous(m):
 	'''
@@ -26,7 +27,7 @@ def data_range(data, colHeaders):
 	for i in range(colMins.shape[1]):
 		colRanges.append([colMins[0,i], colMaxs[0,i]])
 	return colRanges
-	
+
 def linear_regression(d, ind, dep):
 	'''
 	linear regression for one or more independent variables

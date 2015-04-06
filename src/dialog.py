@@ -130,9 +130,14 @@ class OkDialog(OkCancelDialog):
 
 class AboutAppDialog(OkDialog):
 	def body(self, master):
-		title = "DAPPER"
-		desc = "Data Analysis and Plotting for Presenting Exceptional Results"
-		tk.Label(master, text="\n".join([title, desc, header])).pack(side=tk.TOP)
+		title = "Welcome to DAPPER"
+		desc = "Data Analysis and Plotting for Presenting and Evaluating Results"
+		tk.Label(master, text="\n".join([title, desc])).pack(side=tk.TOP)
+		photoIan = tk.PhotoImage(data=photos["ian"])
+		label = tk.Label(master, image=photoIan)
+		label.image = photoIan
+		label.pack(side=tk.TOP)
+		tk.Label(master, text=header).pack(side=tk.TOP)
 
 class AboutMeDialog(OkDialog):
 	def body(self, master):
@@ -140,7 +145,7 @@ class AboutMeDialog(OkDialog):
 		label = tk.Label(master, image=photoIan)
 		label.image = photoIan
 		label.pack(side=tk.TOP)
-		tk.Label(master, text=descriptions["ian"], wraplength=80
+		tk.Label(master, text=descriptions["ian"], wraplength=500
 				 ).pack(side=tk.TOP)
 
 class AboutStephDialog(OkDialog):
@@ -536,6 +541,10 @@ class RunPCA(OkCancelDialog):
 		
 	def body(self, master):
 			
+		self.e0 = tk.StringVar()
+		self.e0.set("")
+		tk.Entry(master, textvariable=self.e0).pack(side=tk.TOP)
+		
 		tk.Label(master, text="Select Headers:").pack(side=tk.TOP)
 		self.e1 = tk.Listbox(master, selectmode=tk.EXTENDED, exportselection=0)
 		for header in self.headers:
@@ -557,7 +566,7 @@ class RunPCA(OkCancelDialog):
 	def apply(self):
 		self.result = [self.e1.get(sel) for sel in self.e1.curselection()]
 		self.result = [h.upper() for h in self.result]
-		self.result.append(self.normalize.get())
+		self.result = [self.e0.get(), self.normalize.get(), self.result]
 			
 class ShowPCA(OkDialog):
 
