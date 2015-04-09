@@ -1233,6 +1233,8 @@ class DisplayApp:
 			data = hdu[i].data
 			if i == 3: # residual
 				data[data < 0] = 0
+			data -= np.min(data)
+			data /= (np.max(data)-np.min(data))
 			data *= 10**scale
 			data += 1
 			data = np.log10(data)
