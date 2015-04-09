@@ -1226,7 +1226,7 @@ class DisplayApp:
 		fig = plt.figure(1)
 		plt.clf()
 		titles = ["Original", "Model", "Residual"]
-		scale = 3 # how much to stretch the data for contrast using log
+		scale = 4 # how much to stretch the data for contrast using log
 		for i, title in enumerate(titles, start=1):
 			a = fig.add_subplot(1,len(titles),i)
 			a.set_title(title)
