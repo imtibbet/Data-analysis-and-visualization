@@ -1234,7 +1234,7 @@ class DisplayApp:
 			if i == 3: # residual
 				data[data < 0] = 0
 			elif i == 1:
-				scale = -np.log10(np.median(data))
+				scale = -int(np.log10(np.median(data)))
 				
 			#data -= np.min(data)
 			#data /= (np.max(data)-np.min(data))
