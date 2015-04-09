@@ -1226,15 +1226,15 @@ class DisplayApp:
 		fig = plt.figure(1)
 		plt.clf()
 		titles = ["Original", "Model", "Residual"]
-		#scale = 6 # how much to stretch the data for contrast using log
+		scale = 6 # how much to stretch the data for contrast using log
 		for i, title in enumerate(titles, start=1):
 			a = fig.add_subplot(1,len(titles),i)
 			a.set_title(title)
 			data = hdu[i].data
 			if i == 3: # residual
 				data[data < 0] = 0
-			elif i == 1:
-				scale = -int(np.log10(np.median(data)))
+			#elif i == 1:
+			#	scale = -int(np.log10(np.median(data)))
 				
 			#data -= np.min(data)
 			#data /= (np.max(data)-np.min(data))
@@ -1245,7 +1245,7 @@ class DisplayApp:
 			implot.set_cmap("cubehelix")
 			implot.set_clim(0.0, scale)
 			cb = plt.colorbar(ticks=range(scale+1), orientation='horizontal')
-			cb.set_label("log10($pixel*10^%d+1$)" % scale)
+			cb.set_label("log10($pixel*10^"+str(scale)+"+1$)")
 		
 		dialog.MatPlotLibDialog(self.root, fig, filename.split("/")[-1])
 		
