@@ -7,7 +7,7 @@ from scipy import stats
 from data import PCAData
 import numpy as np
 import scipy.cluster.vq as vq
-from random import sample
+import random
 
 def appendHomogeneous(m):
 	'''
@@ -29,6 +29,75 @@ def data_range(data, colHeaders):
 		colRanges.append([colMins[0,i], colMaxs[0,i]])
 	return colRanges
 
+def fuzzyPartitionToClusters(points, partition, m):
+	'''
+	
+	'''
+	x = np.asmatrix(points, np.float)
+	w = np.asmatrix(partition, np.float)
+	N, k = partition.shape
+	clusters = np.empty((k, N))
+	for j in range(k):
+		num = np.sum([(w[i, j]**m)*x[i] for i in range(N)], axis=0)
+		den = np.sum([(w[i, j]**m) for i in range(N)])
+		clusters[j] = num/den
+	return clusters
+
+def kmeans(d, headers, K, whiten=True, categories=[]):
+	'''Takes in a Data object, a set of headers, and the number of clusters to create
+	Computes and returns the codebook, codes and representation errors. 
+	If given an Nx1 matrix of categories, it uses the category labels 
+	to calculate the initial cluster means.
+	'''
+	# Assign to A the result getting the data given the headers
+	A = d.get_data(headers)
+	# Assign to W the result of calling vq.whiten on the data
+	W = vq.whiten(A)
+	# assign to codebook the result of calling kmeans_init with W, K, and categories
+	codebook = kmeans_init(W, K, categories)
+	# assign to codebook, codes, errors, the result of calling kmeans_algorithm with W and codebook		
+	codebook, codes, errors = kmeans_algorithm(W, codebook)
+	# return the codebook, codes, and representation error
+	return [codebook, codes, errors]
+
+def kmeans_algorithm(A, means):
+	# set up some useful constants
+	MIN_CHANGE = 1e-7
+	MAX_ITERATIONS = 100
+	D = means.shape[1]
+	K = means.shape[0]
+	N = A.shape[0]
+
+	# iterate no more than MAX_ITERATIONS
+	for i in range(MAX_ITERATIONS):
+		# calculate the codes
+		codes, errors = kmeans_classify( A, means )
+		# calculate the new means
+		newmeans = np.zeros_like( means )
+		counts = np.zeros( (K, 1) )
+		for j in range(N):
+			newmeans[codes[j],:] += A[j,:]
+			counts[codes[j],0] += 1.0
+
+		# finish calculating the means, taking into account possible zero counts
+		for j in range(K):
+			if counts[j,0] > 0.0:
+				newmeans[j,:] /= counts[j, 0]
+			else:
+				newmeans[j,:] = A[random.randint(0,A.shape[0]),:]
+
+		# test if the change is small enough
+		diff = np.sum(np.square(means - newmeans))
+		means = newmeans
+		if diff < MIN_CHANGE:
+			break
+
+	# call classify with the final means
+	codes, errors = kmeans_classify( A, means )
+
+	# return the means, codes, and errors
+	return (means, codes, errors)
+
 def kmeans_classify( d, means ):
 	'''
 	take in the data and cluster means
@@ -36,7 +105,12 @@ def kmeans_classify( d, means ):
 	The IDs should be the index of the closest cluster mean to the data point. 
 	The distances should be the Euclidean distance to the nearest cluster mean. 
 	'''
-	return
+	data = d#.get_data(d.get_headers())
+	dists = np.empty((data.shape[0], means.shape[0]))
+	for row, point in enumerate(data):
+		for k, cluster in enumerate(means):
+			dists[row, k] = np.linalg.norm(point-cluster)
+	return [np.argmin(dists, axis=1), np.min(dists, axis=1)]
 
 def kmeans_init( d, K, categories=[] ):
 	'''
@@ -44,28 +118,38 @@ def kmeans_init( d, K, categories=[] ):
 	return a numpy matrix with K rows, each one repesenting a cluster mean. 
 	If no categories are given choose K random data points to be the means.
 	'''
-	data = d.get_data(d.get_headers())
+	data = d#.get_data(d.get_headers())
 	rows = data.shape[0]
+	categories = np.squeeze(np.asarray(categories))
 	if len(categories):
 		means = []
 		for i in range(K):
-			means.append(np.mean(data[np.where(categories == i)], axis=0))
-		means = np.hstack(means)
+			means.append(np.mean(data[categories == i], axis=0))
+		means = np.vstack(means)
 	else:
-		means = data[sample(xrange(rows), K)]
+		means = data[random.sample(xrange(rows), K)]
 	return means
 
-def kmeans_numpy( d, headers, K, whiten = True):
+def kmeans_numpy( d, headers, K, whiten=True, categories=[]):
 	'''
-    Takes in a Data object, a set of headers, and the number of clusters to create
-    Computes and returns the codebook, codes, and representation error.
-    '''
-
+	Takes in a Data object, a set of headers, and the number of clusters to create
+	Computes and returns the codebook, codes, and representation error.
+	'''
 	# assign to A the result of getting the data from your Data object
-	A = d.get_data(headers)
+	try:
+		A = d.get_data(headers)
+	except:
+		A = d
 	# assign to W the result of calling vq.whiten on A
-	W = vq.whiten(A)
+	W = np.asarray(vq.whiten(A))
 	# assign to codebook, bookerror the result of calling vq.kmeans with W and K
+	
+	categories = np.squeeze(np.asarray(categories))
+	if len(categories):
+		means = []
+		for i in range(K):
+			means.append(np.mean(W[categories == i], axis=0))
+		K = np.asarray(np.vstack(means))
 	codebook, bookerror = vq.kmeans(W, K)
 	# assign to codes, error the result of calling vq.vq with W and the codebook
 	codes, error = vq.vq(W, codebook)
@@ -222,6 +306,7 @@ def pca(data, colHeaders, prenorm=True, verbose=False):
 		else data.get_data(colHeaders))
 	C = np.cov(A, rowvar=0)
 	W, V = np.linalg.eig(C)
+	print V
 	
 	# sort the eigenvectors V and eigenvalues W to be in descending order 
 	oW = np.empty_like(W)
@@ -245,4 +330,22 @@ def stdev(data, colHeaders):
 	'''
 	return np.std(data.get_data(colHeaders), axis=0).tolist()[0]
 
+	
+if __name__ == '__main__':
+	
+	d = np.matrix([	[0.9, 0.9, 0.8, 0.8],
+					[0.86, 0.86, 0.86, 0.86],
+					[0.2, 0.2, 0.11, 0.1],
+					[0.14, 0.15, 0.15, 0.14]] )
+	w = np.matrix([	[0,  1],
+					[ 0,  1],
+					[ 1,  0],
+					[ 1,  0]])
+	w = np.matrix([	[0.1,  0.9],
+					[ 0.2,  0.8],
+					[ 0.5,  0.5],
+					[ 0.8,  0.2]])
+	print("")
+	print(fuzzyPartitionToClusters(d, w, 2))
+	print(kmeans_numpy(d, [], 2)[0])
 	
