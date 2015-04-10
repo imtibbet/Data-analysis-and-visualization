@@ -116,8 +116,8 @@ class Data:
 		self.raw_data = [] # use Python list temporarily
 		for line in reader:
 			line = [str(item).strip() for item in line]
-			if not line[0]:
-				line = line[1:]
+#			if not line[0]:
+#				line = line[1:]
 			if line[0][0] == "#":
 				if self.verbose: print("comment line")
 			elif not self.raw_headers:

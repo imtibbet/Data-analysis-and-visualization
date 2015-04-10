@@ -306,7 +306,6 @@ def pca(data, colHeaders, prenorm=True, verbose=False):
 		else data.get_data(colHeaders))
 	C = np.cov(A, rowvar=0)
 	W, V = np.linalg.eig(C)
-	print V
 	
 	# sort the eigenvectors V and eigenvalues W to be in descending order 
 	oW = np.empty_like(W)
