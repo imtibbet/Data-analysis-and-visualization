@@ -33,14 +33,17 @@ def fuzzyPartitionToClusters(points, partition, m):
 	'''
 	
 	'''
-	x = np.asmatrix(points, np.float)
-	w = np.asmatrix(partition, np.float)
+	x = np.asarray(points, np.float)
+	w = np.asarray(partition, np.float)
 	N, k = partition.shape
 	clusters = np.empty((k, N))
 	for j in range(k):
 		num = np.sum([(w[i, j]**m)*x[i] for i in range(N)], axis=0)
 		den = np.sum([(w[i, j]**m) for i in range(N)])
-		clusters[j] = num/den
+		curAvg = num/den
+		#sw = np.squeeze(w[:,j])
+		#curAvg = np.average(x, axis=0, weights=sw)
+		clusters[j] = curAvg
 	return clusters
 
 def kmeans(d, headers, K, whiten=True, categories=[]):
@@ -49,14 +52,20 @@ def kmeans(d, headers, K, whiten=True, categories=[]):
 	If given an Nx1 matrix of categories, it uses the category labels 
 	to calculate the initial cluster means.
 	'''
-	# Assign to A the result getting the data given the headers
-	A = d.get_data(headers)
+	# assign to A the result of getting the data from your Data object
+	try:
+		A = d.get_data(headers)
+	except: # to allow passing just the matrix of the data
+		A = d
 	# Assign to W the result of calling vq.whiten on the data
 	W = vq.whiten(A)
 	# assign to codebook the result of calling kmeans_init with W, K, and categories
 	codebook = kmeans_init(W, K, categories)
 	# assign to codebook, codes, errors, the result of calling kmeans_algorithm with W and codebook		
 	codebook, codes, errors = kmeans_algorithm(W, codebook)
+	# move means of clusters out of whitened data space
+	codebook *= np.std(A, axis=0)
+	codebook += np.mean(A, axis=0)
 	# return the codebook, codes, and representation error
 	return [codebook, codes, errors]
 
@@ -138,7 +147,7 @@ def kmeans_numpy( d, headers, K, whiten=True, categories=[]):
 	# assign to A the result of getting the data from your Data object
 	try:
 		A = d.get_data(headers)
-	except:
+	except: # to allow passing just the matrix of the data
 		A = d
 	# assign to W the result of calling vq.whiten on A
 	W = np.asarray(vq.whiten(A))
@@ -346,5 +355,5 @@ if __name__ == '__main__':
 					[ 0.8,  0.2]])
 	print("")
 	print(fuzzyPartitionToClusters(d, w, 2))
-	print(kmeans_numpy(d, [], 2)[0])
+	#print(kmeans_numpy(d, [], 2)[0])
 	

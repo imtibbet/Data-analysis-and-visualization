@@ -141,19 +141,21 @@ class Data:
 			print("Appending type numeric")
 			self.raw_types.append("NUMERIC")
 			
-	def save(self, wfile):
+	def save(self, wfilename, headers=[], delimiter=","):
 		'''
 		saves this data to the given filename, assuming valid filename
 		'''
+		if not headers: headers = self.get_raw_headers()
+		data = self.get_raw_data(headers)
 		lines = [self.raw_headers, self.raw_types]
-		rows, cols = self.raw_data.shape
+		rows, cols = data.shape
 		for row in range(rows):
 			lines.append([])
 			for col in range(cols):
-				lines[-1].append(self.raw_data[row, col])
-		lines = [",".join(line) for line in lines]
-		wfile.write("\n".join(lines))
-		wfile.close()
+				lines[-1].append(data[row, col])
+		lines = [delimiter.join(line) for line in lines]
+		with open(wfilename, 'w') as wfile:
+			wfile.write("\n".join(lines))
 	
 	def parseDate(self, rawDate):
 		'''
@@ -312,6 +314,19 @@ class Data:
 			return (self.matrix_data[rows])[:, colIndices].copy()
 		else:
 			return self.matrix_data[rowStart:rowEnd, colIndices].copy()
+		
+	def get_raw_data(self, colHeaders, rows=[], rowStart=None, rowEnd=None): 
+		'''
+		parameter colHeaders - a list of columns headers
+		parameter rows, rowStart, rowEnd - optional, rows has priority
+		return a matrix with the raw data for the specified rows and columns.
+		'''
+		colIndices = [self.header2raw[x] for x in colHeaders]
+		# OR map(self.header2matrix.get, colHeaders)
+		if rows:
+			return (self.raw_data[rows])[:, colIndices].copy()
+		else:
+			return self.raw_data[rowStart:rowEnd, colIndices].copy()
 	
 class PCAData(Data):
 	'''
@@ -376,11 +391,13 @@ class PCAData(Data):
 		'''
 		return [header for header in self.projectedHeaders]
 			
-	def save(self, wfile):
+	def save(self, wfilename, headers=[], delimiter=","):
 		'''
 		saves this data to the given filename, assuming valid filename
 		'''
-		lines = [self.get_data_headers(), self.get_headers()]
+		if not headers: headers = self.get_raw_headers()
+		data = self.get_raw_data(headers)
+		lines = [self.get_data_headers(), headers]
 		lines.append(["Means"])
 		lines.append(self.get_means().astype(str).tolist()[0])
 		lines.append(["Eigenvalues"])
@@ -388,14 +405,14 @@ class PCAData(Data):
 		lines.append(["Eigenvectors"])
 		lines.append(self.get_eigenvectors().astype(str).tolist()[0])
 		lines.append(["Projected Data"])
-		rows, cols = self.raw_data.shape
+		rows, cols = data.shape
 		for row in range(rows):
 			lines.append([])
 			for col in range(cols):
-				lines[-1].append(self.raw_data[row, col])
-		lines = [",".join(line) for line in lines]
-		wfile.write("\n".join(lines))
-		wfile.close()
+				lines[-1].append(data[row, col])
+		lines = [delimiter.join(line) for line in lines]
+		with open(wfilename, 'w') as wfile:
+			wfile.write("\n".join(lines))
 	
 if __name__ == "__main__":
 	usage = "Usage: python %s <csv_filename>" % sys.argv[0]

@@ -499,7 +499,7 @@ class DisplayApp:
 		self.menu.add_cascade( label = "Canvas", menu = canvasmenu )
 		menulist.append([canvasmenu,
 						[['Save Canvas', self.saveCanvas],
-						 ['Set Canves Color', self.setCanvasColor],
+						 ['Set Canvas Color', self.setCanvasColor],
 						 ['Clear, Ctrl-N', self.clearData]
 						 ]])
 
@@ -523,7 +523,8 @@ class DisplayApp:
 		menulist.append([anamenu,
 						[['Run PCA', self.pcaRun],
 						 ['Show PCA', self.pcaShow],
-						 ['Save PCA', self.pcaSave]
+						 ['Save PCA', self.pcaSave],
+						 ['Run Kmeans', self.kmeansRun]
 						 ]])
 
 		# create another menu for color
@@ -1248,6 +1249,12 @@ class DisplayApp:
 		
 		dialog.MatPlotLibDialog(self.root, fig, filename.split("/")[-1])
 		
+	def kmeansRun(self):
+		'''
+		
+		'''
+		print("Kmeans not implemented.")
+		
 	def main(self):
 		'''
 		start the application
@@ -1392,7 +1399,7 @@ class DisplayApp:
 		initDir = "../csv"
 		if not os.path.isdir(initDir):
 			initDir = "."
-		wfile = tkf.asksaveasfile(defaultextension=".csv",
+		wfile = tkf.asksaveasfilename(defaultextension=".csv",
 								parent=self.root,
 								initialdir=initDir,
 								initialfile=filename,
@@ -1604,7 +1611,7 @@ class DisplayApp:
 		initDir = "../csv"
 		if not os.path.isdir(initDir):
 			initDir = "."
-		wfile = tkf.asksaveasfile(defaultextension=".csv",
+		wfile = tkf.asksaveasfilename(defaultextension=".csv",
 								parent=self.root,
 								initialdir=initDir,
 								title="Save Displayed Data")
@@ -1623,7 +1630,7 @@ class DisplayApp:
 		initDir = "../csv"
 		if not os.path.isdir(initDir):
 			initDir = "."
-		wfile = tkf.asksaveasfile(defaultextension=".csv",
+		wfile = tkf.asksaveasfilename(defaultextension=".csv",
 								parent=self.root,
 								initialdir=initDir,
 								title="Save Filtered Data")
