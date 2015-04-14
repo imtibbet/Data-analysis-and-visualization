@@ -22,6 +22,7 @@ import analysis
 from data import Data
 import dialog
 from view import View
+from photos import colors
 
 try: # astronomy research stuff, optional
 	from astropy.io import fits
@@ -64,7 +65,6 @@ class DisplayApp:
 		self.width = None
 		self.height = None
 		self.filename2data = {}
-		self.preDefineColors()
 		self.preDefineDistributions()
 		self.objects = {} # shapes drawn on canvas and their row in the data
 		self.root = tk.Tk()
@@ -80,6 +80,7 @@ class DisplayApp:
 		self.xLabel.set("X")
 		self.yLabel.set("Y")
 		self.zLabel.set("Z")
+		self.colors = ["blue","red","green","purple","yellow","orange","salmon","maroon","black","goldenrod"]
 
 		# set up the geometry for the window
 		self.root.geometry( "%dx%d+50+30" % (width, height) )
@@ -338,13 +339,13 @@ class DisplayApp:
 		row+=1
 
 		# make a size mode selector in the frame
-		colorModes = [
+		sizeModes = [
 			("Size By Data", "d"),
 			("Selected Size", "s")
 		]
 		self.sizeModeStr = tk.StringVar()
 		self.sizeModeStr.set("d") # initialize
-		for text, mode in colorModes:
+		for text, mode in sizeModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
 					variable=self.sizeModeStr, value=mode, command=self.update)
 			b.grid( row=row, columnspan=3 )
@@ -363,13 +364,13 @@ class DisplayApp:
 		row+=1
 
 		# make a shape mode selector in the frame
-		colorModes = [
+		shapeModes = [
 			("Shape By Data", "d"),
 			("Selected Shape", "s")
 		]
 		self.shapeModeStr = tk.StringVar()
 		self.shapeModeStr.set("d") # initialize
-		for text, mode in colorModes:
+		for text, mode in shapeModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
 					variable=self.shapeModeStr, value=mode, command=self.update)
 			b.grid( row=row, columnspan=3 )
@@ -391,27 +392,19 @@ class DisplayApp:
 
 		# make a color mode selector in the frame
 		colorModes = [
-			("Color By Data", "d"),
+			("Gradient Color", "g"),
+			("Discrete Color", "d"),
 			("Selected Color", "s")
 		]
 		self.colorModeStr = tk.StringVar()
-		self.colorModeStr.set("d") # initialize
-		self.colorMode = self.getColorByDepth
+		self.colorModeStr.set("g") # initialize
+		self.getColor = self.getColorGradient
 		for text, mode in colorModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
 							variable=self.colorModeStr, value=mode, 
 							command=self.setColorMode)
 			b.grid( row=row, columnspan=3 )
 			row+=1
-
-		# make a button for selecting predefined colors
-		self.colorRow = row
-		self.colorOption = tk.StringVar( self.root )
-		self.colorOption.set("Select Color")
-		self.colorMenu = tk.OptionMenu( self.rightcntlframe, self.colorOption, 
-					   *self.colors.keys(), command=self.update
-					   ).grid( row=row, columnspan=3 )
-		row+=1
 		
 		# use a label to set the size of the right panel
 		tk.Label( self.rightcntlframe, text="OR"
@@ -888,8 +881,8 @@ class DisplayApp:
 														x, y, dx, dy)
 			
 		if shapeFunc:
-			self.dataDepth = self.colorData[row, 0] # used for coloring
-			shape = shapeFunc(coords, fill=self.colorMode(), outline='')
+			shape = shapeFunc(coords, fill=self.getColor(self.colorData[row, 0]), 
+							outline='')
 			self.objects[shape] = row
 			self.updateNumObjStrVar()
 		else:
@@ -942,28 +935,39 @@ class DisplayApp:
 		self.processData()
 		self.update()
 	
-	def getColorByDepth(self):
+	def getColorCurrent(self, z=None):
+		'''
+		get the current color selected by the controls as hex string
+		'''
+		rgb = ("#%02x%02x%02x" % 
+			(int(self.redBand.get()), 
+			int(self.greenBand.get()), 
+			int(self.blueBand.get())))
+		if rgb in ["black", "#000000"]: rgb = "#000001" # FIXME black causes bad damage rectangle
+		return rgb
+	
+	def getColorDiscrete(self, z):
+		'''
+		get the discrete color selected by the controls as hex string
+		'''
+		z = max(min(z, 1.0), 0.0) # in case depth is not normalized
+		if len(np.unique(np.squeeze(np.asarray(self.colorData)))) <= len(self.colors):
+			rgb = self.colors[int(z*(len(self.colors)-1))]
+		else:
+			rgb = colors[int(z*(len(colors)-1))]
+		if rgb in ["black", "#000000"]: rgb = "#000001" # FIXME black causes bad damage rectangle
+		return rgb
+	
+	def getColorGradient(self, z):
 		'''
 		return the color according the given normalized z as hex string
 		'''
-		z = max(min(self.dataDepth, 1.0), 0.0) # in case depth is not normalized
+		z = max(min(z, 1.0), 0.0) # in case depth is not normalized
 		
 		rb = int(z * 255.0)
 		gb = 0
 		bb = 255 - int(z * 255.0)
 		return "#%02x%02x%02x" % (rb, gb, bb)
-	
-	def getCurrentColor(self):
-		'''
-		get the current color selected by the controls as hex string
-		'''
-		rgb = self.colors[self.colorOption.get()]
-		if not rgb: rgb = ("#%02x%02x%02x" % 
-							 (int(self.redBand.get()), 
-							  int(self.greenBand.get()), 
-							  int(self.blueBand.get())))
-		if rgb in ["black", "#000000"]: rgb = "#000001" # FIXME black causes bad damage rectangle
-		return rgb
 
 	def getCurrentPreset(self):
 		'''
@@ -1251,9 +1255,24 @@ class DisplayApp:
 		
 	def kmeansRun(self):
 		'''
-		
+		run kmeans clumping
 		'''
-		print("Kmeans not implemented.")
+		try:
+			curFilename = self.openFilenames.get(self.openFilenames.curselection())
+		except:
+			print("No open files")
+			return
+		data = self.filename2data[curFilename]
+		result = dialog.RunKmeans(self.root, data).result
+		if not result:
+			return
+		colName, k, colHeaders, categories = result
+		if self.verbose: print("running kmeans")
+		codebook, codes, errors = analysis.kmeans(data, colHeaders, k, categories)
+		if self.verbose: print("kmeans done")
+		if not colName:
+			colName = "-".join(["kmeans%d" % k] + [h[:2] for h in colHeaders])
+		data.add_column(colName, "NUMERIC", codes)
 		
 	def main(self):
 		'''
@@ -1372,14 +1391,12 @@ class DisplayApp:
 		result = dialog.RunPCA(self.root, data).result
 		if not result:
 			return
-		filename = result[0]
-		normBool = result[1]
-		colHeaders = result[2]
+		filename, normBool, colHeaders = result
+		if self.verbose: print("running pca")
 		pcaData = analysis.pca(data, colHeaders, normBool, self.verbose)
+		if self.verbose: print("pca done")
 		if not filename:
-			filename = curFilename + ":"
-			for header in colHeaders:
-				filename += header[0]
+			filename = "-".join(["pca", curFilename] + [h[:2] for h in colHeaders])
 		self.openFilesAppend(filename, pcaData)
 		
 	def pcaSave(self):
@@ -1448,19 +1465,6 @@ class DisplayApp:
 		else:
 			self.restoreState(state)
 			
-	def preDefineColors(self):
-		'''
-		define the colors for the color selector control, keys are displayed
-		'''
-		if self.verbose: print("defining initial colors")
-		self.colors = OrderedDict()
-		self.colors["Select Color"] = ""
-		self.colors["black"] = "black"
-		self.colors["blue"] = "blue"
-		self.colors["red"] = "red"
-		self.colors["green"] = "green"
-		self.colors["purple"] = "purple"
-		
 	def preDefineDistributions(self):
 		'''
 		define the distributions (see builtin random) for creating points
@@ -1687,9 +1691,11 @@ class DisplayApp:
 		'''
 		cmstr = self.colorModeStr.get()
 		if cmstr == "s":
-			self.colorMode = self.getCurrentColor
+			self.getColor = self.getColorCurrent
+		elif cmstr == "g":
+			self.getColor = self.getColorGradient
 		else:# cmstr == "d":
-			self.colorMode = self.getColorByDepth
+			self.getColor = self.getColorDiscrete
 		self.update()
 			
 	def setData(self):
@@ -1823,7 +1829,7 @@ class DisplayApp:
 			deplow = ((intercept+slope*indMin)-depMin)/(depMax-depMin)
 			dephigh = ((intercept+slope*indMax)-depMin)/(depMax-depMin)
 			
-			# the normalized endpoints are interpreted based on current view
+			# the d endpoints are interpreted based on current view
 			if curView == "XY" or not self.zLabel.get():
 				self.fitPoints = np.matrix([[indlow, deplow, 0, 1],
 											[indhigh, dephigh, 0, 1]])

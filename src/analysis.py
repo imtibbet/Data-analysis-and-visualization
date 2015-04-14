@@ -64,8 +64,8 @@ def kmeans(d, headers, K, whiten=True, categories=[]):
 	# assign to codebook, codes, errors, the result of calling kmeans_algorithm with W and codebook		
 	codebook, codes, errors = kmeans_algorithm(W, codebook)
 	# move means of clusters out of whitened data space
-	codebook *= np.std(A, axis=0)
-	codebook += np.mean(A, axis=0)
+	#codebook *= np.std(A, axis=0)
+	#codebook += np.mean(A, axis=0)
 	# return the codebook, codes, and representation error
 	return [codebook, codes, errors]
 

@@ -147,7 +147,8 @@ class Data:
 		'''
 		if not headers: headers = self.get_raw_headers()
 		data = self.get_raw_data(headers)
-		lines = [self.raw_headers, self.raw_types]
+		types = [self.raw_types[self.raw_headers.index(h)] for h in headers]
+		lines = [headers, types]
 		rows, cols = data.shape
 		for row in range(rows):
 			lines.append([])
@@ -222,15 +223,15 @@ class Data:
 		
 		self.matrix_data = np.matrix(self.matrix_data, np.float).T
 
-	def addColumn(self, newHeader, newType, newData):
+	def add_column(self, newHeader, newType, newData):
 		'''
 		adds a column to the data
 		'''
 		if len(newData) != self.raw_data.shape[0]:
 			print("wrong number of points")
 			return
-		self.raw_headers.append(newHeader)
-		self.raw_types.append(newType)
+		self.raw_headers.append(newHeader.upper())
+		self.raw_types.append(newType.upper())
 		self.header2raw[newHeader] = self.raw_data.shape[1]
 		self.raw_data = np.column_stack((self.raw_data, newData))
 		self.buildNumericData() # TODO, rebuilds numeric data from scratch
@@ -391,15 +392,14 @@ class PCAData(Data):
 		'''
 		return [header for header in self.projectedHeaders]
 			
-	def save(self, wfilename, headers=[], delimiter=","):
+	def save(self, wfilename, delimiter=","):
 		'''
 		saves this data to the given filename, assuming valid filename
 		'''
-		if not headers: headers = self.get_raw_headers()
-		data = self.get_raw_data(headers)
-		lines = [self.get_data_headers(), headers]
+		data = self.get_raw_data(self.get_headers())
+		lines = [self.get_data_headers(), self.get_headers(), self.get_raw_types()]
 		lines.append(["Means"])
-		lines.append(self.get_means().astype(str).tolist()[0])
+		lines.append(self.get_data_means().astype(str).tolist()[0])
 		lines.append(["Eigenvalues"])
 		lines.append(self.get_eigenvalues().astype(str).tolist()[0])
 		lines.append(["Eigenvectors"])

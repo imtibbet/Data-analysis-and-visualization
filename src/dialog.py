@@ -11,10 +11,11 @@ import matplotlib
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-try:
-	import tkinter as tk # python 3
-except ImportError:
-	import Tkinter as tk # python 2
+#try:
+#	import tkinter as tk # python 3
+#except ImportError:
+import Tkinter as tk # python 2
+import tkMessageBox as tkm
 
 # abstract super classes
 
@@ -529,6 +530,68 @@ class SetDataRanges(OkCancelDialog):
 			else:
 				self.result.append([newMins[i], newMaxs[i]])
 			
+class RunKmeans(OkCancelDialog):
+
+	def __init__(self, parent, data, title = None):
+		
+		self.headers = [h.upper() for h in data.get_headers()]
+		if len(self.headers) < 2:
+			self.result = None
+			return
+		self.data = data
+		OkCancelDialog.__init__(self, parent, title)
+		
+	def body(self, master):
+			
+		self.name = tk.StringVar()
+		self.name.set("")
+		tk.Entry(master, textvariable=self.name).pack(side=tk.TOP)
+		
+		tk.Label(master, text="Select Clumping Headers:").pack(side=tk.TOP)
+		self.e1 = tk.Listbox(master, selectmode=tk.EXTENDED, exportselection=0)
+		for header in self.headers:
+			self.e1.insert(tk.END, header.capitalize())
+		self.e1.select_set(0)
+		self.e1.pack(side=tk.TOP)
+		
+		tk.Button(master, text="Select All", width=10,
+				command=lambda: self.e1.select_set(0, tk.END)).pack(side=tk.TOP)
+		tk.Button(master, text="Select One", width=10,
+				command=lambda: self.e1.select_clear(1, tk.END)).pack(side=tk.TOP)
+				
+		tk.Label(master, text="Select Category Header (optional):").pack(side=tk.TOP)
+		self.e2 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
+		self.e2.insert(tk.END, "None")
+		for header in self.headers:
+			self.e2.insert(tk.END, header.capitalize())
+		self.e2.select_set(0)
+		self.e2.pack(side=tk.TOP)
+		
+		tk.Label(master, text="K value, if no category selected")
+		self.k = tk.StringVar()
+		self.k.set("2")
+		tk.Entry(master, textvariable=self.k).pack(side=tk.TOP)
+		
+		return None # initial focus
+
+	def apply(self):
+		self.result = [self.e1.get(sel) for sel in self.e1.curselection()]
+		self.result = [h.upper() for h in self.result]
+		catName = self.e2.get(self.e2.curselection()).upper()
+		strK = self.k.get()
+		if catName == "NONE" and not strK.isdigit():
+			tkm.showerror("K Error", "k is not a digit, cancelling")
+			self.result = None
+		else:
+			if catName == "NONE":
+				cat = []
+				k = int(strK)			
+			else:
+				cat = np.squeeze(np.asarray(self.data.get_data([catName])))
+				k = len(np.unique(cat))
+			tkm.showinfo("K value", "K = %d" % k)
+			self.result = [self.name.get(), k, self.result, cat]
+			
 class RunPCA(OkCancelDialog):
 
 	def __init__(self, parent, data, title = None):
@@ -541,9 +604,9 @@ class RunPCA(OkCancelDialog):
 		
 	def body(self, master):
 			
-		self.e0 = tk.StringVar()
-		self.e0.set("")
-		tk.Entry(master, textvariable=self.e0).pack(side=tk.TOP)
+		self.name = tk.StringVar()
+		self.name.set("")
+		tk.Entry(master, textvariable=self.name).pack(side=tk.TOP)
 		
 		tk.Label(master, text="Select Headers:").pack(side=tk.TOP)
 		self.e1 = tk.Listbox(master, selectmode=tk.EXTENDED, exportselection=0)
@@ -566,7 +629,7 @@ class RunPCA(OkCancelDialog):
 	def apply(self):
 		self.result = [self.e1.get(sel) for sel in self.e1.curselection()]
 		self.result = [h.upper() for h in self.result]
-		self.result = [self.e0.get(), self.normalize.get(), self.result]
+		self.result = [self.name.get(), self.normalize.get(), self.result]
 			
 class ShowPCA(OkDialog):
 
