@@ -411,22 +411,28 @@ class GetAtBatID(OkCancelDialog):
 		OkCancelDialog.__init__(self, parent, title)
 		
 	def body(self, master):
+		self.dict = {}
+		A = self.data.get_raw_data(self.data.get_raw_headers())
+		
+		ab_id_index = self.data.header2raw["AB_ID"]
+		pitcher_index = self.data.header2raw["PITCHER"]
+		batter_index = self.data.header2raw["BATTER"]
+		event_index = self.data.header2raw["EVENT"]
+
+	
 	
 		tk.Label(master, text="Select At-Bat ID:").pack(side=tk.TOP)
-		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
+		tk.Label(master, text=("%20s"%"Pitcher") + ("%20s"%"Hitter") +  ("%20s"%"Event") + ("%20s"%"ID")).pack(side=tk.TOP)
+
+		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0, width = 70)
 		#Get At Bat IDS
 		
-		self.dict = {}
-		A = self.data.get_data(self.data.get_headers())
-		
-		ab_id_index = self.data.header2matrix["AB_ID"]
-		pitcher_index = self.data.header2matrix["PITCHER"]
-		result_index = self.data.header2matrix["RESULT"]
 
 		
 		for row in A:
-			string = row[0, pitcher_index] + ": " + row[0, result_index][:20] + "... (" + row[0, ab_id_index] + ")"
-			self.dict[string] = row[0 , ab_id_index]		
+			string = (("%20s"%row[0, pitcher_index]) + ("%20s"%row[0, batter_index]) +  
+					 ("%20s"%" " + row[0, event_index]) + " (ID: " +row[0, ab_id_index] + ")")
+			self.dict[string] = float(row[0 , ab_id_index])	
 		
 		
 		#atbatids = np.unique(np.squeeze(np.asarray(self.data.get_data(["AB_ID"]))))
@@ -435,12 +441,12 @@ class GetAtBatID(OkCancelDialog):
 		for key in self.dict:
 			self.e1.insert(tk.END, key)
 		self.e1.select_set(0)
-		self.e1.pack(side=tk.TOP)
+		self.e1.pack(side=tk.TOP, padx = 10)
 		
 		
 		
 		#Ask for number of frames
-		tk.Label(master, text="Frames")
+		tk.Label(master, text="Frames").pack(side = tk.TOP)
 		self.k = tk.StringVar()
 		self.k.set("20")
 		tk.Entry(master, textvariable=self.k).pack(side=tk.TOP)
