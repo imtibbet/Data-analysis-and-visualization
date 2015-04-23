@@ -9,6 +9,7 @@ import analysis
 from datetime import datetime
 import numpy as np
 import matplotlib
+import tkFont
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -411,6 +412,8 @@ class GetAtBatID(OkCancelDialog):
 		OkCancelDialog.__init__(self, parent, title)
 		
 	def body(self, master):
+	
+		fixedfont = tkFont.Font(family="TkCaptionFont")
 		self.dict = {}
 		A = self.data.get_raw_data(self.data.get_raw_headers())
 		
@@ -422,16 +425,15 @@ class GetAtBatID(OkCancelDialog):
 	
 	
 		tk.Label(master, text="Select At-Bat ID:").pack(side=tk.TOP)
-		tk.Label(master, text=("%20s"%"Pitcher") + ("%20s"%"Hitter") +  ("%20s"%"Event") + ("%20s"%"ID")).pack(side=tk.TOP)
+		tk.Label(master, text=("%-35s"%"Pitcher") + ("%-35s"%"Hitter") +  ("%-35s"%"Event") + ("%-35s"%"ID")).pack(side=tk.TOP)
 
-		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0, width = 70)
+		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0, width = 70, font = fixedfont)
 		#Get At Bat IDS
 		
 
 		
 		for row in A:
-			string = (("%20s"%row[0, pitcher_index]) + ("%20s"%row[0, batter_index]) +  
-					 ("%20s"%" " + row[0, event_index]) + " (ID: " +row[0, ab_id_index] + ")")
+			string = (("%-30s"%row[0, pitcher_index][:28]) + ("%-30s"%row[0, batter_index][:28]) + ("%-30s"%row[0, event_index][:28])+("%-30s"%row[0, ab_id_index][:28]))
 			self.dict[string] = float(row[0 , ab_id_index])	
 		
 		
@@ -441,7 +443,7 @@ class GetAtBatID(OkCancelDialog):
 		for key in self.dict:
 			self.e1.insert(tk.END, key)
 		self.e1.select_set(0)
-		self.e1.pack(side=tk.TOP, padx = 10)
+		self.e1.pack(side=tk.TOP)
 		
 		
 		
