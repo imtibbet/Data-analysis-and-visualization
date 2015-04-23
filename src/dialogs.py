@@ -401,7 +401,7 @@ class FilterDataDialog(OkCancelDialog):
 				self.result.append([newMins[i], newMaxs[i]])
 
 
-class GetAtBatID(OkDialog):
+class GetAtBatID(OkCancelDialog):
 	"""
 	User select at bat to look at
 	"""
@@ -414,11 +414,10 @@ class GetAtBatID(OkDialog):
 	
 		tk.Label(master, text="Select At-Bat ID:").pack(side=tk.TOP)
 		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
-		self.e1.insert(tk.END, "None")
 		#Get At Bat IDS
-		atbatids = np.unique(self.data.get_data(["AB_ID"]))
+		atbatids = np.unique(np.squeeze(np.asarray(self.data.get_data(["AB_ID"]))))
 		for atbatid in atbatids:
-			self.e1.insert(tk.END, header.capitalize())
+			self.e1.insert(tk.END, atbatid)
 		self.e1.select_set(0)
 		self.e1.pack(side=tk.TOP)
 		

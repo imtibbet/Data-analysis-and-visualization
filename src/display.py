@@ -11,6 +11,7 @@ import random
 import types
 import os
 import numpy as np
+import math
 from scipy import stats
 import matplotlib
 matplotlib.use("TkAgg")
@@ -236,10 +237,10 @@ class DisplayApp:
 				   command=self.openData, width=10
 				   ).grid( row=row, columnspan=3 )
 		row+=1
-		self.openFilenames = tk.Listbox(self.rightcntlframe, selectmode=tk.SINGLE, 
+		self.odatas = tk.Listbox(self.rightcntlframe, selectmode=tk.SINGLE, 
 										exportselection=0, height=3)
-		self.openFilenames.bind("<Double-Button-1>", self.plotData)
-		self.openFilenames.grid( row=row, columnspan=3 )
+		self.odatas.bind("<Double-Button-1>", self.plotData)
+		self.odatas.grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a plot button in the frame
@@ -255,6 +256,12 @@ class DisplayApp:
 		row+=1
 		tk.Frame( self.rightcntlframe, height=2, bd=1, relief=tk.SUNKEN
 				  ).grid( row=row, columnspan=3, pady = 10, sticky=tk.EW)
+		row+=1
+
+		# make a get at bat button in the frame
+		tk.Button( self.rightcntlframe, text="Gen At Bat Data", 
+				   command=self.genAtBatData, width=10
+				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a plot button in the frame
@@ -774,7 +781,7 @@ class DisplayApp:
 		assumes selected filename is the open training data
 		'''
 		try:
-			curFilename = self.openFilenames.get(self.openFilenames.curselection())
+			curFilename = self.odatas.get(self.odatas.curselection())
 		except:
 			print("No open files")
 			return
@@ -932,6 +939,7 @@ class DisplayApp:
 		add the control selected shape to the canvas at x, y with cur color
 		row is used to get data determined shape, color, and size if enabled
 		'''
+		
 		dx = int(self.sizeOption.get()) # self.view.extent[0,0]
 		dy = int(self.sizeOption.get()) # self.view.extent[0,1]
 		if self.sizeModeStr.get() == "d":
@@ -1004,6 +1012,28 @@ class DisplayApp:
 		self.processData()
 		self.update()
 	
+		
+	def genAtBatData(self):
+		try:
+			curFilename = self.odatas.get(self.odatas.curselection())
+		except:
+			print("No open files")
+			return
+		data = self.filename2data[curFilename]
+		result = dialogs.GetAtBatID(self.root, data).result
+		if not result:
+			return
+		atBatID = result
+		atBatIDs = np.squeeze(np.asarray(data.get_data(["AB_ID"])))
+		atBatData = data.get_data(data.get_headers())[atBatIDs == atBatID]
+		print atBatData
+		return
+		newData = []
+		
+		for pitch in atBatData:
+			self.getCurve(frames, sx, sy, sz, ex, ey, ez, vx, vy, vz, ax, ay, az)
+		return
+	
 	def getColorCurrent(self, z=None):
 		'''
 		get the current color selected by the controls as hex string
@@ -1049,6 +1079,41 @@ class DisplayApp:
 			return "YZ"
 		else: # self.presetView.get() == presets[0]:
 			return "XZ"
+		
+	def getCurve(self, frames, sx, sy, sz, ex, ey, ez, vx, vy, vz, ax, ay, az):
+		'''
+		populate a new data object and add to odatas listbox
+		new data has pitch id, time step, x, y, and z
+		'''
+		# distance to plate
+		dy = sy - ey
+		# time to plate
+		qsqrt = math.sqrt(vy*vy - 2*ay*dy)
+		t = max( (-vy + qsqrt)/ay, (-vy - qsqrt)/ay )
+		def x(t):
+			return sx + vx*t + 0.5*ax*(t**2)
+		def y(t):
+			return sy + vy*t + 0.5*ay*(t**2)
+		def z(t):
+			return sz + vz*t + 0.5*az*(t**2)
+		
+		#Get velocity at time t
+		def vx(t):
+			return vx+t*ax
+		def vy(t):
+			return vy+t*ay
+		def vz(t):
+			return vz+t*az
+		
+		#Get speed at time t
+		def speed(t):
+			return math.sqrt(vx(t)**2 + vy(t)**2 +vz(t)**2)
+		
+		# sample the curve, making x and y coordinate lists
+		results = []
+		for ct in range(0, t, t/frames):
+			results.append([ct, speed(ct), x(ct), y(ct), z(ct)])
+		return results
 	
 	def getPresets(self):
 		'''
@@ -1327,7 +1392,7 @@ class DisplayApp:
 		run kmeans clumping
 		'''
 		try:
-			curFilename = self.openFilenames.get(self.openFilenames.curselection())
+			curFilename = self.odatas.get(self.odatas.curselection())
 		except:
 			print("No open files")
 			return
@@ -1355,7 +1420,7 @@ class DisplayApp:
 		Run a multiple linear regression
 		'''
 		try:
-			curFilename = self.openFilenames.get(self.openFilenames.curselection())
+			curFilename = self.odatas.get(self.odatas.curselection())
 		except:
 			print("No open files")
 			return
@@ -1401,28 +1466,28 @@ class DisplayApp:
 		append to the listbox displaying open filenames
 		'''
 		self.filename2data[filename] = data
-		self.openFilenames.delete(0, tk.END)
+		self.odatas.delete(0, tk.END)
 		selIndex = tk.END
 		for i, fname in enumerate(self.filename2data):
 			if fname == filename:
 				selIndex = i
-			self.openFilenames.insert(tk.END, fname)
-		self.openFilenames.select_set(selIndex)
+			self.odatas.insert(tk.END, fname)
+		self.odatas.select_set(selIndex)
 
 	def openFilesDelete(self):
 		'''
 		delete selected item from the listbox displaying open filenames
 		'''
 		try:
-			selIndex = self.openFilenames.curselection()
+			selIndex = self.odatas.curselection()
 		except:
 			print("No open files")
 			return
-		fn = self.openFilenames.get(selIndex)
-		self.openFilenames.delete(selIndex)
+		fn = self.odatas.get(selIndex)
+		self.odatas.delete(selIndex)
 		del self.filename2data[fn]
 		try:
-			self.openFilenames.select_set(0)
+			self.odatas.select_set(0)
 		except:
 			pass
 
@@ -1431,7 +1496,7 @@ class DisplayApp:
 		rename selected item from the listbox displaying open filenames
 		'''
 		try:
-			filename = self.openFilenames.get(self.openFilenames.curselection())
+			filename = self.odatas.get(self.odatas.curselection())
 		except:
 			print("No open files")
 			return
@@ -1442,20 +1507,20 @@ class DisplayApp:
 			return
 		self.filename2data[newfn] = self.filename2data[filename]
 		del(self.filename2data[filename])
-		self.openFilenames.delete(0, tk.END)
+		self.odatas.delete(0, tk.END)
 		selIndex = tk.END
 		for i, fname in enumerate(self.filename2data):
 			if fname == newfn:
 				selIndex = i
-			self.openFilenames.insert(tk.END, fname)
-		self.openFilenames.select_set(selIndex)
+			self.odatas.insert(tk.END, fname)
+		self.odatas.select_set(selIndex)
 		
 	def pcaRun(self):
 		'''
 		perform a pca analysis
 		'''
 		try:
-			curFilename = self.openFilenames.get(self.openFilenames.curselection())
+			curFilename = self.odatas.get(self.odatas.curselection())
 		except:
 			print("No open files")
 			return
@@ -1476,7 +1541,7 @@ class DisplayApp:
 		save the selected pca to a file	
 		'''
 		try:
-			filename = self.openFilenames.get(self.openFilenames.curselection())
+			filename = self.odatas.get(self.odatas.curselection())
 		except:
 			tkm.showerror("No Selected Data", "Select opened data to save")
 			return
@@ -1501,7 +1566,7 @@ class DisplayApp:
 		show a pca analysis
 		'''
 		try:
-			curFilename = self.openFilenames.get(self.openFilenames.curselection())
+			curFilename = self.odatas.get(self.odatas.curselection())
 		except:
 			print("No open files")
 			return
@@ -1527,7 +1592,7 @@ class DisplayApp:
 		'''
 		state = self.captureState()
 		try:
-			self.filename = self.openFilenames.get(self.openFilenames.curselection())
+			self.filename = self.odatas.get(self.odatas.curselection())
 		except:
 			print("No open files")
 			return
