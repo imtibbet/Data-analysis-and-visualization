@@ -335,7 +335,7 @@ class DistributionDialog(OkCancelDialog):
 	def apply(self):
 		x = self.e1.get(self.e1.curselection())
 		y = self.e2.get(self.e2.curselection())
-		z = self.e2.get(self.e3.curselection())
+		z = self.e3.get(self.e3.curselection())
 		self.result = [x.upper(), y.upper(), z.upper()]
 		
 		
@@ -399,6 +399,36 @@ class FilterDataDialog(OkCancelDialog):
 				break
 			else:
 				self.result.append([newMins[i], newMaxs[i]])
+
+
+class GetAtBatID(OkDialog):
+	"""
+	User select at bat to look at
+	"""
+	def __init__(self, parent, data, title = None):
+		
+		self.data = data
+		OkCancelDialog.__init__(self, parent, title)
+		
+	def body(self, master):
+	
+		tk.Label(master, text="Select At-Bat ID:").pack(side=tk.TOP)
+		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
+		self.e1.insert(tk.END, "None")
+		#Get At Bat IDS
+		atbatids = np.unique(self.data.get_data(["AB_ID"]))
+		for atbatid in atbatids:
+			self.e1.insert(tk.END, header.capitalize())
+		self.e1.select_set(0)
+		self.e1.pack(side=tk.TOP)
+		
+		return None # initial focus
+	
+	def apply(self):
+		self.result = self.e1.get(self.e1.curselection())	
+	
+	
+
 			
 class MatPlotLibDialog(OkDialog):
 	
