@@ -1,3 +1,4 @@
+#dialog
 header='''
 Ian Tibbetts
 Colby College CS251 Spring '15
@@ -188,7 +189,67 @@ class BindingsDialog(OkDialog):
 			tk.Label(master, text=k, relief=tk.GROOVE, width=20
 					 ).grid(row=row, column=0)
 			tk.Label(master, text=bd).grid(row=row, column=1)
+			
+class ClassifyDialog(OkCancelDialog):
 
+	def __init__(self, parent, data, filename2data, title = None):
+		
+		self.headers = [h.upper() for h in data.get_headers()]
+		if len(self.headers) < 2:
+			self.result = None
+			return
+		self.data = data
+		self.filename2data = filename2data
+		OkCancelDialog.__init__(self, parent, title)
+		
+	def body(self, master):
+		
+		tk.Label(master, text="Select Classifying Headers:").pack(side=tk.TOP)
+		self.e1 = tk.Listbox(master, selectmode=tk.EXTENDED, exportselection=0)
+		for header in self.headers:
+			self.e1.insert(tk.END, header.capitalize())
+		self.e1.select_set(0)
+		self.e1.pack(side=tk.TOP)
+		
+		tk.Button(master, text="Select All", width=10,
+				command=lambda: self.e1.select_set(0, tk.END)).pack(side=tk.TOP)
+		tk.Button(master, text="Select One", width=10,
+				command=lambda: self.e1.select_clear(1, tk.END)).pack(side=tk.TOP)
+				
+		tk.Label(master, text="(Optional) Select Category Header:").pack(side=tk.TOP)
+		self.e2 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
+		self.e2.insert(tk.END, "None")
+		for header in self.headers:
+			self.e2.insert(tk.END, header.capitalize())
+		self.e2.select_set(0)
+		self.e2.pack(side=tk.TOP)
+		
+		tk.Label(master, text="(Optional) Choose the test data object").pack(side=tk.TOP)
+		self.e3 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
+		self.e3.insert(tk.END, "None")
+		for openDataName in self.filename2data:
+			self.e3.insert(tk.END, openDataName)
+		self.e3.select_set(0)
+		self.e3.pack(side=tk.TOP)
+
+		self.kbool = tk.BooleanVar()
+		tk.Checkbutton(master, text = "KNN Classify?", variable=self.kbool
+					).pack(side=tk.TOP)
+		tk.Label(master, text="K value, optional for KNN")
+		self.k = tk.StringVar()
+		self.k.set("")
+		tk.Entry(master, textvariable=self.k).pack(side=tk.TOP)
+		
+		return None # initial focus
+
+	def apply(self):
+		self.result = [self.e1.get(sel) for sel in self.e1.curselection()]
+		self.result = [h.upper() for h in self.result]
+		catName = self.e2.get(self.e2.curselection()).upper()
+		fname = self.e3.get(self.e3.curselection())
+		dtest = self.filename2data[fname] if fname != "None" else None
+		self.result = [dtest, catName, self.result, self.kbool.get(), self.k.get()]
+			
 class ColorMakerDialog(OkCancelDialog):
 		
 	def body(self, master):

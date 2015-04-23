@@ -8,6 +8,7 @@ from data import PCAData
 import numpy as np
 import scipy.cluster.vq as vq
 import random
+import classifiers
 
 def appendHomogeneous(m):
 	'''
@@ -46,7 +47,7 @@ def fuzzyPartitionToClusters(points, partition, m):
 		clusters[j] = curAvg
 	return clusters
 
-def kmeans(d, headers, K, whiten=True, categories=[]):
+def kmeans(d, headers=[], K=2, whiten=True, categories=[]):
 	'''Takes in a Data object, a set of headers, and the number of clusters to create
 	Computes and returns the codebook, codes and representation errors. 
 	If given an Nx1 matrix of categories, it uses the category labels 
@@ -58,14 +59,15 @@ def kmeans(d, headers, K, whiten=True, categories=[]):
 	except: # to allow passing just the matrix of the data
 		A = d
 	# Assign to W the result of calling vq.whiten on the data
-	W = vq.whiten(A)
+	W = vq.whiten(A) if whiten else A
 	# assign to codebook the result of calling kmeans_init with W, K, and categories
 	codebook = kmeans_init(W, K, categories)
 	# assign to codebook, codes, errors, the result of calling kmeans_algorithm with W and codebook		
 	codebook, codes, errors = kmeans_algorithm(W, codebook)
-	# move means of clusters out of whitened data space
-	#codebook *= np.std(A, axis=0)
-	#codebook += np.mean(A, axis=0)
+	# if whitening, move means of clusters out of whitened data space
+	if whiten: 
+		ostd = np.std(A, axis=0).T
+		for mean in codebook: mean *= ostd
 	# return the codebook, codes, and representation error
 	return [codebook, codes, errors]
 
@@ -139,7 +141,7 @@ def kmeans_init( d, K, categories=[] ):
 		means = data[random.sample(xrange(rows), K)]
 	return means
 
-def kmeans_numpy( d, headers, K, whiten=True, categories=[]):
+def kmeans_numpy( d, headers=[], K=2, whiten=True, categories=[]):
 	'''
 	Takes in a Data object, a set of headers, and the number of clusters to create
 	Computes and returns the codebook, codes, and representation error.
@@ -355,5 +357,5 @@ if __name__ == '__main__':
 					[ 0.8,  0.2]])
 	print("")
 	print(fuzzyPartitionToClusters(d, w, 2))
-	#print(kmeans_numpy(d, [], 2)[0])
+	print(kmeans(d, [], 2)[0])
 	

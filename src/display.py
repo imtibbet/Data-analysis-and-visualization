@@ -19,8 +19,9 @@ import matplotlib.image as image
 
 # defined by me for this project
 import analysis
+import classifiers
 from data import Data
-import dialog
+import dialogs
 from view import View
 from photos import colors
 
@@ -128,7 +129,7 @@ class DisplayApp:
 		self.buildAxes()
 		
 		if filename:
-			try: # handle error caused by exiting application with dialog open
+			try: # handle error caused by exiting application with dialogs open
 				self.setData()
 				self.update()
 			except tk.TclError:
@@ -517,7 +518,8 @@ class DisplayApp:
 						[['Run PCA', self.pcaRun],
 						 ['Show PCA', self.pcaShow],
 						 ['Save PCA', self.pcaSave],
-						 ['Run Kmeans', self.kmeansRun]
+						 ['Run Kmeans', self.kmeansRun],
+						 ['Classify', self.classify]
 						 ]])
 
 		# create another menu for color
@@ -752,7 +754,7 @@ class DisplayApp:
 			headers = self.headers[:2]
 		else:
 			headers = self.headers[:3]
-		newRanges = dialog.SetDataRanges(self.root, self.data, 
+		newRanges = dialogs.SetDataRanges(self.root, self.data, 
 										self.manualDataRanges, headers,
 										"Set Data Ranges").result
 		if self.verbose: print("changing ranges: %s" % newRanges)
@@ -765,6 +767,73 @@ class DisplayApp:
 		# TODO: self.excludeData(newRanges) would eliminate data outside new range
 		self.processData()
 		self.update()
+		
+	def classify(self):
+		'''
+		present a dialog for running classification
+		assumes selected filename is the open training data
+		'''
+		try:
+			curFilename = self.openFilenames.get(self.openFilenames.curselection())
+		except:
+			print("No open files")
+			return
+		dtrain = self.filename2data[curFilename]
+		result = dialogs.ClassifyDialog(self.root, dtrain, self.filename2data).result
+		if not result:
+			return
+		dtest, classHeader, headers, knnbool, k = result
+		try:
+			k = int(k)
+		except:
+			k = None
+		testNotOpened = dtest == None
+		noClassHeader = classHeader.upper() == "NONE"
+		initDir = "../csv"
+		if not os.path.isdir(initDir):
+			initDir = "."
+		if noClassHeader:
+			# get a filename for the test category data
+			filename = tkf.askopenfilename(parent=self.root, 
+										title='Choose a training categories file', 
+										initialdir=initDir,
+										filetypes=[("All Files","*"),
+												("Data files", "*.csv")])
+			if not filename:
+				return
+			traincats = Data(filename)
+			dtrain.add_column(traincats.get_raw_headers()[0], 
+							traincats.get_raw_types()[0], 
+							traincats.raw_data[:, 0])
+			classHeader = traincats.get_raw_headers()[0]
+		if testNotOpened:
+			# get a filename for the training data
+			fndtest = tkf.askopenfilename(parent=self.root, 
+										title='Choose a testing data file', 
+										initialdir=initDir,
+										filetypes=[("All Files","*"),
+												("Data files", "*.csv")])
+			if not fndtest:
+				return
+			dtest = Data(fndtest)
+		if classHeader not in dtest.get_raw_headers():
+			# get a filename for the test category data
+			filename = tkf.askopenfilename(parent=self.root, 
+										title='Choose a testing categories file', 
+										initialdir=initDir,
+										filetypes=[("All Files","*"),
+												("Data files", "*.csv")])
+			if filename:
+				testcats = Data(filename)
+				dtest.add_column(testcats.get_raw_headers()[0], 
+								testcats.get_raw_types()[0], 
+								testcats.raw_data[:, 0])
+
+		classes = classifiers.classify(dtrain, dtest, classHeader, headers, knnbool, k)
+		colName = "Classifications_"
+		colName += "k="+str(k) if knnbool else "NB"
+		dtest.add_column(colName, "NUMERIC", classes)
+		if testNotOpened: self.openFilesAppend(fndtest.split("/")[-1], dtest)
 		
 	def clearData(self, event=None):
 		'''
@@ -830,33 +899,33 @@ class DisplayApp:
 		
 	def displayAboutApp(self, event=None):
 		'''
-		display the application about dialog
+		display the application about dialogs
 		'''
-		dialog.AboutAppDialog(self.root, title="About Application")
+		dialogs.AboutAppDialog(self.root, title="About Application")
 
 	def displayAboutMe(self, event=None):
 		'''
-		display the author about dialog
+		display the author about dialogs
 		'''
-		dialog.AboutMeDialog(self.root, title="About Me")
+		dialogs.AboutMeDialog(self.root, title="About Me")
 
 	def displayAboutSteph(self, event=None):
 		'''
-		display the Stephanie about dialog
+		display the Stephanie about dialogs
 		'''
-		dialog.AboutStephDialog(self.root, title="About Stephanie Taylor")
+		dialogs.AboutStephDialog(self.root, title="About Stephanie Taylor")
 
 	def displayAboutBruce(self, event=None):
 		'''
-		display the Bruce about dialog
+		display the Bruce about dialogs
 		'''
-		dialog.AboutBruceDialog(self.root, title="About Bruce Maxwell")
+		dialogs.AboutBruceDialog(self.root, title="About Bruce Maxwell")
 
 	def displayBindings(self, event=None):
 		'''
-		display the Key Bindings about dialog
+		display the Key Bindings about dialogs
 		'''
-		dialog.BindingsDialog(self.root, title="Key Bindings")
+		dialogs.BindingsDialog(self.root, title="Key Bindings")
 	
 	def drawObject(self, x, y, row=0):
 		'''
@@ -925,7 +994,7 @@ class DisplayApp:
 		if not self.data:
 			tkm.showerror("No Data", "No data to filter")
 			return
-		newRanges = dialog.FilterDataDialog(self.root, self.data, 
+		newRanges = dialogs.FilterDataDialog(self.root, self.data, 
 										title="Filter Data").result
 		if self.verbose: print("filtering: %s" % newRanges)
 		if not newRanges:
@@ -1057,7 +1126,7 @@ class DisplayApp:
 		returns user selected color as hex string of band values
 		'''
 		if self.verbose: print("creating a new color")
-		#d = dialog.ColorMakerDialog(self.root, title="Create New Color")
+		#d = dialogs.ColorMakerDialog(self.root, title="Create New Color")
 		result = askcolor()
 		if result[0]:
 			(rb, gb, bb) = result[0]
@@ -1251,7 +1320,7 @@ class DisplayApp:
 			cb = plt.colorbar(orientation='horizontal')#ticks=range(scale+1), 
 			cb.set_label("log10($pixel*10^"+str(scale)+"+1$)")
 		
-		dialog.MatPlotLibDialog(self.root, fig, filename.split("/")[-1])
+		dialogs.MatPlotLibDialog(self.root, fig, filename.split("/")[-1])
 		
 	def kmeansRun(self):
 		'''
@@ -1263,7 +1332,7 @@ class DisplayApp:
 			print("No open files")
 			return
 		data = self.filename2data[curFilename]
-		result = dialog.RunKmeans(self.root, data).result
+		result = dialogs.RunKmeans(self.root, data).result
 		if not result:
 			return
 		colName, k, colHeaders, categories = result
@@ -1292,7 +1361,7 @@ class DisplayApp:
 			return
 		data = self.filename2data[curFilename]
 		if self.verbose: print("running multiple linear regression")
-		headers = dialog.MultiLinearRegression(self.root, data,
+		headers = dialogs.MultiLinearRegression(self.root, data,
 										title="Pick Regression Axes").result
 		if not headers:
 			return
@@ -1307,7 +1376,7 @@ class DisplayApp:
 		
 	def openData(self, event=None):
 		'''
-		open a dialog for picking data file and read into field
+		open a dialogs for picking data file and read into field
 		'''
 		initDir = "../csv"
 		if not os.path.isdir(initDir):
@@ -1345,10 +1414,13 @@ class DisplayApp:
 		delete selected item from the listbox displaying open filenames
 		'''
 		try:
-			self.openFilenames.delete(self.openFilenames.curselection())
+			selIndex = self.openFilenames.curselection()
 		except:
 			print("No open files")
 			return
+		fn = self.openFilenames.get(selIndex)
+		self.openFilenames.delete(selIndex)
+		del self.filename2data[fn]
 		try:
 			self.openFilenames.select_set(0)
 		except:
@@ -1388,7 +1460,7 @@ class DisplayApp:
 			print("No open files")
 			return
 		data = self.filename2data[curFilename]
-		result = dialog.RunPCA(self.root, data).result
+		result = dialogs.RunPCA(self.root, data).result
 		if not result:
 			return
 		filename, normBool, colHeaders = result
@@ -1433,15 +1505,15 @@ class DisplayApp:
 		except:
 			print("No open files")
 			return
-		dialog.ShowPCA(self.root, self.filename2data[curFilename])
+		dialogs.ShowPCA(self.root, self.filename2data[curFilename])
 		
 	def pickDataAxes(self, event=None):
 		'''
 		pick the data axesPts and update the displayed data
 		'''
-		self.headers = dialog.PickAxesDialog(self.root, self.data, self.headers,
+		self.headers = dialogs.PickAxesDialog(self.root, self.data, self.headers,
 											title="Pick Data Axes").result
-		if not self.headers: # if the user cancels the dialog, abort
+		if not self.headers: # if the user cancels the dialogs, abort
 			self.data = None
 		else: # sets the active data and normalize it
 			self.manualDataRanges = {}
@@ -1680,7 +1752,7 @@ class DisplayApp:
 		sets the canvas color according to a user selected color
 		'''
 		if self.verbose: print("setting canvas color")
-		#d = dialog.ColorMakerDialog(self.root, title="Create New Color")
+		#d = dialogs.ColorMakerDialog(self.root, title="Create New Color")
 		result = askcolor()
 		if result[0]:
 			self.canvas.itemconfig(self.canvasBG, fill=result[1])
@@ -1734,7 +1806,7 @@ class DisplayApp:
 				plt.hist(xvalues)
 				plt.ylabel(ylabel)
 			plt.xlabel(xlabel)
-			dialog.MatPlotLibDialog(self.root, fig, title)
+			dialogs.MatPlotLibDialog(self.root, fig, title)
 			return
 
 		# for more than one column, get headers from the user
@@ -1765,11 +1837,11 @@ class DisplayApp:
 		
 	def setDistribution(self, event=None):
 		'''
-		select the distribution using the dialog and update status
+		select the distribution using the dialogs and update status
 		'''
 		if self.verbose: print("setting a new distribution")
 		[xDistribution, yDistribution, zDistribution] = \
-			dialog.DistributionDialog(self.root, 
+			dialogs.DistributionDialog(self.root, 
 							   self.xDistribution.get(), 
 							   self.yDistribution.get(), 
 							   self.zDistribution.get(), 

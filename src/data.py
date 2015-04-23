@@ -45,7 +45,7 @@ class Data:
 			dialect.delimiter = delimiter
 			reader = csv.reader(lines, dialect=dialect)
 		except:
-			if self.verbose: print("File not found, assuming input is list of lists of data")
+			print("File not found, assuming input is list of lists of data")
 			reader = filename
 			
 		# process given data to populate fields
@@ -227,6 +227,7 @@ class Data:
 		'''
 		adds a column to the data
 		'''
+		newData = np.squeeze(np.asarray(newData))
 		if len(newData) != self.raw_data.shape[0]:
 			print("wrong number of points")
 			return
