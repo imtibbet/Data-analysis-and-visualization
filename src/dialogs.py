@@ -415,16 +415,40 @@ class GetAtBatID(OkCancelDialog):
 		tk.Label(master, text="Select At-Bat ID:").pack(side=tk.TOP)
 		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
 		#Get At Bat IDS
-		atbatids = np.unique(np.squeeze(np.asarray(self.data.get_data(["AB_ID"]))))
-		for atbatid in atbatids:
-			self.e1.insert(tk.END, atbatid)
+		
+		self.dict = {}
+		A = self.data.get_data(self.data.get_headers())
+		
+		ab_id_index = self.data.header2matrix("AB_ID")
+		pitcher_index = self.data.header2matrix("PITCHER")
+		result_index = self.data.header2matrix("RESULT")
+
+		
+		for row in A:
+			string = row[0, pitcher_index] + ": " + row[0, result_index][:20] + "... (" + row[0, ab_id_index] + ")"
+			self.dict[string] = row[0 , ab_id_index]		
+		
+		
+		#atbatids = np.unique(np.squeeze(np.asarray(self.data.get_data(["AB_ID"]))))
+		
+		
+		for key in self.dict:
+			self.e1.insert(tk.END, key)
 		self.e1.select_set(0)
 		self.e1.pack(side=tk.TOP)
+		
+		
+		
+		#Ask for number of frames
+		tk.Label(master, text="Frames")
+		self.k = tk.StringVar()
+		self.k.set("20")
+		tk.Entry(master, textvariable=self.k).pack(side=tk.TOP)
 		
 		return None # initial focus
 	
 	def apply(self):
-		self.result = self.e1.get(self.e1.curselection())	
+		self.result = [self.dict[self.e1.get(self.e1.curselection())], self.k.get()]
 	
 	
 
