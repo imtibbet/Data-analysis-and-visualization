@@ -1019,20 +1019,42 @@ class DisplayApp:
 		except:
 			print("No open files")
 			return
+		print("getting at bat data")
 		data = self.filename2data[curFilename]
 		result = dialogs.GetAtBatID(self.root, data).result
 		if not result:
 			return
-		atBatID = result
+		[atBatID, numFrames] = result
+		try:
+			numFrames = float(numFrames)
+		except:
+			numFrames = 20.0
 		atBatIDs = np.squeeze(np.asarray(data.get_data(["AB_ID"])))
 		atBatData = data.get_data(data.get_headers())[atBatIDs == atBatID]
-		print atBatData
-		return
-		newData = []
-		
+		sx = data.header2matrix["XSTART"]
+		sy = data.header2matrix["YSTART"]
+		sz = data.header2matrix["ZSTART"]
+		ex = data.header2matrix["XEND"]
+		ey = data.header2matrix["YEND"]
+		ez = data.header2matrix["ZEND"]
+		vx = data.header2matrix["XVEL"]
+		vy = data.header2matrix["YVEL"]
+		vz = data.header2matrix["ZVEL"]
+		ax = data.header2matrix["XACC"]
+		ay = data.header2matrix["YACC"]
+		az = data.header2matrix["ZACC"]
+		newData = [["TS", "SPEED", "X", "Y", "Z"] + data.get_headers(), 
+				["NUMERIC"]*5 + data.get_types()]
 		for pitch in atBatData:
-			self.getCurve(frames, sx, sy, sz, ex, ey, ez, vx, vy, vz, ax, ay, az)
-		return
+			frames = self.getCurve(numFrames, 
+						pitch[0, sx], pitch[0, sy], pitch[0, sz], 
+						pitch[0, ex], pitch[0, ey], pitch[0, ez], 
+						pitch[0, vx], pitch[0, vy], pitch[0, vz], 
+						pitch[0, ax], pitch[0, ay], pitch[0, az])
+			for frame in frames:
+				newData.append(pitch.tolist()[0] + frame)
+		fn = "ab:"+str(atBatID)
+		self.openFilesAppend(fn, Data(newData, verbose=self.verbose))			
 	
 	def getColorCurrent(self, z=None):
 		'''
@@ -1082,37 +1104,36 @@ class DisplayApp:
 		
 	def getCurve(self, frames, sx, sy, sz, ex, ey, ez, vx, vy, vz, ax, ay, az):
 		'''
-		populate a new data object and add to odatas listbox
-		new data has pitch id, time step, x, y, and z
+		return a list of frames with time, speed, x, y, and z for each of the frames
 		'''
 		# distance to plate
 		dy = sy - ey
 		# time to plate
 		qsqrt = math.sqrt(vy*vy - 2*ay*dy)
-		t = max( (-vy + qsqrt)/ay, (-vy - qsqrt)/ay )
-		def x(t):
+		t = min( (-vy + qsqrt)/ay, (-vy - qsqrt)/ay )
+		def _x(t):
 			return sx + vx*t + 0.5*ax*(t**2)
-		def y(t):
+		def _y(t):
 			return sy + vy*t + 0.5*ay*(t**2)
-		def z(t):
+		def _z(t):
 			return sz + vz*t + 0.5*az*(t**2)
 		
 		#Get velocity at time t
-		def vx(t):
+		def _vx(t):
 			return vx+t*ax
-		def vy(t):
+		def _vy(t):
 			return vy+t*ay
-		def vz(t):
+		def _vz(t):
 			return vz+t*az
 		
 		#Get speed at time t
-		def speed(t):
-			return math.sqrt(vx(t)**2 + vy(t)**2 +vz(t)**2)
+		def _speed(t):
+			return math.sqrt(_vx(t)**2 + _vy(t)**2 +_vz(t)**2)
 		
 		# sample the curve, making x and y coordinate lists
 		results = []
-		for ct in range(0, t, t/frames):
-			results.append([ct, speed(ct), x(ct), y(ct), z(ct)])
+		for ct in np.arange(0, t, t/frames):
+			results.append([ct, _speed(ct), _x(ct), _y(ct), _z(ct)])
 		return results
 	
 	def getPresets(self):

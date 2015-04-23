@@ -182,6 +182,7 @@ class Data:
 		# reset numeric fields
 		self.matrix_data = [] # use Python list temporarily
 		self.numeric_headers = []
+		self.numeric_types = []
 		self.header2matrix = {}
 		self.enum2value = {}
 		if self.verbose: print("building numeric data")
@@ -192,6 +193,7 @@ class Data:
 			if rawType in ["NUMERIC", "ENUM", "DATE"]:
 				rawHeader = self.raw_headers[colIndex]
 				self.numeric_headers.append(rawHeader)
+				self.numeric_types.append(rawType)
 				self.header2matrix[rawHeader] = rawColIndex
 				rawColIndex += 1
 				
@@ -284,6 +286,12 @@ class Data:
 		return list of headers of columns with numeric data
 		'''
 		return self.numeric_headers
+	
+	def get_types(self):
+		'''
+		return list of types of columns with numeric data
+		'''
+		return self.numeric_types
 	
 	def get_num_columns(self):
 		'''
