@@ -419,9 +419,9 @@ class GetAtBatID(OkCancelDialog):
 		self.dict = {}
 		A = self.data.get_data(self.data.get_headers())
 		
-		ab_id_index = self.data.header2matrix("AB_ID")
-		pitcher_index = self.data.header2matrix("PITCHER")
-		result_index = self.data.header2matrix("RESULT")
+		ab_id_index = self.data.header2matrix["AB_ID"]
+		pitcher_index = self.data.header2matrix["PITCHER"]
+		result_index = self.data.header2matrix["RESULT"]
 
 		
 		for row in A:
