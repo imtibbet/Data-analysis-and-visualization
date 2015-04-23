@@ -1,7 +1,8 @@
 '''
-Ian Tibbetts
+Ian "DAPPER" Tibbetts and Daniel "D-Train" Meyer
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
+
 '''
 from scipy import stats
 from data import PCAData
