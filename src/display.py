@@ -1,5 +1,5 @@
 '''
-Ian Tibbetts
+Ian Tibbetts and Daniel Meyer
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 '''
@@ -245,13 +245,13 @@ class DisplayApp:
 
 		# make a plot button in the frame
 		tk.Button( self.rightcntlframe, text="Plot", 
-				   command=self.plotData, width=5
+				   command=self.plotData, width=6
 				   ).grid( row=row, column=0 )
 		tk.Button( self.rightcntlframe, text="Delete", 
-				   command=self.openFilesDelete, width=5
+				   command=self.openFilesDelete, width=6
 				   ).grid( row=row, column=1 )
 		tk.Button( self.rightcntlframe, text="Rename", 
-				   command=self.openFilesRename, width=5
+				   command=self.openFilesRename, width=6
 				   ).grid( row=row, column=2 )
 		row+=1
 		tk.Frame( self.rightcntlframe, height=2, bd=1, relief=tk.SUNKEN
@@ -260,49 +260,49 @@ class DisplayApp:
 
 		# make a get at bat button in the frame
 		tk.Button( self.rightcntlframe, text="Gen At Bat Data", 
-				   command=self.genAtBatData, width=10
+				   command=self.genAtBatData, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a plot button in the frame
 		tk.Button( self.rightcntlframe, text="Change Axes", 
-				   command=self.changeDataAxes, width=10
+				   command=self.changeDataAxes, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a plot button in the frame
 		tk.Button( self.rightcntlframe, text="Change Ranges", 
-				   command=self.changeRanges, width=10
+				   command=self.changeRanges, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 		
 		# make a filter button in the frame
 		tk.Button( self.rightcntlframe, text="Filter", 
-				   command=self.filterData, width=10
+				   command=self.filterData, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a save button in the frame
 		tk.Button( self.rightcntlframe, text="Save Displayed", 
-				   command=self.saveData, width=10
+				   command=self.saveData, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a save button in the frame
 		tk.Button( self.rightcntlframe, text="Save Canvas", 
-				   command=self.saveCanvas, width=10
+				   command=self.saveCanvas, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a clear button in the frame
 		tk.Button( self.rightcntlframe, text="Clear", 
-				   command=self.clearData, width=10
+				   command=self.clearData, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a clear button in the frame
 		tk.Button( self.rightcntlframe, text="Reset", 
-				   command=self.resetView, width=10
+				   command=self.resetView, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 		
@@ -352,7 +352,7 @@ class DisplayApp:
 			("Selected Size", "s")
 		]
 		self.sizeModeStr = tk.StringVar()
-		self.sizeModeStr.set("d") # initialize
+		self.sizeModeStr.set("s") # initialize
 		for text, mode in sizeModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
 					variable=self.sizeModeStr, value=mode, command=self.update)
@@ -377,7 +377,7 @@ class DisplayApp:
 			("Selected Shape", "s")
 		]
 		self.shapeModeStr = tk.StringVar()
-		self.shapeModeStr.set("d") # initialize
+		self.shapeModeStr.set("s") # initialize
 		for text, mode in shapeModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
 					variable=self.shapeModeStr, value=mode, command=self.update)
@@ -453,9 +453,11 @@ class DisplayApp:
 		# prepare to transform the active data to the current view
 		VTM = self.view.build()
 		viewData = self.normalizedData.copy()
-		
+
 		# transform into view
 		viewData = (VTM * viewData.T).T
+		
+
 
 		# order so that closer objects draw last
 		zIndicesSorted = np.argsort(viewData[:, 2].T.tolist()[0])
@@ -1043,8 +1045,8 @@ class DisplayApp:
 		ax = data.header2matrix["XACC"]
 		ay = data.header2matrix["YACC"]
 		az = data.header2matrix["ZACC"]
-		newData = [["TS", "SPEED", "X", "Y", "Z"] + data.get_headers(), 
-				["NUMERIC"]*5 + data.get_types()]
+		newData = [["X", "Y", "Z", "TS", "SPEED"] + data.get_headers() , 
+				  ["NUMERIC"]*5 + data.get_types()]
 		for pitch in atBatData:
 			frames = self.getCurve(numFrames, 
 						pitch[0, sx], pitch[0, sy], pitch[0, sz], 
@@ -1052,7 +1054,7 @@ class DisplayApp:
 						pitch[0, vx], pitch[0, vy], pitch[0, vz], 
 						pitch[0, ax], pitch[0, ay], pitch[0, az])
 			for frame in frames:
-				newData.append(pitch.tolist()[0] + frame)
+				newData.append(frame + pitch.tolist()[0])
 		fn = "ab:"+str(atBatID)
 		self.openFilesAppend(fn, Data(newData, verbose=self.verbose))			
 	
@@ -1133,7 +1135,7 @@ class DisplayApp:
 		# sample the curve, making x and y coordinate lists
 		results = []
 		for ct in np.arange(0, t, t/frames):
-			results.append([ct, _speed(ct), _x(ct), _y(ct), _z(ct)])
+			results.append([_x(ct), _y(ct), _z(ct), ct, _speed(ct)])
 		return results
 	
 	def getPresets(self):
@@ -1237,6 +1239,8 @@ class DisplayApp:
 		'''
 		if self.verbose: print('handle button 1: %d %d' % (event.x, event.y))
 		self.baseClick = [event.x, event.y]
+		self.baseExtent = self.view.extent.copy()
+
 
 	def handleButton2(self, event):
 		'''
@@ -1244,6 +1248,7 @@ class DisplayApp:
 		'''
 		if self.verbose: print('handle button 2: %d %d' % (event.x, event.y))
 		self.baseClick = [event.x, event.y]
+		self.baseExtent = self.view.extent.copy()
 		self.baseView = self.view.clone()
 
 	def handleButton3(self, event):
@@ -1654,13 +1659,14 @@ class DisplayApp:
 		'''
 		use the data instance field to set active data fields
 		'''
-		# normalize the data and set the fields
-		forceRanges = [self.manualDataRanges[header] 
-					if header in self.manualDataRanges else [] 
-					for header in self.headers]
-		self.normalizedData = analysis.normalize_columns_separately(self.data, 
-																self.headers,
-																forceRanges)
+			
+		#sike its not normalized			
+		self.normalizedData = self.data.get_data(self.headers)	
+		
+		data_ranges = analysis.data_range(self.data, self.headers)
+		
+		self.view.extent = [data_ranges[0][1] - data_ranges[0][0], data_ranges[1][1] - data_ranges[1][0], data_ranges[2][1] - data_ranges[2][0]] 
+				
 		self.shapeData = self.normalizedData[:, -1]
 		self.shapeField.set(self.headers[-1])
 		self.colorData = self.normalizedData[:, -2]
@@ -1819,6 +1825,7 @@ class DisplayApp:
 		self.canvas.bind( '<Control-B1-Motion>', self.handleButton2Motion ) # same as B2-Motion
 		self.canvas.bind( '<B2-Motion>', self.handleButton2Motion )
 		self.canvas.bind( '<B3-Motion>', self.handleButton3Motion )
+		self.canvas.bind( '<Shift-B1-Motion>', self.handleButton3Motion )
 		self.canvas.bind( '<Control-Shift-Button-1>', self.handleDelete )
 		self.canvas.bind( '<Motion>', self.handleShowData )
 		self.canvas.bind( '<Configure>', self.updateScreen ) # resizing canvas
