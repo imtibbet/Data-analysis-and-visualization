@@ -62,7 +62,7 @@ class DisplayApp:
 		self.delimiter = ","
 		self.headers = None
 		self.filteredData = None
-		self.normalizedData = None
+		self.numericData = None
 		self.manualDataRanges = {}
 		self.width = None
 		self.height = None
@@ -83,7 +83,12 @@ class DisplayApp:
 		self.yLabel.set("Y")
 		self.zLabel.set("Z")
 		self.colors = ["blue","red","green","purple","yellow","orange","salmon","maroon","black","goldenrod"]
-
+		self.minx = 0.25
+		self.maxx = 0.75
+		self.miny = 0
+		self.maxy = 1
+		self.minz = 0.25
+		self.maxz = 0.75
 		# set up the geometry for the window
 		self.root.geometry( "%dx%d+50+30" % (width, height) )
 		
@@ -91,7 +96,7 @@ class DisplayApp:
 		# PICKUP: Plotting by Ingenious Computer Kid in an Undergraduate Program
 		# PLAD: Plotting and Analysis of Data
 		# DAPPER: Data Analysis and Plotting for Producing/Portraying Exceptional Results
-		self.root.title("DAPPER") # TODO: better name
+		self.root.title("DAPPER")
 		# set the maximum size of the window for resizing
 		self.root.maxsize( 1600, 900 )
 		
@@ -127,6 +132,9 @@ class DisplayApp:
 		self.height = self.canvas.winfo_height()
 		
 		# build the axesPts
+		self.view = View(offset=[self.width*0.15, self.height*0.15],
+							screen=[self.width*0.7, self.height*0.7])
+		self.baseView = self.view.clone() # in case b2 motion happens without click
 		self.buildAxes()
 		
 		if filename:
@@ -135,20 +143,18 @@ class DisplayApp:
 				self.update()
 			except tk.TclError:
 				exit()
+		self.resetView()
 
-	def buildAxes(self, axes=[[0,0,0],[1,0,0],
-							  [0,0,0],[0,1,0],
-							  [0,0,0],[0,0,1]]):
+	def buildAxes(self):
 		'''
 		builds the view transformation matrix [VTM], 
 		multiplies the axis endpoints by the VTM, 
 		then creates three new line objects, one for each axis
 		Note: only called once by __init__, then updateAxes used
 		'''
-		if self.verbose: print("building the axesPts")
-		self.view = View(offset=[self.width*0.15, self.height*0.15],
-							screen=[self.width*0.7, self.height*0.7])
-		self.baseView = self.view.clone() # in case b2 motion happens without click
+		axes=[[self.minx,0,self.minz],[self.maxx,0,self.minz],
+			 [0,self.miny,0],[0,self.maxy,0],
+			 [self.minz,0,self.minz],[self.minx,0,self.maxz]]
 		
 		# set up the fields for holding normalized locations of axes objects
 		self.axesPts = np.asmatrix(axes, dtype=np.float)
@@ -156,7 +162,7 @@ class DisplayApp:
 		self.numTicks = 5
 		self.ticksMarksPts = []
 		self.ticksLabelsPts = []
-		for i in range(3):
+		for i in range(len(axes)):
 			low = self.axesPts[2*i] 
 			high = self.axesPts[2*i+1]
 			self.axesLabelsPts.append(high.copy())
@@ -188,19 +194,39 @@ class DisplayApp:
 		axesLabelsPts = (VTM * self.axesLabelsPts.T).T
 		ticksMarksPts = (VTM * self.ticksMarksPts.T).T
 		ticksLabelsPts = (VTM * self.ticksLabelsPts.T).T
+		try:
+			for axis in self.axes:
+				self.canvas.delete(axis)
+			for axisLabel in self.axesLabels:
+				self.canvas.delete(axisLabel)
+			for tickMark in self.ticksMarks:
+				self.canvas.delete(tickMark)
+			for tickLabel in self.ticksLabels:
+				self.canvas.delete(tickLabel)
+		except:
+			pass
 		self.axes = []
 		self.axesLabels = []
 		self.ticksMarks = []
 		self.ticksLabels = []
 		labelVars = [self.xLabel, self.yLabel, self.zLabel]
-		for i in range(3):
+		try:
+			ranges = analysis.data_range(self.data, self.headers[:3])
+			mins = [r[0] for r in ranges]
+			maxs = [r[1] for r in ranges]
+			mins[1] = min(0, mins[1])
+		except:
+			mins = [self.minx, self.miny, self.minz]
+			maxs = [self.maxx, self.maxy, self.maxz]
+		for i in range(len(axes)):
+			if i != 1: continue
 			self.axes.append(self.canvas.create_line(
 				axesPts[2*i, 0], axesPts[2*i, 1], 
 				axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
 			self.axesLabels.append(self.canvas.create_text(
 				axesLabelsPts[i, 0], axesLabelsPts[i, 1], 
 				font=("Purina", 10), text=labelVars[i].get()))
-			for j in range(self.numTicks):
+			for j in range(self.numTicks):	
 				self.ticksMarks.append(self.canvas.create_line(
 					ticksMarksPts[self.numTicks*2*i + 2*j, 0], 
 					ticksMarksPts[self.numTicks*2*i + 2*j, 1], 
@@ -210,7 +236,7 @@ class DisplayApp:
 					ticksLabelsPts[self.numTicks*i + j, 0], 
 					ticksLabelsPts[self.numTicks*i + j, 1], 
 					font=("Purina", 8), 
-					text=""))#str(self.numTicks*i + j)))
+					text="%.1f" % (mins[i]+j*(maxs[i]-mins[i])/float(self.numTicks-1))))
 			
 	def buildControlsFrame(self):
 		'''
@@ -309,9 +335,9 @@ class DisplayApp:
 		presets = self.getPresets()
 		self.zLabel.trace("w", self.updatePresets)
 		self.presetView = tk.StringVar()
-		self.presetView.set(presets[0])
+		self.presetView.set(presets[-1])
 		self.presetControl = tk.OptionMenu( self.rightcntlframe, self.presetView, 
-									*presets, command=self.resetViewOrientation)
+									*presets, command=self.resetView)
 		self.presetControlRow = row
 		self.presetControl.grid( row=self.presetControlRow, columnspan=3 )
 		row+=1
@@ -337,7 +363,7 @@ class DisplayApp:
 		
 		# disable ticks
 		tk.Checkbutton( self.rightcntlframe, text="Enable Ticks",
-					variable=self.enableTicks, command=self.updateAxes
+					variable=self.enableTicks, command=self.buildAxes
 					   ).grid( row=row, columnspan=3 )
 		row+=1
 		
@@ -438,7 +464,7 @@ class DisplayApp:
 					   *range(256)).grid( row=row, column=2 )
 		row+=1
 		
-	def buildData(self): 
+	def buildData(self, animate=False): 
 		'''
 		build the data on the screen based on the data and filename fields
 		Note: this method is the only one that transforms and draws data
@@ -452,27 +478,28 @@ class DisplayApp:
 		
 		# prepare to transform the active data to the current view
 		VTM = self.view.build()
-		viewData = self.normalizedData.copy()
+		viewData = self.numericData.copy()
 
 		# transform into view
 		viewData = (VTM * viewData.T).T
 		
-
-
-		# order so that closer objects draw last
-		zIndicesSorted = np.argsort(viewData[:, 2].T.tolist()[0])
+		indices = (range(viewData.shap[0]) if animate else
+				# order so that closer objects draw last
+				np.argsort(viewData[:, 2].T.tolist()[0]))
 		
-		# transform sorted data to view and draw on canvas
-		for row in zIndicesSorted:
+		# draw all objects
+		for row in indices:
 			x, y = [viewData[row, col] for col in range(2)]
 			self.drawObject(x, y, row=row)
-			
-			# line plotting, currently ordered according to csv
-			nextRow = row + 1
-			if self.linePlot.get() and nextRow < len(zIndicesSorted):
-				xh, yh = [viewData[nextRow, col] for col in range(2)]
-				line = self.canvas.create_line(x, y, xh, yh)
-				self.dataLines.append(line)
+			if animate: 
+				self.saveCanvas(self.filename + ("%3d" % row))
+			else:
+				# line plotting, currently ordered according to csv
+				nextRow = row + 1
+				if self.linePlot.get() and nextRow < len(indices):
+					xh, yh = [viewData[nextRow, col] for col in range(2)]
+					line = self.canvas.create_line(x, y, xh, yh)
+					self.dataLines.append(line)
 
 	def buildMenus(self):
 		'''
@@ -610,7 +637,7 @@ class DisplayApp:
 		optionsmenu.add_checkbutton(label="Line Plot", variable=self.linePlot)
 		optionsmenu.add_checkbutton(label="Enable Tick Marks", 
 								variable=self.enableTicks,
-								command=self.updateAxes)
+								command=self.buildAxes)
 		
 	def buildStatusFrame(self):
 		'''
@@ -728,11 +755,30 @@ class DisplayApp:
 				 ).grid(row=2, column=cols)
 		cols+=1
 	
+	def buildStrikeZone(self):
+		'''
+		draw the strike zone
+		'''
+		axes = [[self.minx,0,self.minz],[self.minx,0,self.maxz],
+				[self.minx,0,self.maxz],[self.maxx,0,self.maxz],
+				[self.maxx,0,self.maxz],[self.maxx,0,self.minz],
+				[self.maxx,0,self.minz],[self.minx,0,self.minz]]
+		axesPts = np.asmatrix(axes, dtype=np.float)
+		axesPts = analysis.appendHomogeneous(axesPts)
+		VTM = self.view.build()
+		axesPts = (VTM * axesPts.T).T
+		try:
+			for axis in self.zone:
+				self.canvas.delete(axis)
+		except:
+			self.zone = []
+		
+			
 	def captureState(self):
 		'''
 		return the current state of the application's data as a dictionary
 		'''
-		return {"normalized":self.normalizedData,
+		return {"normalized":self.numericData,
 				"filtered":self.filteredData,
 				"filename":self.filename,
 				"headers":self.headers,
@@ -864,7 +910,7 @@ class DisplayApp:
 		self.sizeField.set("")
 		self.shapeField.set("")
 		self.removeFit()
-		self.updateAxes()
+		self.buildAxes()
 	
 	def clearObjects(self):
 		'''
@@ -1287,7 +1333,7 @@ class DisplayApp:
 		# calculate the differential motion
 		[dx, dy] = [ event.x - self.baseClick[0], event.y - self.baseClick[1] ]
 		# rotate the view
-		rotSpeed = 0.5
+		rotSpeed = 0.1
 		self.view = self.baseView.clone()
 		self.view.rotateVRC(-rotSpeed*dx, rotSpeed*dy)
 		self.update()
@@ -1659,29 +1705,51 @@ class DisplayApp:
 		'''
 		use the data instance field to set active data fields
 		'''
+		
+		# numeric data and ranges based on used selected data and headers
+		try:
+			self.numericData = \
+					analysis.normalize_columns_together(self.data, 
+										self.headers[:3]+["SZ_TOP", "SZ_BOT"])
+		except:
+			self.numericData = \
+					analysis.normalize_columns_together(self.data, self.headers[:3])
+		self.numericData = np.hstack((self.numericData, 
+				analysis.normalize_columns_separately(self.data, self.headers[-3:])))
 			
-		#sike its not normalized			
-		self.normalizedData = self.data.get_data(self.headers)	
+		#rangex, rangey, rangez = analysis.data_range(self.data, self.headers)[:3]
+		miny, maxy = np.min(self.numericData[:,1]), np.max(self.numericData[:,1])
+		minz, maxz = np.min(self.numericData[:,4]), np.max(self.numericData[:,3])
+		minx, maxx = minz, maxz #np.min(self.numericData[:,0]), np.max(self.numericData[:,0])
+		print minz
+		print maxz
+		self.minx = minx
+		self.miny = min(0,miny)
+		self.minz = minz
+		self.maxx = maxx
+		self.maxy = maxy
+		self.maxz = maxz
 		
-		data_ranges = analysis.data_range(self.data, self.headers)
-		
-		self.view.extent = [data_ranges[0][1] - data_ranges[0][0], data_ranges[1][1] - data_ranges[1][0], data_ranges[2][1] - data_ranges[2][0]] 
+		# use the ranges to change the axes and the view
+		self.buildAxes()
+		#TODO: want to see all the data
+		#self.view.extent = [maxx-minx, maxy-miny, maxz-minz] 
 				
-		self.shapeData = self.normalizedData[:, -1]
+		self.shapeData = self.numericData[:, -1]
 		self.shapeField.set(self.headers[-1])
-		self.colorData = self.normalizedData[:, -2]
+		self.colorData = self.numericData[:, -2]
 		self.colorField.set(self.headers[-2])
-		self.sizeData = self.normalizedData[:, -3]
+		self.sizeData = self.numericData[:, -3]
 		self.sizeField.set(self.headers[-3])
 		self.xLabel.set(self.headers[0].capitalize())
 		self.yLabel.set(self.headers[1].capitalize())
-		[rows, cols] = self.normalizedData.shape
+		[rows, cols] = self.numericData.shape
 		if cols < 6: # pad missing z data
-			self.normalizedData = np.column_stack((self.normalizedData[:, :2], 
+			self.numericData = np.column_stack((self.numericData[:, :2], 
 												np.zeros(rows), np.ones(rows)))
 			self.zLabel.set("")
 		else: # pad the homogeneous coordinate
-			self.normalizedData = np.column_stack((self.normalizedData[:, :3], 
+			self.numericData = np.column_stack((self.numericData[:, :3], 
 												np.ones(rows)))
 			self.zLabel.set(self.headers[2].capitalize())
 		
@@ -1728,11 +1796,15 @@ class DisplayApp:
 		'''
 		set the view to the specified preset, including zoom reset
 		'''
+		preset = self.getCurrentPreset()
 		curView = self.view.clone()
 		self.view.reset() # return to default view
 		self.view.offset = curView.offset.copy()
 		self.view.screen = curView.screen.copy()
-		self.presetView.set(self.getPresets()[0])
+		if preset == "XZ":
+			self.view.rotateVRC(0, 90)
+		elif preset == "YZ":
+			self.view.rotateVRC(90, 90)
 		self.update()
 		
 	def restoreState(self, state):
@@ -1743,19 +1815,20 @@ class DisplayApp:
 		self.headers = state["headers"]
 		self.filename = state["filename"]
 		self.filteredData = state["filtered"]
-		self.normalizedData = state["normalized"]
+		self.numericData = state["normalized"]
 		
-	def saveCanvas(self, event=None):
+	def saveCanvas(self, filename=""):
 		'''
 		saves the canvas to a postscript file
 		'''
-		initDir = "../images"
-		if not os.path.isdir(initDir):
-			initDir = ".."
-		filename = tkf.asksaveasfilename(defaultextension=".ps",
-										parent=self.root,
-										initialdir=initDir,
-										title="Save Displayed Data")
+		if not filename:
+			initDir = "../images"
+			if not os.path.isdir(initDir):
+				initDir = ".."
+			filename = tkf.asksaveasfilename(defaultextension=".ps",
+											parent=self.root,
+											initialdir=initDir,
+											title="Save Displayed Data")
 		if not filename:
 			return
 		self.canvas.postscript(file=filename, colormode='color')
@@ -2019,8 +2092,8 @@ class DisplayApp:
 		'''
 		update the objects on the canvas with the current vtm 
 		'''
+		self.buildAxes()
 		self.buildData()
-		self.updateAxes()
 
 	def updateAxes(self):
 		'''
@@ -2078,8 +2151,8 @@ class DisplayApp:
 						tickVal = ""
 				self.canvas.itemconfig( curTick, state=tickstate )
 				self.canvas.itemconfig( curLabel, text=tickVal )
-		self.canvas.itemconfig(self.axes[2], state=zstate)
-		self.canvas.itemconfig(self.axesLabels[2], state=zstate)
+		#self.canvas.itemconfig(self.axes[2], state=zstate)
+		#self.canvas.itemconfig(self.axesLabels[2], state=zstate)
 			
 	def updateNumObjStrVar(self):
 		'''
@@ -2093,7 +2166,7 @@ class DisplayApp:
 		update the control for the presets to have current options
 		'''
 		presets = self.getPresets()
-		self.presetView.set(presets[0])
+		self.presetView.set(presets[-1])
 		self.presetControl.destroy()
 		#if len(presets) > 1: # can disable preset option if 2D
 		self.presetControl = tk.OptionMenu( self.rightcntlframe, self.presetView, 
