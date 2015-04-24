@@ -84,12 +84,8 @@ class DisplayApp:
 		self.yLabel.set("Y")
 		self.zLabel.set("Z")
 		self.colors = ["blue","red","green","purple","yellow","orange","salmon","maroon","black","goldenrod"]
-		self.zoneLeft = 0.25
-		self.zoneRight = 0.75
 		self.minx = self.miny = self.minz = 0
 		self.maxx = self.maxy = self.maxz = 1
-		self.zoneBot = 0.25
-		self.zoneTop = 0.75
 		# set up the geometry for the window
 		self.root.geometry( "%dx%d+50+30" % (width, height) )
 		
@@ -239,10 +235,7 @@ class DisplayApp:
 					text="%.1f" % (mins[i]+j*(maxs[i]-mins[i])/float(self.numTicks-1))))
 				
 		if self.data:
-			self.buildStrikeZone()	
-		#except:
-		#	print sys.exc_info()
-		#	print("couldn't build strike zone")
+			self.buildStrikeZone()
 			
 	def buildControlsFrame(self):
 		'''
@@ -772,10 +765,14 @@ class DisplayApp:
 		axesPts = np.asmatrix(axes, dtype=np.float)
 		axesPts = analysis.appendHomogeneous(axesPts)
 		front = axesPts.copy()
-		front[:, 1].fill(self.zoneBack), 
+		front[:, 1].fill(self.zoneFront)
 		back = axesPts.copy()
-		back[:, 1].fill(self.zoneFront)
+		back[:, 1].fill(self.zoneBack)
 		axesPts = np.vstack((front, back))
+		for i in range(0, 8, 2):
+			print i
+			axesPts = np.vstack((axesPts, axesPts[i]))
+			axesPts = np.vstack((axesPts, axesPts[i+8]))
 		VTM = self.view.build()
 		axesPts = (VTM * axesPts.T).T
 		try:
@@ -783,7 +780,7 @@ class DisplayApp:
 				self.canvas.delete(axis)
 		except:
 			self.zone = []
-		for i in range(4):
+		for i in range(axesPts.shape[0]/2):
 			self.zone.append(self.canvas.create_line(
 				axesPts[2*i, 0], axesPts[2*i, 1], 
 				axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
