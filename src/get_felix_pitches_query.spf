@@ -87,6 +87,893 @@ p.end_speed,
 
 p.sz_top,
 p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "477132"
+ORDER BY g.game_id, ab.ab_id, p.pitch_id
+LIMIT 1000</string>
+			<key>table</key>
+			<string>atbats</string>
+			<key>view</key>
+			<string>SP_VIEW_CUSTOMQUERY</string>
+			<key>windowVerticalDividerPosition</key>
+			<real>202</real>
+		</dict>
+	</dict>
+	<key>encrypted</key>
+	<false/>
+	<key>format</key>
+	<string>connection</string>
+	<key>queryFavorites</key>
+	<array/>
+	<key>queryHistory</key>
+	<array>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "547973"
+ORDER BY g.game_id, ab.ab_id, p.pitch_id
+LIMIT 1000</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "518886"  OR ab.pitcher = "547973"
+ORDER BY g.game_id, ab.ab_id
+LIMIT 1000</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "518886"  OR ab.pitcher = "547973"
+ORDER BY g.game_id ab.ab_id
+LIMIT 1000</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "518886"  OR ab.pitcher = "547973"
+ORDER BY ab.ab_id
+LIMIT 1000</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "518886"  OR ab.pitcher = "547973"
+ORDER BY p.start_speed
+LIMIT 1000</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "518886"  OR ab.pitcher = "547973"
+LIMIT 1000
+ORDER BY p.start_speed</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "518886"  OR ab.pitcher = "547973"
+LIMIT 1000
+ORDER BY p1.eliasid</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "518886"  OR ab.pitcher = "547973"
+LIMIT 1000
+ORDER BY ab.batter</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "518886"  OR ab.pitcher = "547973"
+LIMIT 1000
+ORDER BY p.batter</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "518886"  OR ab.pitcher = "547973"
+LIMIT 1000
+ORDER BY BatterID</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "518886"  OR ab.pitcher = "547973"
+LIMIT 1000
+ORDER BatterID</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "518886"  OR ab.pitcher = "547973"
+LIMIT 1000
+ORDER_BY BatterID</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "433587"  OR ab.pitcher = "547973"
+LIMIT 1000</string>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+-1 as sz_left,
+1 as sz_right,
+0 as sz_back,
+1 as sz_front,
 
 p.pfx_x as xmove,
 p.pfx_z as zmove,
@@ -123,22 +1010,63 @@ WHERE SUBSTR(g.date, 1,4) = 2014
 AND p.px is not null
 AND ab.pitcher = "433587" 
 LIMIT 1000</string>
-			<key>table</key>
-			<string>atbats</string>
-			<key>view</key>
-			<string>SP_VIEW_CUSTOMQUERY</string>
-			<key>windowVerticalDividerPosition</key>
-			<real>202</real>
-		</dict>
-	</dict>
-	<key>encrypted</key>
-	<false/>
-	<key>format</key>
-	<string>connection</string>
-	<key>queryFavorites</key>
-	<array/>
-	<key>queryHistory</key>
-	<array>
+		<string>Select 
+CONCAT(p2.first, " ", p2.last) AS Pitcher, 
+ab.pitcher AS PitcherID,
+CONCAT(p1.first, " ", p1.last) AS Batter, 
+ab.batter AS BatterID,
+ab.stand as hitside,
+g.game_id as game_id,
+ab.ab_id as ab_id,
+p.pitch_id as pitch_id,
+
+p.des, 
+ab.des as result,
+ab.event as event,
+p.pitch_type,
+p.type as called,
+
+p.start_speed,
+p.end_speed,
+
+p.sz_top,
+p.sz_bot,
+
+p.pfx_x as xmove,
+p.pfx_z as zmove,
+p.break_length,
+
+p.px as xend,
+p.pz as zend,
+0 as yend,
+
+p.x0 as xstart,
+p.y0 as ystart,
+p.z0 as zstart, 
+
+p.vx0 as xvel,
+p.vy0 as yvel,
+p.vz0 as zvel,
+
+p.ax as xacc,
+p.ay as yacc,
+p.az as zacc
+
+
+
+From games g
+LEFT JOIN atbats ab
+ON g.game_id = ab.game_id
+LEFT JOIN pitches p 
+ON p.ab_id = ab.ab_id
+JOIN Players p1
+ON batter = p1.eliasid
+JOIN Players_Copy p2
+ON pitcher = p2.eliasid
+WHERE SUBSTR(g.date, 1,4) = 2014 
+AND p.px is not null
+AND ab.pitcher = "433587" 
+LIMIT 1000</string>
 		<string>Select 
 CONCAT(p2.first, " ", p2.last) AS Pitcher, 
 ab.pitcher AS PitcherID,
@@ -415,824 +1343,6 @@ ON pitcher = p2.eliasid
 WHERE SUBSTR(g.date, 1,4) = 2014 
 AND ab.pitcher = "433587" 
 AND ab.ab_id = "1541665"
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 
-AND ab.pitcher = "433587" 
-AND p.pitch_type = "CU"
-
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 
-AND ab.pitcher = "433587" 
-AND p.pitch_type = "CU"
-AND ab.batter= "433587"
-
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 
-AND ab.pitcher = "433587" 
-
-
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 
-AND ab.pitcher = "433587" 
-AND ab.batter = "18944"
-
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 
-AND ab.pitcher = "433587" 
-AND p.batter = "18944"
-
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 AND ab.pitcher = "433587" AND ab.ab_id = "1441909"
-
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 AND ab.pitcher = "433587" AND ab.batter = "18944" #ab.ab_id = "1441909"
-
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 AND ab.pitcher = "433587" AND ab.batter = "18944"
-
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 AND ab.pitcher = "433587" 
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 AND ab.pitcher = "433587" AND ab.batter = "18944" 
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 AND ab.pitcher = "433587" AND ab.batter = "18944" AND ab.ab_id = "1441909"
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 AND ab.pitcher = "433587" AND ab.batter = "18944" AND abid = "1441909"
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 AND ab.pitcher = "433587"  
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 AND ab.pitcher = "477132"  
-LIMIT 1000</string>
-		<string>Select 
-CONCAT(p2.first, " ", p2.last) AS Pitcher, 
-ab.pitcher AS PitcherID,
-CONCAT(p1.first, " ", p1.last) AS Batter, 
-ab.batter AS BatterID,
-ab.stand as hitside,
-g.game_id as gid,
-ab.ab_id as abid,
-
-p.des, 
-ab.des as result,
-p.pitch_type,
-p.type as called,
-
-p.start_speed,
-p.end_speed,
-
-p.sz_top,
-p.sz_bot,
-
-p.pfx_x as xmove,
-p.pfx_z as zmove,
-p.break_length,
-
-p.px as xend,
-p.pz as zend,
-0 as yend,
-
-p.x0 as xstart,
-p.y0 as ystart,
-p.z0 as zstart, 
-
-p.px0 as xrel,
-p.pz0 as zrel,
-p.py0 as yrel,
-
-p.vx0 as xvel,
-p.vy0 as yvel,
-p.vz0 as zvel,
-
-p.ax as xacc,
-p.ay as yacc,
-p.az as zacc
-
-
-
-From games g
-LEFT JOIN atbats ab
-ON g.game_id = ab.game_id
-LEFT JOIN pitches p 
-ON p.ab_id = ab.ab_id
-JOIN Players p1
-ON batter = p1.eliasid
-JOIN Players_Copy p2
-ON pitcher = p2.eliasid
-WHERE SUBSTR(g.date, 1,4) = 2014 AND ab.pitcher = "477132"  
 LIMIT 1000</string>
 	</array>
 	<key>rdbms_type</key>
