@@ -10,6 +10,7 @@ from optparse import OptionParser
 import random
 import types
 import os
+import sys
 import numpy as np
 import math
 from scipy import stats
@@ -83,12 +84,12 @@ class DisplayApp:
 		self.yLabel.set("Y")
 		self.zLabel.set("Z")
 		self.colors = ["blue","red","green","purple","yellow","orange","salmon","maroon","black","goldenrod"]
-		self.minx = 0.25
-		self.maxx = 0.75
-		self.miny = 0
-		self.maxy = 1
-		self.minz = 0.25
-		self.maxz = 0.75
+		self.zoneLeft = 0.25
+		self.zoneRight = 0.75
+		self.minx = self.miny = self.minz = 0
+		self.maxx = self.maxy = self.maxz = 1
+		self.zoneBot = 0.25
+		self.zoneTop = 0.75
 		# set up the geometry for the window
 		self.root.geometry( "%dx%d+50+30" % (width, height) )
 		
@@ -152,9 +153,9 @@ class DisplayApp:
 		then creates three new line objects, one for each axis
 		Note: only called once by __init__, then updateAxes used
 		'''
-		axes=[[self.minx,0,self.minz],[self.maxx,0,self.minz],
-			 [0,self.miny,0],[0,self.maxy,0],
-			 [self.minz,0,self.minz],[self.minx,0,self.maxz]]
+		axes=[[self.minx,0,0],[self.maxx,0,0],
+			  [0,self.miny,0],[0,self.maxy,0],
+			  [0,0,self.minz],[0,0,self.maxz]]
 		
 		# set up the fields for holding normalized locations of axes objects
 		self.axesPts = np.asmatrix(axes, dtype=np.float)
@@ -214,7 +215,6 @@ class DisplayApp:
 			ranges = analysis.data_range(self.data, self.headers[:3])
 			mins = [r[0] for r in ranges]
 			maxs = [r[1] for r in ranges]
-			mins[1] = min(0, mins[1])
 		except:
 			mins = [self.minx, self.miny, self.minz]
 			maxs = [self.maxx, self.maxy, self.maxz]
@@ -237,6 +237,12 @@ class DisplayApp:
 					ticksLabelsPts[self.numTicks*i + j, 1], 
 					font=("Purina", 8), 
 					text="%.1f" % (mins[i]+j*(maxs[i]-mins[i])/float(self.numTicks-1))))
+				
+		if self.data:
+			self.buildStrikeZone()	
+		#except:
+		#	print sys.exc_info()
+		#	print("couldn't build strike zone")
 			
 	def buildControlsFrame(self):
 		'''
@@ -759,12 +765,17 @@ class DisplayApp:
 		'''
 		draw the strike zone
 		'''
-		axes = [[self.minx,0,self.minz],[self.minx,0,self.maxz],
-				[self.minx,0,self.maxz],[self.maxx,0,self.maxz],
-				[self.maxx,0,self.maxz],[self.maxx,0,self.minz],
-				[self.maxx,0,self.minz],[self.minx,0,self.minz]]
+		axes = [[self.zoneLeft,0,self.zoneBot],[self.zoneLeft,0,self.zoneTop],
+				[self.zoneLeft,0,self.zoneTop],[self.zoneRight,0,self.zoneTop],
+				[self.zoneRight,0,self.zoneTop],[self.zoneRight,0,self.zoneBot],
+				[self.zoneRight,0,self.zoneBot],[self.zoneLeft,0,self.zoneBot]]
 		axesPts = np.asmatrix(axes, dtype=np.float)
 		axesPts = analysis.appendHomogeneous(axesPts)
+		front = axesPts.copy()
+		front[:, 1].fill(self.zoneBack), 
+		back = axesPts.copy()
+		back[:, 1].fill(self.zoneFront)
+		axesPts = np.vstack((front, back))
 		VTM = self.view.build()
 		axesPts = (VTM * axesPts.T).T
 		try:
@@ -772,7 +783,10 @@ class DisplayApp:
 				self.canvas.delete(axis)
 		except:
 			self.zone = []
-		
+		for i in range(4):
+			self.zone.append(self.canvas.create_line(
+				axesPts[2*i, 0], axesPts[2*i, 1], 
+				axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
 			
 	def captureState(self):
 		'''
@@ -1074,9 +1088,10 @@ class DisplayApp:
 			return
 		[atBatID, numFrames] = result
 		try:
-			numFrames = float(numFrames)
+			numFrames = int(numFrames)
 		except:
-			numFrames = 20.0
+			print("invalid frames %s, using 20 instead" % numFrames)
+			numFrames = 20
 		atBatIDs = np.squeeze(np.asarray(data.get_data(["AB_ID"])))
 		atBatData = data.get_data(data.get_headers())[atBatIDs == atBatID]
 		sx = data.header2matrix["XSTART"]
@@ -1180,7 +1195,7 @@ class DisplayApp:
 		
 		# sample the curve, making x and y coordinate lists
 		results = []
-		for ct in np.arange(0, t, t/frames):
+		for ct in np.arange(0, t, t/float(frames)):
 			results.append([_x(ct), _y(ct), _z(ct), ct, _speed(ct)])
 		return results
 	
@@ -1710,7 +1725,7 @@ class DisplayApp:
 		try:
 			self.numericData = \
 					analysis.normalize_columns_together(self.data, 
-										self.headers[:3]+["SZ_TOP", "SZ_BOT"])
+										self.headers[:3]+["SZ_BOT", "SZ_TOP", "SZ_LEFT", "SZ_RIGHT", "SZ_BACK", "SZ_FRONT"])
 		except:
 			self.numericData = \
 					analysis.normalize_columns_together(self.data, self.headers[:3])
@@ -1718,22 +1733,30 @@ class DisplayApp:
 				analysis.normalize_columns_separately(self.data, self.headers[-3:])))
 			
 		#rangex, rangey, rangez = analysis.data_range(self.data, self.headers)[:3]
-		miny, maxy = np.min(self.numericData[:,1]), np.max(self.numericData[:,1])
-		minz, maxz = np.min(self.numericData[:,4]), np.max(self.numericData[:,3])
-		minx, maxx = minz, maxz #np.min(self.numericData[:,0]), np.max(self.numericData[:,0])
-		print minz
-		print maxz
+		minx, maxx = np.min(self.numericData[:,0]), np.max(self.numericData[:,0])
 		self.minx = minx
-		self.miny = min(0,miny)
-		self.minz = minz
 		self.maxx = maxx
+		miny, maxy = np.min(self.numericData[:,1]), np.max(self.numericData[:,1])
+		self.miny = miny
 		self.maxy = maxy
+		minz, maxz = np.min(self.numericData[:,2]), np.max(self.numericData[:,2])
+		self.minz = minz
 		self.maxz = maxz
+
+		zoneBot, zoneTop = np.min(self.numericData[:,3]), np.max(self.numericData[:,4])
+		self.zoneBot = zoneBot
+		self.zoneTop = zoneTop
+		zoneLeft, zoneRight = np.min(self.numericData[:,5]), np.max(self.numericData[:,6])
+		self.zoneLeft = zoneLeft
+		self.zoneRight = zoneRight
+		zoneBack, zoneFront = np.min(self.numericData[:,7]), np.max(self.numericData[:,8])
+		self.zoneBack = zoneBack
+		self.zoneFront = zoneFront
 		
 		# use the ranges to change the axes and the view
 		self.buildAxes()
 		#TODO: want to see all the data
-		#self.view.extent = [maxx-minx, maxy-miny, maxz-minz] 
+		#self.view.extent = [zoneRight-zoneLeft, maxy-miny, zoneTop-zoneBot] 
 				
 		self.shapeData = self.numericData[:, -1]
 		self.shapeField.set(self.headers[-1])
