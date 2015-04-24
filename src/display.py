@@ -162,7 +162,7 @@ class DisplayApp:
 		self.numTicks = 5
 		self.ticksMarksPts = []
 		self.ticksLabelsPts = []
-		for i in range(len(axes)):
+		for i in range(3):
 			low = self.axesPts[2*i] 
 			high = self.axesPts[2*i+1]
 			self.axesLabelsPts.append(high.copy())
@@ -218,7 +218,7 @@ class DisplayApp:
 		except:
 			mins = [self.minx, self.miny, self.minz]
 			maxs = [self.maxx, self.maxy, self.maxz]
-		for i in range(len(axes)):
+		for i in range(3):
 			if i != 1: continue
 			self.axes.append(self.canvas.create_line(
 				axesPts[2*i, 0], axesPts[2*i, 1], 
