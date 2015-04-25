@@ -157,10 +157,10 @@ class DisplayApp:
 		self.buildData(fn=fn)
 		allFrames = fn + "-frame*.ps"
 		gifName = fn + ".gif"
-		print("converting to gif...");
-		os.system("convert -delay 3 -loop 0 " + allFrames + " " + gifName);
-		print("removing frames...");
-		os.system("rm " + fn + "-frame*.ps");
+		print("converting to gif...")
+		os.system("convert -delay 3 -loop 0 " + allFrames + " " + gifName)
+		print("removing frames...")
+		os.system("rm " + fn + "-frame*.ps")
 		print("animating...")
 		os.system("animate " + gifName)
 		
