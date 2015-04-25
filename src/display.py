@@ -149,7 +149,20 @@ class DisplayApp:
 		'''
 		build the data, animating with images to make a gif
 		'''
-		self.buildData(animate=True)
+		try:
+			fn = ".".join(self.filename.split(".")[:-1])
+		except:
+			print("No data to animate")
+			return
+		self.buildData(fn=fn)
+		allFrames = fn + "-frame*.ps"
+		gifName = fn + ".gif"
+		print("converting to gif...");
+		os.system("convert -delay 3 -loop 0 " + allFrames + " " + gifName);
+		print("removing frames...");
+		os.system("rm " + fn + "-frame*.ps");
+		print("animating...")
+		os.system("animate " + gifName)
 		
 	def buildAxes(self):
 		'''
@@ -478,7 +491,7 @@ class DisplayApp:
 					   *range(256)).grid( row=row, column=2 )
 		row+=1
 		
-	def buildData(self, animate=False): 
+	def buildData(self, fn=""): 
 		'''
 		build the data on the screen based on the data and filename fields
 		Note: this method is the only one that transforms and draws data
@@ -486,7 +499,6 @@ class DisplayApp:
 		# if the data is not set, set according to filename
 		if not self.data:
 			return
-		fn = ".".join(self.filename.split(".")[:-1])
 		
 		# clean the data on the canvas
 		self.clearObjects()
@@ -498,7 +510,7 @@ class DisplayApp:
 		# transform into view
 		viewData = (VTM * viewData.T).T
 		
-		indices = (range(viewData.shape[0]) if animate else
+		indices = (range(viewData.shape[0]) if fn else
 				# order so that closer objects draw last
 				np.argsort(viewData[:, 2].T.tolist()[0]))
 		
@@ -506,7 +518,7 @@ class DisplayApp:
 		for row in indices:
 			x, y = [viewData[row, col] for col in range(2)]
 			self.drawObject(x, y, row=row)
-			if animate: 
+			if fn: 
 				self.saveCanvas(fn + ("-frame%03d" % row))
 			else:
 				# line plotting, currently ordered according to csv
@@ -516,16 +528,6 @@ class DisplayApp:
 					line = self.canvas.create_line(x, y, xh, yh)
 					self.dataLines.append(line)
 		
-		if animate: # convert to gif
-			allFrames = fn + "-frame*.ps"
-			gifName = fn + ".gif"
-			print("converting to gif...");
-			os.system("convert -delay 3 -loop 0 " + allFrames + " " + gifName);
-			print("removing frames...");
-			os.system("rm " + fn + "-frame*.ps");
-			print("animating...")
-			os.system("animate " + gifName)
-
 	def buildMenus(self):
 		'''
 		builds the menu bar and contents
