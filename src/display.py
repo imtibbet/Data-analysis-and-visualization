@@ -326,10 +326,10 @@ class DisplayApp:
 		row+=1
 
 		# make a plot button in the frame
-		tk.Button( self.rightcntlframe, text="Change Ranges", 
-				   command=self.changeRanges, width=15
-				   ).grid( row=row, columnspan=3 )
-		row+=1
+#		tk.Button( self.rightcntlframe, text="Change Ranges", 
+#				   command=self.changeRanges, width=15
+#				   ).grid( row=row, columnspan=3 )
+#		row+=1
 		
 		# make a filter button in the frame
 		tk.Button( self.rightcntlframe, text="Filter", 
