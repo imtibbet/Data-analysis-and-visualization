@@ -2,6 +2,10 @@
 Ian Tibbetts and Daniel Meyer
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
+
+TODO: 	enable ticks
+		animate, save with name
+		name with frames
 '''
 
 # standard with python
@@ -10,7 +14,6 @@ from optparse import OptionParser
 import random
 import types
 import os
-import sys
 import numpy as np
 import math
 from scipy import stats
@@ -141,7 +144,13 @@ class DisplayApp:
 			except tk.TclError:
 				exit()
 		self.resetView()
-
+		
+	def animate(self):
+		'''
+		build the data, animating with images to make a gif
+		'''
+		self.buildData(animate=True)
+		
 	def buildAxes(self):
 		'''
 		builds the view transformation matrix [VTM], 
@@ -286,6 +295,12 @@ class DisplayApp:
 		# make a get at bat button in the frame
 		tk.Button( self.rightcntlframe, text="Gen At Bat Data", 
 				   command=self.genAtBatData, width=15
+				   ).grid( row=row, columnspan=3 )
+		row+=1
+
+		# make a get at bat button in the frame
+		tk.Button( self.rightcntlframe, text="Animate Data", 
+				   command=self.animate, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
@@ -471,6 +486,7 @@ class DisplayApp:
 		# if the data is not set, set according to filename
 		if not self.data:
 			return
+		fn = ".".join(self.filename.split(".")[:-1])
 		
 		# clean the data on the canvas
 		self.clearObjects()
@@ -482,7 +498,7 @@ class DisplayApp:
 		# transform into view
 		viewData = (VTM * viewData.T).T
 		
-		indices = (range(viewData.shap[0]) if animate else
+		indices = (range(viewData.shape[0]) if animate else
 				# order so that closer objects draw last
 				np.argsort(viewData[:, 2].T.tolist()[0]))
 		
@@ -491,7 +507,7 @@ class DisplayApp:
 			x, y = [viewData[row, col] for col in range(2)]
 			self.drawObject(x, y, row=row)
 			if animate: 
-				self.saveCanvas(self.filename + ("%3d" % row))
+				self.saveCanvas(fn + ("-frame%03d" % row))
 			else:
 				# line plotting, currently ordered according to csv
 				nextRow = row + 1
@@ -499,6 +515,16 @@ class DisplayApp:
 					xh, yh = [viewData[nextRow, col] for col in range(2)]
 					line = self.canvas.create_line(x, y, xh, yh)
 					self.dataLines.append(line)
+		
+		if animate: # convert to gif
+			allFrames = fn + "-frame*.ps"
+			gifName = fn + ".gif"
+			print("converting to gif...");
+			os.system("convert -delay 3 -loop 0 " + allFrames + " " + gifName);
+			print("removing frames...");
+			os.system("rm " + fn + "-frame*.ps");
+			print("animating...")
+			os.system("animate " + gifName)
 
 	def buildMenus(self):
 		'''
@@ -770,7 +796,6 @@ class DisplayApp:
 		back[:, 1].fill(self.zoneBack)
 		axesPts = np.vstack((front, back))
 		for i in range(0, 8, 2):
-			print i
 			axesPts = np.vstack((axesPts, axesPts[i]))
 			axesPts = np.vstack((axesPts, axesPts[i+8]))
 		VTM = self.view.build()
@@ -1080,10 +1105,11 @@ class DisplayApp:
 			return
 		print("getting at bat data")
 		data = self.filename2data[curFilename]
-		result = dialogs.GetAtBatID(self.root, data).result
-		if not result:
+		try:
+			result = dialogs.GetAtBatID(self.root, data).result
+			[atBatID, numFrames] = result
+		except:
 			return
-		[atBatID, numFrames] = result
 		try:
 			numFrames = int(numFrames)
 		except:
@@ -1113,7 +1139,7 @@ class DisplayApp:
 						pitch[0, ax], pitch[0, ay], pitch[0, az])
 			for frame in frames:
 				newData.append(frame + pitch.tolist()[0])
-		fn = "ab:"+str(atBatID)
+		fn = "ab_"+str(atBatID)+("_frames=%d" % numFrames)
 		self.openFilesAppend(fn, Data(newData, verbose=self.verbose))			
 	
 	def getColorCurrent(self, z=None):
@@ -1668,7 +1694,7 @@ class DisplayApp:
 			self.manualDataRanges = {}
 			self.removeFit()
 			self.processData()
-			self.resetViewOrientation()
+			#TODO: good for baseball to turn off self.resetView()
 			
 	def plotData(self, event=None):
 		'''
@@ -1851,8 +1877,10 @@ class DisplayApp:
 											title="Save Displayed Data")
 		if not filename:
 			return
+		if not filename.endswith(".ps"): filename += ".ps"
 		self.canvas.postscript(file=filename, colormode='color')
 		if self.verbose: print("saved canvas as %s" % filename)
+		'''
 		try:
 			img = image.imread(filename)
 			newFilename = ".".join(filename.split(".")[:-1]+["png"])
@@ -1861,7 +1889,8 @@ class DisplayApp:
 			if self.verbose: print("saved canvas as %s" % newFilename)
 		except:
 			pass
-		
+		'''
+			
 	def saveData(self, event=None):
 		'''
 		save the displayed data, prompting for a filename
@@ -2190,7 +2219,7 @@ class DisplayApp:
 		self.presetControl.destroy()
 		#if len(presets) > 1: # can disable preset option if 2D
 		self.presetControl = tk.OptionMenu( self.rightcntlframe, self.presetView, 
-									*presets, command=self.resetViewOrientation)
+									*presets, command=self.resetView)
 		self.presetControl.grid( row=self.presetControlRow, columnspan=3 )
 
 	def updateScreen(self, event=None):
