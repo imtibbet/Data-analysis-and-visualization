@@ -20,7 +20,7 @@ from scipy import stats
 import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
-import matplotlib.image as image
+#import matplotlib.image as image
 
 # defined by me for this project
 import analysis
@@ -149,11 +149,7 @@ class DisplayApp:
 		'''
 		build the data, animating with images to make a gif
 		'''
-		try:
-			fn = ".".join(self.filename.split(".")[:-1])
-		except:
-			print("No data to animate")
-			return
+		fn = self.filename # this could be modified to indicate animation
 		self.buildData(fn=fn)
 		allFrames = fn + "-frame*.ps"
 		gifName = fn + ".gif"
@@ -161,7 +157,7 @@ class DisplayApp:
 		os.system("convert -delay 3 -loop 0 " + allFrames + " " + gifName)
 		print("removing frames...")
 		os.system("rm " + fn + "-frame*.ps")
-		print("animating...")
+		print("Animating...")
 		os.system("animate " + gifName)
 		
 	def buildAxes(self):
@@ -185,19 +181,24 @@ class DisplayApp:
 			low = self.axesPts[2*i] 
 			high = self.axesPts[2*i+1]
 			self.axesLabelsPts.append(high.copy())
-			self.axesLabelsPts[-1] -= 0.06
-			self.axesLabelsPts[-1][0,i] += 0.12
+			self.axesLabelsPts[-1][0,i] += 0.06
+			#self.axesLabelsPts[-1] -= 0.06
+			#self.axesLabelsPts[-1][0,i] += 0.12
+			#if i == 1: self.axesLabelsPts[-1][0,2] += 0.06
 			step = (high-low)/(self.numTicks-1.0)
 			for j in range(self.numTicks):
 				cur = low + j*step
 				curLow = cur - 0.02
 				curLow[0,i] += 0.02
+				if i == 1: curLow[0,2] += 0.02
 				curHigh = cur + 0.02
 				curHigh[0,i] -= 0.02
+				if i == 1: curHigh[0,2] -= 0.02
 				self.ticksMarksPts.append(curLow)
 				self.ticksMarksPts.append(curHigh)
-				curLabel = cur - 0.04
-				curLabel[0,i] += 0.04
+				curLabel = cur - 0.05
+				curLabel[0,i] += 0.05
+				#if i == 1: curLabel[0,2] += 0.05
 				self.ticksLabelsPts.append(curLabel)
 				
 		self.axesLabelsPts = np.vstack(self.axesLabelsPts)	
@@ -243,7 +244,8 @@ class DisplayApp:
 				axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
 			self.axesLabels.append(self.canvas.create_text(
 				axesLabelsPts[i, 0], axesLabelsPts[i, 1], 
-				font=("Purina", 10), text=labelVars[i].get()))
+				font=("Courier", 12), text=labelVars[i].get()))
+			if not self.enableTicks.get(): continue
 			for j in range(self.numTicks):	
 				self.ticksMarks.append(self.canvas.create_line(
 					ticksMarksPts[self.numTicks*2*i + 2*j, 0], 
@@ -253,7 +255,7 @@ class DisplayApp:
 				self.ticksLabels.append(self.canvas.create_text(
 					ticksLabelsPts[self.numTicks*i + j, 0], 
 					ticksLabelsPts[self.numTicks*i + j, 1], 
-					font=("Purina", 8), 
+					font=("Courier", 12), 
 					text="%.1f" % (mins[i]+j*(maxs[i]-mins[i])/float(self.numTicks-1))))
 				
 		if self.data:
