@@ -3,9 +3,7 @@ Ian Tibbetts and Daniel Meyer
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 
-TODO: 	enable ticks
-		animate, save with name
-		name with frames
+TODO: 
 '''
 
 # standard with python
@@ -21,6 +19,7 @@ import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 #import matplotlib.image as image
+import time
 
 # defined by me for this project
 import analysis
@@ -145,18 +144,23 @@ class DisplayApp:
 				exit()
 		self.resetView()
 		
-	def animate(self):
+	def animateCanvas(self):
+		'''
+		build the data, pausing as if animation
+		'''
+		self.buildData(animate=True)
+		
+	def animateGif(self):
 		'''
 		build the data, animating with images to make a gif
 		'''
-		fn = self.filename # this could be modified to indicate animation
-		self.buildData(fn=fn)
-		allFrames = fn + "-frame*.ps"
-		gifName = fn + ".gif"
+		self.buildData(fn=self.filename)
+		allFrames = self.filename + "-frame*.ps"
+		gifName = self.filename + ".gif"
 		print("converting to gif...")
 		os.system("convert -delay 3 -loop 0 " + allFrames + " " + gifName)
 		print("removing frames...")
-		os.system("rm " + fn + "-frame*.ps")
+		os.system("rm " + allFrames)
 		print("Animating...")
 		os.system("animate " + gifName)
 		
@@ -314,32 +318,20 @@ class DisplayApp:
 		row+=1
 
 		# make a get at bat button in the frame
-		tk.Button( self.rightcntlframe, text="Animate Data", 
-				   command=self.animate, width=15
+		tk.Button( self.rightcntlframe, text="Animate Canvas", 
+				   command=self.animateCanvas, width=15
+				   ).grid( row=row, columnspan=3 )
+		row+=1
+
+		# make a get at bat button in the frame
+		tk.Button( self.rightcntlframe, text="Generate Gif", 
+				   command=self.animateGif, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a plot button in the frame
 		tk.Button( self.rightcntlframe, text="Change Axes", 
 				   command=self.changeDataAxes, width=15
-				   ).grid( row=row, columnspan=3 )
-		row+=1
-
-		# make a plot button in the frame
-#		tk.Button( self.rightcntlframe, text="Change Ranges", 
-#				   command=self.changeRanges, width=15
-#				   ).grid( row=row, columnspan=3 )
-#		row+=1
-		
-		# make a filter button in the frame
-		tk.Button( self.rightcntlframe, text="Filter", 
-				   command=self.filterData, width=15
-				   ).grid( row=row, columnspan=3 )
-		row+=1
-
-		# make a save button in the frame
-		tk.Button( self.rightcntlframe, text="Save Displayed", 
-				   command=self.saveData, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
@@ -493,7 +485,7 @@ class DisplayApp:
 					   *range(256)).grid( row=row, column=2 )
 		row+=1
 		
-	def buildData(self, fn=""): 
+	def buildData(self, animate=False, fn=""): 
 		'''
 		build the data on the screen based on the data and filename fields
 		Note: this method is the only one that transforms and draws data
@@ -512,7 +504,7 @@ class DisplayApp:
 		# transform into view
 		viewData = (VTM * viewData.T).T
 		
-		indices = (range(viewData.shape[0]) if fn else
+		indices = (range(viewData.shape[0]) if animate or fn else
 				# order so that closer objects draw last
 				np.argsort(viewData[:, 2].T.tolist()[0]))
 		
@@ -522,6 +514,9 @@ class DisplayApp:
 			self.drawObject(x, y, row=row)
 			if fn: 
 				self.saveCanvas(fn + ("-frame%03d" % row))
+			elif animate:
+				self.canvas.update()
+				time.sleep(.1)
 			else:
 				# line plotting, currently ordered according to csv
 				nextRow = row + 1
@@ -1143,7 +1138,7 @@ class DisplayApp:
 						pitch[0, ax], pitch[0, ay], pitch[0, az])
 			for frame in frames:
 				newData.append(frame + pitch.tolist()[0])
-		fn = "ab_"+str(atBatID)+("_frames=%d" % numFrames)
+		fn = ("ab_%d" % int(atBatID))+("_%03dframes" % numFrames)
 		self.openFilesAppend(fn, Data(newData, verbose=self.verbose))			
 	
 	def getColorCurrent(self, z=None):
@@ -1198,9 +1193,12 @@ class DisplayApp:
 		'''
 		# distance to plate
 		dy = sy - ey
-		# time to plate
+		
+		# time to plate using quadratic formula
 		qsqrt = math.sqrt(vy*vy - 2*ay*dy)
 		t = min( (-vy + qsqrt)/ay, (-vy - qsqrt)/ay )
+		
+		# Get position at time t
 		def _x(t):
 			return sx + vx*t + 0.5*ax*(t**2)
 		def _y(t):
@@ -1221,10 +1219,8 @@ class DisplayApp:
 			return math.sqrt(_vx(t)**2 + _vy(t)**2 +_vz(t)**2)
 		
 		# sample the curve, making x and y coordinate lists
-		results = []
-		for ct in np.arange(0, t, t/float(frames)):
-			results.append([_x(ct), _y(ct), _z(ct), ct, _speed(ct)])
-		return results
+		return [[_x(ct), _y(ct), _z(ct), ct, _speed(ct)] 
+			for ct in np.arange(0, t, t/float(frames))]
 	
 	def getPresets(self):
 		'''
