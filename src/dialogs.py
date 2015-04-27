@@ -364,7 +364,7 @@ class FilterDataDialog(OkCancelDialog):
 					 ).grid(row=row, column=0)
 			typeDesc = raw_type.capitalize()
 			if raw_type == "ENUM":
-				for [key, val] in self.data.enum2value[header].items():
+				for [key, val] in self.data.value2enum[header].items():
 					typeDesc += "\n%d->%s" % (val, key)
 			elif raw_type == "DATE":
 				typeDesc += "\n%d->%s" % (int(curMin), datetime.fromordinal(int(curMin)).strftime("%Y-%m-%d"))
@@ -512,7 +512,6 @@ class PickAxesDialog(OkCancelDialog):
 	def __init__(self, parent, data, oldHeaders, title = None):
 		
 		self.oldHeaders = oldHeaders
-		print(oldHeaders)
 		self.headers = [h.upper() for h in data.get_headers()]
 		OkCancelDialog.__init__(self, parent, title)
 		

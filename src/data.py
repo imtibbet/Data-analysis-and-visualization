@@ -89,7 +89,8 @@ class Data:
 		self.matrix_data = np.matrix([]) # matrix of numeric data
 		self.numeric_headers = [] # list of numeric column headers
 		self.header2matrix = {} # map header string to col index in matrix data
-		self.enum2value = {} # conversion dictionary between enum keys and index
+		self.enum2value = {} # conversion dictionary between enum index and value
+		self.value2enum = {} # conversion dictionary between value and enum index
 		
 	def clone(self):
 		'''
@@ -106,6 +107,7 @@ class Data:
 		data.numeric_headers = self.numeric_headers
 		data.header2matrix = self.header2matrix
 		data.enum2value = self.enum2value
+		data.value2enum = self.value2enum
 		return data
 			
 	def read(self, reader):
@@ -185,6 +187,7 @@ class Data:
 		self.numeric_types = []
 		self.header2matrix = {}
 		self.enum2value = {}
+		self.value2enum = {}
 		if self.verbose: print("building numeric data")
 		rawColIndex = 0
 		for colIndex in range(self.raw_data.shape[1]):
@@ -206,14 +209,15 @@ class Data:
 				elif rawType == "ENUM":
 					self.matrix_data.append([])
 					raw_header = self.raw_headers[colIndex]
-					self.enum2value[raw_header] = {}
-					enumIndex = 0
+					self.enum2value[raw_header] = []
+					self.value2enum[raw_header] = {}
 					for rawEnum in self.raw_data[:, colIndex]:
 						rawEnum = rawEnum[0,0]
-						if rawEnum not in self.enum2value[raw_header]:
-							self.enum2value[raw_header][rawEnum] = enumIndex
-							enumIndex += 1
-						self.matrix_data[-1].append(self.enum2value[raw_header][rawEnum])
+						if rawEnum not in self.value2enum[raw_header]:
+							enumIndex = len(self.enum2value[raw_header])
+							self.enum2value[raw_header].append(rawEnum)
+							self.value2enum[raw_header][rawEnum] = enumIndex
+						self.matrix_data[-1].append(self.value2enum[raw_header][rawEnum])
 						
 				elif rawType == "DATE":
 					self.matrix_data.append([])

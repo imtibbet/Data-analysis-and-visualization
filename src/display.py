@@ -3,7 +3,16 @@ Ian Tibbetts and Daniel Meyer
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 
-TODO: 
+TODO: 	Make sure strikes are red and balls are blue
+			- add color radio option (called, gradient, discrete, manual)
+			- use enum2value on called in data to get string, test for color
+		Strike count and most recent pitch type during animation
+			- text in the status bar (or on the canvas?) that updates when y==0
+		Keep track of 'actual' vs 'called' strike or ball
+			- test location, if enters strike zone then strike, else ball
+		Sounds (contact, umpire call, result, catcher's glove, result)
+			- single or multiple sounds per pitch?
+			- sound priority? if multiple apply, which gets used?
 '''
 
 # standard with python
@@ -20,6 +29,7 @@ matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 #import matplotlib.image as image
 import time
+from fractions import Fraction
 
 # defined by me for this project
 import analysis
@@ -318,11 +328,11 @@ class DisplayApp:
 		row+=1
 
 		# make a get at bat button in the frame
-		tk.Label( self.rightcntlframe, text="Fraction of real time"
-				   ).grid( row=row, columnspan=3 )
-		row+=1
-		self.fracRealTime = tk.Entry( self.rightcntlframe )
-		self.fracRealTime.grid( row=row, columnspan=3 )
+		tk.Label( self.rightcntlframe, text="Real Time Multiplier:"
+				   ).grid( row=row, columnspan=2, sticky=tk.E )
+		#row+=1
+		self.animateSpeedupEntry = tk.Entry( self.rightcntlframe, width=5 )
+		self.animateSpeedupEntry.grid( row=row, column=2, sticky=tk.W )
 		row+=1
 		tk.Button( self.rightcntlframe, text="Animate Canvas", 
 				   command=self.animateCanvas, width=15
@@ -453,6 +463,7 @@ class DisplayApp:
 
 		# make a color mode selector in the frame
 		colorModes = [
+			("Ump Called Color", "c"),
 			("Gradient Color", "g"),
 			("Discrete Color", "d"),
 			("Selected Color", "s")
@@ -514,14 +525,17 @@ class DisplayApp:
 				# order so that closer objects draw last
 				np.argsort(viewData[:, 2].T.tolist()[0]))
 		
+		# get the delay from the data for animating and report to the user
 		if animate or fn:
 			delayCol = self.data.header2matrix["FRAME_DELAY"]
 			try:
-				fracRealTime = 1/float(self.fracRealTime.get())
+				speedup = float(self.animateSpeedupEntry.get())
 			except:
-				fracRealTime = 1.0
-				print("fraction of real time entry is not a float")
-
+				speedup = 1.0
+				if self.verbose: print("times faster entry is not a float")
+			#print("animating %.2fx real time" % speedup)
+			print("animating "+str(Fraction(speedup))+"x real time")
+			
 		# draw all objects
 		for row in indices:
 			x, y = [viewData[row, col] for col in range(2)]
@@ -530,7 +544,7 @@ class DisplayApp:
 				self.saveCanvas(fn + ("-frame%03d" % row))
 			elif animate:
 				self.canvas.update()
-				delay = self.data.matrix_data[row, delayCol] * fracRealTime
+				delay = self.data.matrix_data[row, delayCol] / speedup
 				time.sleep(delay)
 			else:
 				# line plotting, currently ordered according to csv
@@ -612,7 +626,7 @@ class DisplayApp:
 		colormenu = tk.Menu( self.menu )
 		self.menu.add_cascade( label = "Color", menu = colormenu )
 		menulist.append([colormenu,
-						[['Random Color', self.getRandomColor],
+						[['Random Color', self.getColorRandom],
 						 ['Pick Color', self.getUserColor],
 						 ['', None]
 						 ]])
@@ -1056,7 +1070,7 @@ class DisplayApp:
 														x, y, dx, dy)
 			
 		if shapeFunc:
-			shape = shapeFunc(coords, fill=self.getColor(self.colorData[row, 0]), 
+			shape = shapeFunc(coords, fill=self.getColor(row), 
 							outline='')
 			self.objects[shape] = row
 			self.updateNumObjStrVar()
@@ -1117,7 +1131,7 @@ class DisplayApp:
 		except:
 			print("No open files")
 			return
-		print("getting at bat data")
+		if self.verbose: print("getting at bat data")
 		data = self.filename2data[curFilename]
 		try:
 			result = dialogs.GetAtBatID(self.root, data).result
@@ -1128,10 +1142,11 @@ class DisplayApp:
 			numFrames = int(numFrames)
 			if numFrames < 2: numFrames = 2
 		except:
-			print("invalid frames %s, using 20 instead" % numFrames)
+			if self.verbose: print("invalid frames %s, using 20 instead" % numFrames)
 			numFrames = 20
 		atBatIDs = np.squeeze(np.asarray(data.get_data(["AB_ID"])))
 		atBatData = data.get_data(data.get_headers())[atBatIDs == atBatID]
+		atBatRaw =  data.get_raw_data(data.get_raw_headers())[atBatIDs == atBatID]
 		sx = data.header2matrix["XSTART"]
 		sy = data.header2matrix["YSTART"]
 		sz = data.header2matrix["ZSTART"]
@@ -1144,20 +1159,38 @@ class DisplayApp:
 		ax = data.header2matrix["XACC"]
 		ay = data.header2matrix["YACC"]
 		az = data.header2matrix["ZACC"]
-		newData = [["X", "Y", "Z", "SPEED", "TS", "FRAME_DELAY"] + data.get_headers() , 
-				  ["NUMERIC"]*6 + data.get_types()]
-		for pitch in atBatData:
+		newData = [["X", "Y", "Z", "SPEED", "TS", "FRAME_DELAY"] + data.get_raw_headers() , 
+					["NUMERIC"]*6 + data.get_raw_types()]
+		for row in range(atBatData.shape[0]):
 			frames = self.getCurve(numFrames, 
-						pitch[0, sx], pitch[0, sy], pitch[0, sz], 
-						pitch[0, ex], pitch[0, ey], pitch[0, ez], 
-						pitch[0, vx], pitch[0, vy], pitch[0, vz], 
-						pitch[0, ax], pitch[0, ay], pitch[0, az])
+						atBatData[row, sx], atBatData[row, sy], atBatData[row, sz], 
+						atBatData[row, ex], atBatData[row, ey], atBatData[row, ez], 
+						atBatData[row, vx], atBatData[row, vy], atBatData[row, vz], 
+						atBatData[row, ax], atBatData[row, ay], atBatData[row, az])
 			for frame in frames:
-				newData.append(frame + pitch.tolist()[0])
+				newData.append(frame + atBatRaw[row].tolist()[0])
+
 		fn = ("ab_%d" % int(atBatID))+("_%03dframes" % numFrames)
 		self.openFilesAppend(fn, Data(newData, verbose=self.verbose))			
 	
-	def getColorCurrent(self, z=None):
+	def getColorCalled(self, row):
+		'''
+		gets the color according to how the pitch was called
+		'''
+		calledCol = self.data.header2matrix["CALLED"]
+		print self.data.enum2value
+		enumIndex = int(self.data.matrix_data[row, calledCol])
+		calledStr = self.data.enum2value["CALLED"][enumIndex]
+		if calledStr == "B":
+			rgb = "green"
+		elif calledStr == "S":
+			rgb = "red"
+		else: # calledStr == "X":
+			rgb = "blue"
+		if rgb in ["black", "#000000"]: rgb = "#000001"
+		return rgb
+	
+	def getColorCurrent(self, row=None):
 		'''
 		get the current color selected by the controls as hex string
 		'''
@@ -1165,31 +1198,49 @@ class DisplayApp:
 			(int(self.redBand.get()), 
 			int(self.greenBand.get()), 
 			int(self.blueBand.get())))
-		if rgb in ["black", "#000000"]: rgb = "#000001" # FIXME black causes bad damage rectangle
+		if rgb in ["black", "#000000"]: rgb = "#000001"
 		return rgb
 	
-	def getColorDiscrete(self, z):
+	def getColorDiscrete(self, row):
 		'''
 		get the discrete color selected by the controls as hex string
 		'''
+		z = self.colorData[row, 0]
 		z = max(min(z, 1.0), 0.0) # in case depth is not normalized
 		if len(np.unique(np.squeeze(np.asarray(self.colorData)))) <= len(self.colors):
 			rgb = self.colors[int(z*(len(self.colors)-1))]
 		else:
 			rgb = colors[int(z*(len(colors)-1))]
-		if rgb in ["black", "#000000"]: rgb = "#000001" # FIXME black causes bad damage rectangle
+		if rgb in ["black", "#000000"]: rgb = "#000001"
 		return rgb
 	
-	def getColorGradient(self, z):
+	def getColorGradient(self, row):
 		'''
 		return the color according the given normalized z as hex string
 		'''
+		z = self.colorData[row, 0]
 		z = max(min(z, 1.0), 0.0) # in case depth is not normalized
 		
 		rb = int(z * 255.0)
 		gb = 0
 		bb = 255 - int(z * 255.0)
 		return "#%02x%02x%02x" % (rb, gb, bb)
+		
+	def getColorRandom(self, event=None):
+		'''
+		set the color channel pickers to three random integers between 0 and 255
+		returns the random rgb band values as hex string
+		'''
+		if self.verbose: print("setting random color")
+		rb = random.randint(0,255)
+		gb = random.randint(0,255)
+		bb = random.randint(0,255)
+		self.redBand.set(str(rb))
+		self.greenBand.set(str(gb))
+		self.blueBand.set(str(bb))
+		rgb = "#%02x%02x%02x" % (rb, gb, bb)
+		if rgb in ["black", "#000000"]: rgb = "#000001"
+		return rgb
 
 	def getCurrentPreset(self):
 		'''
@@ -1237,7 +1288,7 @@ class DisplayApp:
 		# sample the curve, making x and y coordinate lists
 		frames = float(frames-1)
 		delay = totalTime/frames
-		return [[_x(ct), _y(ct), _z(ct), _speed(ct), ct, delay] 
+		return [[str(a) for a in [_x(ct), _y(ct), _z(ct), _speed(ct), ct, delay]]
 			for ct in np.arange(0, totalTime+delay, delay)]
 	
 	def getPresets(self):
@@ -1252,22 +1303,6 @@ class DisplayApp:
 				   self.zLabel.get()[:min(5, len(self.zLabel.get()))]
 				   ]
 		return presets if self.zLabel.get() else presets[:1]
-		
-	def getRandomColor(self, event=None):
-		'''
-		set the color channel pickers to three random integers between 0 and 255
-		returns the random rgb band values as hex string
-		'''
-		if self.verbose: print("setting random color")
-		rb = random.randint(0,255)
-		gb = random.randint(0,255)
-		bb = random.randint(0,255)
-		self.redBand.set(str(rb))
-		self.greenBand.set(str(gb))
-		self.blueBand.set(str(bb))
-		rgb = "#%02x%02x%02x" % (rb, gb, bb)
-		if rgb in ["black", "#000000"]: rgb = "#000001" # FIXME black causes bad damage rectangle
-		return rgb
 	
 	def getShapeFunction(self, shape, x, y, dx, dy):
 		'''
@@ -1332,14 +1367,14 @@ class DisplayApp:
 		'''
 		quit the display application
 		'''
-		if self.verbose: print('Terminating')
+		if self.verbose: print("Terminating")
 		self.root.destroy()
 
 	def handleButton1(self, event):
 		'''
 		prepare to pan the view by storing the base click
 		'''
-		if self.verbose: print('handle button 1: %d %d' % (event.x, event.y))
+		if self.verbose: print("handle button 1: %d %d" % (event.x, event.y))
 		self.baseClick = [event.x, event.y]
 		self.baseExtent = self.view.extent.copy()
 
@@ -1348,7 +1383,7 @@ class DisplayApp:
 		'''
 		prepare to rotate the view by storing original click and view
 		'''
-		if self.verbose: print('handle button 2: %d %d' % (event.x, event.y))
+		if self.verbose: print("handle button 2: %d %d" % (event.x, event.y))
 		self.baseClick = [event.x, event.y]
 		self.baseExtent = self.view.extent.copy()
 		self.baseView = self.view.clone()
@@ -1357,7 +1392,7 @@ class DisplayApp:
 		'''
 		prepare to zoom the view by storing original click and extent
 		'''
-		if self.verbose: print('handle button 3: %d %d' % (event.x, event.y))
+		if self.verbose: print("handle button 3: %d %d" % (event.x, event.y))
 		self.baseClick = [event.x, event.y]
 		self.baseExtent = self.view.extent.copy()
 
@@ -1410,7 +1445,7 @@ class DisplayApp:
 		'''
 		delete the top point under the event location
 		'''
-		if self.verbose: print('handle ctrl shift button 1: %d %d' % (event.x, event.y))
+		if self.verbose: print("handle ctrl shift button 1: %d %d" % (event.x, event.y))
 		self.baseClick = [event.x, event.y]
 		for obj in self.objects:
 			[xlow, ylow, xhigh, yhigh] = self.canvas.bbox(obj)
@@ -1540,7 +1575,7 @@ class DisplayApp:
 		'''
 		start the application
 		'''
-		if self.verbose: print('Entering main loop')
+		if self.verbose: print("Entering main loop")
 		self.root.mainloop()
 		
 	def multiLinearRegression(self, event=None):
@@ -1999,8 +2034,10 @@ class DisplayApp:
 			self.getColor = self.getColorCurrent
 		elif cmstr == "g":
 			self.getColor = self.getColorGradient
-		else:# cmstr == "d":
+		elif cmstr == "d":
 			self.getColor = self.getColorDiscrete
+		else: #cmstr == "c":
+			self.getColor = self.getColorCalled
 		self.update()
 			
 	def setData(self):
@@ -2088,7 +2125,6 @@ class DisplayApp:
 		'''
 		setup the path to the image files for astro research
 		'''
-		if self.verbose: print(self.imageFilePath)
 		path = tkf.askdirectory(parent=self.root, title='Choose a data file', 
 							initialdir=self.imageFilePath )
 		if path:
