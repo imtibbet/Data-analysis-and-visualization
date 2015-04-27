@@ -3,7 +3,11 @@ Ian Tibbetts and Daniel Meyer
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 
-TODO: 	Strike count and most recent pitch type during animation
+TODO: 	Analysis, predicting call/swing from frames as columns
+		Batter silhouette in the plane of the strike zone
+			- what happens if the user rotates?
+			- picture or drawing?
+		Strike count and most recent pitch type during animation
 			- text in the status bar (or on the canvas?) that updates when y==0
 		Keep track of 'actual' vs 'called' strike or ball
 			- test location, if enters strike zone then strike, else ball
