@@ -1126,6 +1126,7 @@ class DisplayApp:
 			return
 		try:
 			numFrames = int(numFrames)
+			if numFrames < 2: numFrames = 2
 		except:
 			print("invalid frames %s, using 20 instead" % numFrames)
 			numFrames = 20
@@ -1211,7 +1212,7 @@ class DisplayApp:
 		
 		# time to plate using quadratic formula
 		qsqrt = math.sqrt(vy*vy - 2*ay*dy)
-		t = min( (-vy + qsqrt)/ay, (-vy - qsqrt)/ay )
+		totalTime = min( (-vy + qsqrt)/ay, (-vy - qsqrt)/ay )
 		
 		# Get position at time t
 		def _x(t):
@@ -1234,9 +1235,10 @@ class DisplayApp:
 			return math.sqrt(_vx(t)**2 + _vy(t)**2 +_vz(t)**2)
 		
 		# sample the curve, making x and y coordinate lists
-		frames = float(frames)
-		return [[_x(ct), _y(ct), _z(ct), _speed(ct), ct, t/frames] 
-			for ct in np.arange(0, t, t/frames)]
+		frames = float(frames-1)
+		delay = totalTime/frames
+		return [[_x(ct), _y(ct), _z(ct), _speed(ct), ct, delay] 
+			for ct in np.arange(0, totalTime+delay, delay)]
 	
 	def getPresets(self):
 		'''
