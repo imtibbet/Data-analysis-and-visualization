@@ -517,7 +517,7 @@ class DisplayApp:
 		if animate or fn:
 			delayCol = self.data.header2matrix["FRAME_DELAY"]
 			try:
-				fracRealTime = float(self.fracRealTime.get())
+				fracRealTime = 1/float(self.fracRealTime.get())
 			except:
 				fracRealTime = 1.0
 				print("fraction of real time entry is not a float")
