@@ -4,9 +4,7 @@ Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 
 TODO: 	Analysis, predicting call/swing from frames as columns
-		Batter silhouette in the plane of the strike zone
-			- what happens if the user rotates?
-			- picture or drawing?
+		Ump Called color expand to include different types of strikes
 		Strike count and most recent pitch type during animation
 			- text in the status bar (or on the canvas?) that updates when y==0
 		Keep track of 'actual' vs 'called' strike or ball
@@ -28,7 +26,6 @@ from scipy import stats
 import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
-#import matplotlib.image as image
 import time
 from fractions import Fraction
 import threading
@@ -61,6 +58,16 @@ import tkMessageBox as tkm
 import tkSimpleDialog as tks
 from tkColorChooser import askcolor
 	
+def convertToGif(allFrames, gifName, animate=False):
+	print("converting to gif...")
+	os.system("convert -delay 3 -loop 0 " + allFrames + " " + gifName)
+	print("removing frames...")
+	os.system("rm " + allFrames)
+	print("Created Gif " + gifName)
+	if not animate: return
+	print("Animating...")
+	os.system("animate " + gifName)
+	
 class DisplayApp:
 	'''
 	class to build and manage the display
@@ -91,6 +98,8 @@ class DisplayApp:
 		self.linePlot = tk.BooleanVar()
 		self.enableTicks = tk.BooleanVar()		
 		self.enableTicks.set(True)
+		self.enableAnimateRotate = tk.BooleanVar()		
+		self.enableAnimateRotate.set(True)
 		self.xLabel = tk.StringVar( self.root )
 		self.yLabel = tk.StringVar( self.root )
 		self.zLabel = tk.StringVar( self.root )
@@ -161,11 +170,15 @@ class DisplayApp:
 		build the data, pausing as if animation
 		'''
 		self.buildData(animate=True)
-		degreeStep = 2
-		for _ in range(0, 360, degreeStep):
-			self.view.rotateVRC(degreeStep, 0)
-			self.update()
-			self.canvas.update()
+		if self.enableAnimateRotate.get():
+			try:
+				degreeStep = int(self.animateAngSpeed.get())
+			except:
+				degreeStep = 5
+			for _ in range(0, 360, degreeStep):
+				self.view.rotateVRC(degreeStep, 0)
+				self.update()
+				self.canvas.update()
 		
 	def animateGif(self):
 		'''
@@ -173,21 +186,19 @@ class DisplayApp:
 		'''
 		self.buildData(fn=self.filename)
 		curFrame = self.numericData.shape[0]
-		degreeStep = 2
-		for _ in range(0, 360, degreeStep):
-			self.view.rotateVRC(degreeStep, 0)
-			self.update()
-			self.saveCanvas(self.filename + ("-frame%03d" % curFrame))
-			curFrame += 1
-		#t = threading.Thread
-		allFrames = self.filename + "-frame*.ps"
-		gifName = self.filename + ".gif"
-		print("converting to gif...")
-		os.system("convert -delay 3 -loop 0 " + allFrames + " " + gifName)
-		print("removing frames...")
-		os.system("rm " + allFrames)
-		print("Animating...")
-		os.system("animate " + gifName)
+		if self.enableAnimateRotate.get():
+			try:
+				degreeStep = int(self.animateAngSpeed.get())
+			except:
+				degreeStep = 5
+			for _ in range(0, 360, degreeStep):
+				self.view.rotateVRC(degreeStep, 0)
+				self.update()
+				self.saveCanvas(self.filename + ("-frame%03d" % curFrame))
+				curFrame += 1
+		t = threading.Thread(target=convertToGif, 
+				args=(self.filename+"-frame*.ps", self.filename+".gif"))
+		t.start()
 		
 	def buildAxes(self):
 		'''
@@ -382,6 +393,13 @@ class DisplayApp:
 				self.batter.append(self.canvas.create_line(
 					axesPts[2*i, 0], axesPts[2*i, 1], 
 					axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
+			'''
+			elif i == axesPts.shape[0]/2-2: # bat end
+				self.batter.append(self.canvas.create_arc(
+					axesPts[2*i, 0], axesPts[2*i, 1], 
+					axesPts[2*i+1, 0], axesPts[2*i+1, 1], fill="brown", 
+					start=90 if lefty else 270, extent=180, outline="brown"))
+			'''
 		
 	def buildControlsFrame(self):
 		'''
@@ -409,7 +427,7 @@ class DisplayApp:
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 		self.odatas = tk.Listbox(self.rightcntlframe, selectmode=tk.SINGLE, 
-										exportselection=0)#, height=3)
+										exportselection=0, height=6)
 		self.odatas.bind("<Double-Button-1>", self.plotData)
 		self.odatas.grid( row=row, columnspan=3 )
 		row+=1
@@ -436,9 +454,17 @@ class DisplayApp:
 		row+=1
 
 		# make a get at bat button in the frame
+		tk.Checkbutton( self.rightcntlframe, variable=self.enableAnimateRotate,
+					text="Enable Animation Rotation"
+					).grid( row=row, columnspan=3 )
+		row+=1
+		tk.Label( self.rightcntlframe, text="Angular Speed (deg/frame):"
+				   ).grid( row=row, columnspan=2, sticky=tk.E )
+		self.animateAngSpeed = tk.Entry( self.rightcntlframe, width=5 )
+		self.animateAngSpeed.grid( row=row, column=2, sticky=tk.W )
+		row+=1
 		tk.Label( self.rightcntlframe, text="Real Time Multiplier:"
 				   ).grid( row=row, columnspan=2, sticky=tk.E )
-		#row+=1
 		self.animateSpeedupEntry = tk.Entry( self.rightcntlframe, width=5 )
 		self.animateSpeedupEntry.grid( row=row, column=2, sticky=tk.W )
 		row+=1
@@ -486,27 +512,6 @@ class DisplayApp:
 		self.presetControlRow = row
 		self.presetControl.grid( row=self.presetControlRow, columnspan=3 )
 		row+=1
-
-		'''
-		# make a plot button in the frame
-		tk.Button( self.rightcntlframe, text="Multiple Linear Regression", 
-				   command=self.multiLinearRegression,
-				   ).grid( row=row, columnspan=3 )
-		row+=1
-		
-		# linear regression control
-		tk.Checkbutton( self.rightcntlframe, text="2D Linear Regression",
-					variable=self.linearRegressionEnabled,
-					command=self.toggleLinearRegression,
-					   ).grid( row=row, columnspan=3 )
-		row+=1
-		
-		# connecting axes control
-		tk.Checkbutton( self.rightcntlframe, text="Line Plot",
-					variable=self.linePlot, command=self.update
-					   ).grid( row=row, columnspan=3 )
-		row+=1
-		'''
 		
 		# disable ticks
 		tk.Checkbutton( self.rightcntlframe, text="Enable Ticks",
@@ -1250,8 +1255,8 @@ class DisplayApp:
 			numFrames = int(numFrames)
 			if numFrames < 2: numFrames = 2
 		except:
-			if self.verbose: print("invalid frames %s, using 20 instead" % numFrames)
-			numFrames = 20
+			numFrames = 50
+		if self.verbose: print("%d frames per pitch" % numFrames)
 		atBatIDs = np.squeeze(np.asarray(data.get_data(["AB_ID"])))
 		atBatData = data.get_data(data.get_headers())[atBatIDs == atBatID]
 		atBatRaw =  data.get_raw_data(data.get_raw_headers())[atBatIDs == atBatID]

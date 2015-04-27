@@ -450,7 +450,6 @@ class GetAtBatID(OkCancelDialog):
 		#Ask for number of frames
 		tk.Label(master, text="Frames").pack(side = tk.TOP)
 		self.k = tk.StringVar()
-		self.k.set("20")
 		tk.Entry(master, textvariable=self.k).pack(side=tk.TOP)
 		
 		return None # initial focus
