@@ -516,7 +516,7 @@ class DisplayApp:
 				self.saveCanvas(fn + ("-frame%03d" % row))
 			elif animate:
 				self.canvas.update()
-				time.sleep(.1)
+				time.sleep(.05)
 			else:
 				# line plotting, currently ordered according to csv
 				nextRow = row + 1
