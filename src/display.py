@@ -160,6 +160,12 @@ class DisplayApp:
 		build the data, pausing as if animation
 		'''
 		self.buildData(animate=True)
+		for i in range(360):
+			self.view.rotateVRC(1, 0)
+			self.update()
+			self.canvas.update()
+			time.sleep(.0001)
+
 		
 	def animateGif(self):
 		'''
@@ -547,6 +553,7 @@ class DisplayApp:
 				self.canvas.update()
 				delay = self.data.matrix_data[row, delayCol] / speedup
 				time.sleep(delay)
+			
 			else:
 				# line plotting, currently ordered according to csv
 				nextRow = row + 1
