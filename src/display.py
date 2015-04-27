@@ -3,10 +3,7 @@ Ian Tibbetts and Daniel Meyer
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
 
-TODO: 	Make sure strikes are red and balls are blue
-			- add color radio option (called, gradient, discrete, manual)
-			- use enum2value on called in data to get string, test for color
-		Strike count and most recent pitch type during animation
+TODO: 	Strike count and most recent pitch type during animation
 			- text in the status bar (or on the canvas?) that updates when y==0
 		Keep track of 'actual' vs 'called' strike or ball
 			- test location, if enters strike zone then strike, else ball
@@ -95,7 +92,7 @@ class DisplayApp:
 		self.xLabel.set("X")
 		self.yLabel.set("Y")
 		self.zLabel.set("Z")
-		self.colors = ["blue","red","green","purple","yellow","orange","salmon","maroon","black","goldenrod"]
+		self.colors = ["blue","red","green","purple","orange","salmon"]
 		self.minx = self.miny = self.minz = 0
 		self.maxx = self.maxy = self.maxz = 1
 		# set up the geometry for the window
