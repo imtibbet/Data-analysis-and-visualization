@@ -31,6 +31,7 @@ import matplotlib.pyplot as plt
 #import matplotlib.image as image
 import time
 from fractions import Fraction
+import threading
 
 # defined by me for this project
 import analysis
@@ -160,18 +161,25 @@ class DisplayApp:
 		build the data, pausing as if animation
 		'''
 		self.buildData(animate=True)
-		for i in range(360):
-			self.view.rotateVRC(1, 0)
+		degreeStep = 2
+		for _ in range(0, 360, degreeStep):
+			self.view.rotateVRC(degreeStep, 0)
 			self.update()
 			self.canvas.update()
-			time.sleep(.0001)
-
 		
 	def animateGif(self):
 		'''
 		build the data, animating with images to make a gif
 		'''
 		self.buildData(fn=self.filename)
+		curFrame = self.numericData.shape[0]
+		degreeStep = 2
+		for _ in range(0, 360, degreeStep):
+			self.view.rotateVRC(degreeStep, 0)
+			self.update()
+			self.saveCanvas(self.filename + ("-frame%03d" % curFrame))
+			curFrame += 1
+		#t = threading.Thread
 		allFrames = self.filename + "-frame*.ps"
 		gifName = self.filename + ".gif"
 		print("converting to gif...")
@@ -277,11 +285,104 @@ class DisplayApp:
 					ticksLabelsPts[self.numTicks*i + j, 0], 
 					ticksLabelsPts[self.numTicks*i + j, 1], 
 					font=("Courier", 12), 
-					text="%.1f" % (mins[i]+j*(maxs[i]-mins[i])/float(self.numTicks-1))))
+					text="%.1f" % abs(mins[i]+j*(maxs[i]-mins[i])/float(self.numTicks-1))))
 				
 		if self.data:
 			self.buildStrikeZone()
+			self.buildBatter()
+	
+	def buildBatter(self):
+		'''
+		draw the strike zone
+		'''
+		# side of batter
+		sideCol = self.data.header2raw["HITSIDE"]
+		side = self.data.raw_data[0, sideCol]
+		lefty = side == "L"
+		hpad = 0.01 
+		vpad = 0.04
+		if lefty:
+			hpad *= -1
+		
+		# vertical and horizontal width and midpoints
+		vmid = (self.zoneBot + self.zoneTop)/2.0
+		vmid += vpad
+		vw = (self.zoneTop - self.zoneBot)/2.0
+		hmid = (self.zoneLeft + self.zoneRight)/2.0
+		hmid += hpad
+		hw = self.zoneRight - self.zoneLeft
+		
+		# depth of batter relative to the mound
+		y = self.zoneBack
+		
 			
+		# some useful points (lr/ll - left side of plate, close/far from plate)
+		lr = self.zoneLeft
+		lr += hpad
+		lm = self.zoneLeft - hw/2.0
+		lm += hpad
+		ll = self.zoneLeft - hw
+		ll += hpad
+		rl = self.zoneRight
+		rl += hpad
+		rm = self.zoneRight + hw/2.0
+		rm += hpad
+		rr = self.zoneRight + hw 
+		rr += hpad
+		tb = self.zoneTop
+		tb += vpad
+		tm = self.zoneTop + hw/2.0
+		tm += vpad
+		tt = self.zoneTop + hw
+		tt += vpad
+		bt = self.zoneBot - vw
+		bt += vpad
+		bm = self.zoneBot - 2*vw
+		bm += vpad
+		bb = self.zoneBot - 4*vw
+		bb += vpad
+		if lefty:
+			axes = [[lm,y,vmid],[lr,y,vmid], # arm
+					[lm,y,tb],[lm,y,bt], # body
+					[lm,y,bt],[ll,y,bb], # leg
+					[lm,y,bt],[lr,y,bb], # leg
+					[lr+hw/2.0,y,tm],[ll,y,tm], # cap
+					[ll,y,tb],[lr,y,tt], # head
+					[lr,y,vmid],[ll-hw/2.0,y,tb],[ll-hw/2.0,y,tb+0.01] # bat
+					]
+		else:
+			axes = [[rm,y,vmid],[rl,y,vmid], # arm
+					[rm,y,tb],[rm,y,bt], # body
+					[rm,y,bt],[rl,y,bb], # leg
+					[rm,y,bt],[rr,y,bb], # leg
+					[rl-hw/2.0,y,tm],[rr,y,tm], # cap
+					[rl,y,tb],[rr,y,tt], # head
+					[rl,y,vmid],[rr+hw/2.0,y,tb],[rr+hw/2.0,y,tb+0.01] # bat
+					]
+		axesPts = np.asmatrix(axes, dtype=np.float)
+		axesPts = analysis.appendHomogeneous(axesPts)
+		VTM = self.view.build()
+		axesPts = (VTM * axesPts.T).T
+		try:
+			for axis in self.batter:
+				self.canvas.delete(axis)
+		except:
+			self.batter = []
+		for i in range(axesPts.shape[0]/2):
+			if i == axesPts.shape[0]/2-2:
+				self.batter.append(self.canvas.create_oval(
+					axesPts[2*i, 0], axesPts[2*i, 1], 
+					axesPts[2*i+1, 0], axesPts[2*i+1, 1]))#, fill="#000001"))
+			elif i == axesPts.shape[0]/2-1:
+				self.batter.append(self.canvas.create_polygon(
+					axesPts[2*i, 0], axesPts[2*i, 1], 
+					axesPts[2*i+1, 0], axesPts[2*i+1, 1], 
+					axesPts[2*i+2, 0], axesPts[2*i+2, 1], fill="brown"))
+			else:
+				self.batter.append(self.canvas.create_line(
+					axesPts[2*i, 0], axesPts[2*i, 1], 
+					axesPts[2*i+1, 0], axesPts[2*i+1, 1]))
+		
 	def buildControlsFrame(self):
 		'''
 		build the frame and controls for application
@@ -308,7 +409,7 @@ class DisplayApp:
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 		self.odatas = tk.Listbox(self.rightcntlframe, selectmode=tk.SINGLE, 
-										exportselection=0, height=3)
+										exportselection=0)#, height=3)
 		self.odatas.bind("<Double-Button-1>", self.plotData)
 		self.odatas.grid( row=row, columnspan=3 )
 		row+=1
@@ -386,6 +487,7 @@ class DisplayApp:
 		self.presetControl.grid( row=self.presetControlRow, columnspan=3 )
 		row+=1
 
+		'''
 		# make a plot button in the frame
 		tk.Button( self.rightcntlframe, text="Multiple Linear Regression", 
 				   command=self.multiLinearRegression,
@@ -404,6 +506,7 @@ class DisplayApp:
 					variable=self.linePlot, command=self.update
 					   ).grid( row=row, columnspan=3 )
 		row+=1
+		'''
 		
 		# disable ticks
 		tk.Checkbutton( self.rightcntlframe, text="Enable Ticks",
@@ -485,28 +588,26 @@ class DisplayApp:
 			b.grid( row=row, columnspan=3 )
 			row+=1
 		
-		# use a label to set the size of the right panel
-		tk.Label( self.rightcntlframe, text="OR"
-				  ).grid( row=row, columnspan=3 )
-		row+=1
-		
 		# make a an integer selector for each color band
-		tk.Label( self.rightcntlframe, text="Red").grid( row=row, column=0 )
-		tk.Label( self.rightcntlframe, text="Green").grid( row=row, column=1 )
-		tk.Label( self.rightcntlframe, text="Blue").grid( row=row, column=2 )
+		tk.Label( self.rightcntlframe, text="OR"
+				  )#.grid( row=row, columnspan=3 )
+		row+=1		
+		tk.Label( self.rightcntlframe, text="Red")#.grid( row=row, column=0 )
+		tk.Label( self.rightcntlframe, text="Green")#.grid( row=row, column=1 )
+		tk.Label( self.rightcntlframe, text="Blue")#.grid( row=row, column=2 )
 		row+=1
 		self.redBand = tk.StringVar( self.root )
 		self.redBand.set("0")
 		tk.OptionMenu( self.rightcntlframe, self.redBand, 
-					   *range(256)).grid( row=row, column=0 )
+					   *range(256))#.grid( row=row, column=0 )
 		self.greenBand = tk.StringVar( self.root )
 		self.greenBand.set("0")
 		tk.OptionMenu( self.rightcntlframe, self.greenBand, 
-					   *range(256)).grid( row=row, column=1 )
+					   *range(256))#.grid( row=row, column=1 )
 		self.blueBand = tk.StringVar( self.root )
 		self.blueBand.set("0")
 		tk.OptionMenu( self.rightcntlframe, self.blueBand, 
-					   *range(256)).grid( row=row, column=2 )
+					   *range(256))#.grid( row=row, column=2 )
 		row+=1
 		
 	def buildData(self, animate=False, fn=""): 
@@ -553,7 +654,6 @@ class DisplayApp:
 				self.canvas.update()
 				delay = self.data.matrix_data[row, delayCol] / speedup
 				time.sleep(delay)
-			
 			else:
 				# line plotting, currently ordered according to csv
 				nextRow = row + 1
@@ -1839,8 +1939,6 @@ class DisplayApp:
 		
 		# use the ranges to change the axes and the view
 		self.buildAxes()
-		#TODO: want to see all the data
-		#self.view.extent = [zoneRight-zoneLeft, maxy-miny, zoneTop-zoneBot] 
 				
 		self.shapeData = self.numericData[:, -1]
 		self.shapeField.set(self.headers[-1])
@@ -1939,6 +2037,7 @@ class DisplayApp:
 		if not filename:
 			return
 		if not filename.endswith(".ps"): filename += ".ps"
+		#self.canvas.update()
 		self.canvas.postscript(file=filename, colormode='color')
 		if self.verbose: print("saved canvas as %s" % filename)
 		'''
