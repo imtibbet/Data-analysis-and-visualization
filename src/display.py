@@ -509,6 +509,10 @@ class DisplayApp:
 				np.argsort(viewData[:, 2].T.tolist()[0]))
 		
 		# draw all objects
+		if animate or fn:
+			timeCol = self.data.header2matrix["T"]
+			framesCol = self.data.header2matrix["FRAMES"]
+			
 		for row in indices:
 			x, y = [viewData[row, col] for col in range(2)]
 			self.drawObject(x, y, row=row)
@@ -516,7 +520,9 @@ class DisplayApp:
 				self.saveCanvas(fn + ("-frame%03d" % row))
 			elif animate:
 				self.canvas.update()
-				time.sleep(.1)
+				stime = (self.data.matrix_data[row, timeCol]/
+						self.data.matrix_data[row, framesCol])
+				time.sleep(stime)
 			else:
 				# line plotting, currently ordered according to csv
 				nextRow = row + 1
@@ -1128,8 +1134,8 @@ class DisplayApp:
 		ax = data.header2matrix["XACC"]
 		ay = data.header2matrix["YACC"]
 		az = data.header2matrix["ZACC"]
-		newData = [["X", "Y", "Z", "TS", "SPEED"] + data.get_headers() , 
-				  ["NUMERIC"]*5 + data.get_types()]
+		newData = [["X", "Y", "Z", "T", "FRAMES", "TS", "SPEED"] + data.get_headers() , 
+				  ["NUMERIC"]*7 + data.get_types()]
 		for pitch in atBatData:
 			frames = self.getCurve(numFrames, 
 						pitch[0, sx], pitch[0, sy], pitch[0, sz], 
@@ -1219,7 +1225,7 @@ class DisplayApp:
 			return math.sqrt(_vx(t)**2 + _vy(t)**2 +_vz(t)**2)
 		
 		# sample the curve, making x and y coordinate lists
-		return [[_x(ct), _y(ct), _z(ct), ct, _speed(ct)] 
+		return [[_x(ct), _y(ct), _z(ct), t, frames, ct, _speed(ct)] 
 			for ct in np.arange(0, t, t/float(frames))]
 	
 	def getPresets(self):
