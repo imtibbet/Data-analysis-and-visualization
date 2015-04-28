@@ -243,6 +243,23 @@ class Data:
 		self.raw_data = np.column_stack((self.raw_data, newData))
 		self.buildNumericData() # TODO, rebuilds numeric data from scratch
 		
+	def add_columns(self, newHeaders, newTypes, newDatas):
+		'''
+		adds a column to the data
+		'''
+		#for newHeader, newType, newData in zip(newHeaders, newTypes, newDatas):
+		if newDatas.shape[0] != self.raw_data.shape[0]:
+			print("wrong number of points")
+			return
+		for i in range(newDatas.shape[1]):
+			self.raw_headers.append(newHeaders[i].upper())
+			self.raw_types.append(newTypes[i].upper())
+			self.header2raw[newHeaders[i].upper()] = self.raw_data.shape[1]+i
+		self.raw_data = np.hstack((self.raw_data, newDatas))
+		print self.raw_headers
+		print self.raw_types
+		self.buildNumericData() # TODO, rebuilds numeric data from scratch
+		
 	def get_raw_headers(self): 
 		'''
 		returns a list of all of the headers.

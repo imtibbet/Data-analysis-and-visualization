@@ -173,6 +173,7 @@ class DisplayApp:
 		if self.enableAnimateRotate.get():
 			try:
 				degreeStep = int(self.animateAngSpeed.get())
+				if degreeStep < 1: degreeStep = 1
 			except:
 				degreeStep = 5
 			for _ in range(0, 360, degreeStep):
@@ -189,6 +190,7 @@ class DisplayApp:
 		if self.enableAnimateRotate.get():
 			try:
 				degreeStep = int(self.animateAngSpeed.get())
+				if degreeStep < 1: degreeStep = 1
 			except:
 				degreeStep = 5
 			for _ in range(0, 360, degreeStep):
@@ -454,6 +456,12 @@ class DisplayApp:
 		row+=1
 
 		# make a get at bat button in the frame
+		tk.Button( self.rightcntlframe, text="Gen Curve Data", 
+				   command=self.genBaseballAnalysisData, width=15
+				   ).grid( row=row, columnspan=3 )
+		row+=1
+
+		# make a get at bat button in the frame
 		tk.Checkbutton( self.rightcntlframe, variable=self.enableAnimateRotate,
 					text="Enable Animation Rotation"
 					).grid( row=row, columnspan=3 )
@@ -686,7 +694,6 @@ class DisplayApp:
 		self.menu.add_cascade( label = "File", menu = filemenu )
 		menulist.append([filemenu,
 						[['Open, Ctrl-O', self.openData], 
-						 ['Save, Ctrl-S', self.saveData],  
 						 ['Quit, Ctrl-Q OR Esc', self.handleQuit]
 						 ]])
 
@@ -703,7 +710,8 @@ class DisplayApp:
 		datamenu = tk.Menu( self.menu )
 		self.menu.add_cascade( label = "Data", menu = datamenu )
 		menulist.append([datamenu,
-						[['Save Displayed Data', self.saveData],
+						[['Save Selected Data', self.saveData],
+						 ['Save Displayed Data', self.saveDisplayedData],
 						 ['Plot Selected, Ctrl-P', self.plotData],
 						 ['Set Delimiter, Ctrl-D', self.setDelimiter],
 						 ['Filter, Ctrl-F', self.filterData],
@@ -1237,8 +1245,10 @@ class DisplayApp:
 		self.processData()
 		self.update()
 	
-		
 	def genAtBatData(self):
+		'''
+		
+		'''
 		try:
 			curFilename = self.odatas.get(self.odatas.curselection())
 		except:
@@ -1285,6 +1295,57 @@ class DisplayApp:
 
 		fn = ("ab_%d" % int(atBatID))+("_%03dframes" % numFrames)
 		self.openFilesAppend(fn, Data(newData, verbose=self.verbose))			
+	
+	def genBaseballAnalysisData(self):
+		'''
+		
+		'''		
+		try:
+			curFilename = self.odatas.get(self.odatas.curselection())
+		except:
+			print("No open files")
+			return
+		if self.verbose: print("generating curve data")
+		data = self.filename2data[curFilename]
+		numFrames = tks.askinteger("Number of Frames", 
+								"Input number of frames.")
+		if numFrames < 2: numFrames = 50
+		if self.verbose: print("%d frames per pitch" % numFrames)
+		sx = data.header2matrix["XSTART"]
+		sy = data.header2matrix["YSTART"]
+		sz = data.header2matrix["ZSTART"]
+		ex = data.header2matrix["XEND"]
+		ey = data.header2matrix["YEND"]
+		ez = data.header2matrix["ZEND"]
+		vx = data.header2matrix["XVEL"]
+		vy = data.header2matrix["YVEL"]
+		vz = data.header2matrix["ZVEL"]
+		ax = data.header2matrix["XACC"]
+		ay = data.header2matrix["YACC"]
+		az = data.header2matrix["ZACC"]
+		newDatas = []
+		for row in range(data.matrix_data.shape[0]):
+			frames = self.getCurve(numFrames, 
+						data.matrix_data[row, sx], data.matrix_data[row, sy], data.matrix_data[row, sz], 
+						data.matrix_data[row, ex], data.matrix_data[row, ey], data.matrix_data[row, ez], 
+						data.matrix_data[row, vx], data.matrix_data[row, vy], data.matrix_data[row, vz], 
+						data.matrix_data[row, ax], data.matrix_data[row, ay], data.matrix_data[row, az])
+			frames = frames[:numFrames] # TODO: fix for broken
+			newDatas.append([])
+			for i in range(3): # arrange the x's together, y's, then z's
+				newDatas[-1] += [frame[i] for frame in frames]
+		#for i in range(len(newDatas)):
+		#	print len(newDatas[i]) # TODO: broken
+		newDatas = np.matrix(newDatas, dtype=str)
+		print newDatas.shape
+		newHeaders = ["x%03d" % i for i in range(numFrames)]
+		newHeaders += ["y%03d" % i for i in range(numFrames)]
+		newHeaders += ["z%03d" % i for i in range(numFrames)]
+		newTypes = ["NUMERIC"]*3*numFrames
+		dataClone = data.clone()
+		dataClone.add_columns(newHeaders, newTypes, newDatas)
+		fn = curFilename+("_%03dframes" % numFrames)
+		self.openFilesAppend(fn, dataClone)			
 	
 	def getColorCalled(self, row):
 		'''
@@ -1401,7 +1462,7 @@ class DisplayApp:
 		# sample the curve, making x and y coordinate lists
 		frames = float(frames-1)
 		delay = totalTime/frames
-		return [[str(a) for a in [_x(ct), _y(ct), _z(ct), _speed(ct), ct, delay]]
+		return [[str(x) for x in [_x(ct), _y(ct), _z(ct), _speed(ct), ct, delay]]
 			for ct in np.arange(0, totalTime+delay, delay)]
 	
 	def getPresets(self):
@@ -2060,6 +2121,20 @@ class DisplayApp:
 		'''
 		save the displayed data, prompting for a filename
 		'''
+		try:
+			curFilename = self.odatas.get(self.odatas.curselection())
+		except:
+			print("No open files")
+			return
+		data = self.filename2data[curFilename]
+		curFilename += ".csv" if not curFilename.endswith(".csv") else ""
+		data.save(curFilename)
+		if self.verbose: print("saved %s successfully" % curFilename)
+		
+	def saveDisplayedData(self, event=None):
+		'''
+		save the displayed data, prompting for a filename
+		'''
 		if not self.data:
 			tkm.showerror("No Data", "No data to save")
 			return
@@ -2073,7 +2148,7 @@ class DisplayApp:
 		if not wfile:
 			return
 		self.data.save(wfile)
-		if self.verbose: print("saved successfully")
+		if self.verbose: print("saved %s successfully" % wfile)
 	
 	def saveFilteredData(self, event=None):
 		'''
@@ -2093,7 +2168,7 @@ class DisplayApp:
 			return
 		
 		self.filteredData.save(wfile)
-		if self.verbose: print("saved successfully")
+		if self.verbose: print("saved %s successfully" % wfile)
 
 	def setBindings(self):
 		'''
