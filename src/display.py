@@ -99,7 +99,7 @@ class DisplayApp:
 		self.enableTicks = tk.BooleanVar()		
 		self.enableTicks.set(True)
 		self.enableAnimateRotate = tk.BooleanVar()		
-		self.enableAnimateRotate.set(True)
+		self.enableAnimateRotate.set(False)
 		self.xLabel = tk.StringVar( self.root )
 		self.yLabel = tk.StringVar( self.root )
 		self.zLabel = tk.StringVar( self.root )
@@ -1249,13 +1249,16 @@ class DisplayApp:
 		'''
 		
 		'''
+		# get the selected data object
 		try:
 			curFilename = self.odatas.get(self.odatas.curselection())
 		except:
 			print("No open files")
 			return
-		if self.verbose: print("getting at bat data")
 		data = self.filename2data[curFilename]
+		
+		# get the number of frames and atbatid from the user
+		if self.verbose: print("getting at bat data")
 		try:
 			result = dialogs.GetAtBatID(self.root, data).result
 			[atBatID, numFrames] = result
@@ -1267,32 +1270,23 @@ class DisplayApp:
 		except:
 			numFrames = 50
 		if self.verbose: print("%d frames per pitch" % numFrames)
+
+		# get the raw and numeric data for the specified atbatid
 		atBatIDs = np.squeeze(np.asarray(data.get_data(["AB_ID"])))
 		atBatData = data.get_data(data.get_headers())[atBatIDs == atBatID]
 		atBatRaw =  data.get_raw_data(data.get_raw_headers())[atBatIDs == atBatID]
-		sx = data.header2matrix["XSTART"]
-		sy = data.header2matrix["YSTART"]
-		sz = data.header2matrix["ZSTART"]
-		ex = data.header2matrix["XEND"]
-		ey = data.header2matrix["YEND"]
-		ez = data.header2matrix["ZEND"]
-		vx = data.header2matrix["XVEL"]
-		vy = data.header2matrix["YVEL"]
-		vz = data.header2matrix["ZVEL"]
-		ax = data.header2matrix["XACC"]
-		ay = data.header2matrix["YACC"]
-		az = data.header2matrix["ZACC"]
+
+		# prepare a list of lists as the new data, specifying header and type
 		newData = [["X", "Y", "Z", "SPEED", "TS", "FRAME_DELAY"] + data.get_raw_headers() , 
 					["NUMERIC"]*6 + data.get_raw_types()]
-		for row in range(atBatData.shape[0]):
-			frames = self.getCurve(numFrames, 
-						atBatData[row, sx], atBatData[row, sy], atBatData[row, sz], 
-						atBatData[row, ex], atBatData[row, ey], atBatData[row, ez], 
-						atBatData[row, vx], atBatData[row, vy], atBatData[row, vz], 
-						atBatData[row, ax], atBatData[row, ay], atBatData[row, az])
+		
+		# get all the frames for each pitch, then use to populate the new data
+		allFrames = self.genCurvesData(data, atBatData, numFrames)
+		for row, frames in enumerate(allFrames):
 			for frame in frames:
 				newData.append(frame + atBatRaw[row].tolist()[0])
 
+		# append the new data to the open data listbox
 		fn = ("ab_%d" % int(atBatID))+("_%03dframes" % numFrames)
 		self.openFilesAppend(fn, Data(newData, verbose=self.verbose))			
 	
@@ -1300,42 +1294,35 @@ class DisplayApp:
 		'''
 		
 		'''		
+		# get the selected data object
 		try:
 			curFilename = self.odatas.get(self.odatas.curselection())
 		except:
 			print("No open files")
 			return
-		if self.verbose: print("generating curve data")
 		data = self.filename2data[curFilename]
+		
+		# get the number of frames and atbatid from the user
+		if self.verbose: print("generating curve data")
 		numFrames = tks.askinteger("Number of Frames", 
 								"Input number of frames.")
 		if numFrames < 2: numFrames = 50
 		if self.verbose: print("%d frames per pitch" % numFrames)
-		sx = data.header2matrix["XSTART"]
-		sy = data.header2matrix["YSTART"]
-		sz = data.header2matrix["ZSTART"]
-		ex = data.header2matrix["XEND"]
-		ey = data.header2matrix["YEND"]
-		ez = data.header2matrix["ZEND"]
-		vx = data.header2matrix["XVEL"]
-		vy = data.header2matrix["YVEL"]
-		vz = data.header2matrix["ZVEL"]
-		ax = data.header2matrix["XACC"]
-		ay = data.header2matrix["YACC"]
-		az = data.header2matrix["ZACC"]
+
+		# get all the frames for each pitch and store as a list of lists
+		# with a list of numFrames x's, then y's, then z's for each pitch
 		newDatas = []
-		for row in range(data.matrix_data.shape[0]):
-			frames = self.getCurve(numFrames, 
-						data.matrix_data[row, sx], data.matrix_data[row, sy], data.matrix_data[row, sz], 
-						data.matrix_data[row, ex], data.matrix_data[row, ey], data.matrix_data[row, ez], 
-						data.matrix_data[row, vx], data.matrix_data[row, vy], data.matrix_data[row, vz], 
-						data.matrix_data[row, ax], data.matrix_data[row, ay], data.matrix_data[row, az])
-			frames = frames[:numFrames] # TODO: fix for broken
+		allFrames = self.genCurvesData(data, data.matrix_data, numFrames)
+		for frames in allFrames:
+			frames = frames[:numFrames] # TODO: fix for too many frames
 			newDatas.append([])
 			for i in range(3): # arrange the x's together, y's, then z's
 				newDatas[-1] += [frame[i] for frame in frames]
+		
 		#for i in range(len(newDatas)):
-		#	print len(newDatas[i]) # TODO: broken
+		#	print len(newDatas[i]) # TODO: some lines have more frames
+
+		# use the above list of lists as columns added to the data
 		newDatas = np.matrix(newDatas, dtype=str)
 		print newDatas.shape
 		newHeaders = ["x%03d" % i for i in range(numFrames)]
@@ -1344,8 +1331,33 @@ class DisplayApp:
 		newTypes = ["NUMERIC"]*3*numFrames
 		dataClone = data.clone()
 		dataClone.add_columns(newHeaders, newTypes, newDatas)
+		
+		# append the new data to the open data listbox
 		fn = curFilename+("_%03dframes" % numFrames)
 		self.openFilesAppend(fn, dataClone)			
+	
+	def genCurvesData(self, data, mdata, numFrames):
+		'''
+		
+		'''
+		sx = data.header2matrix["XSTART"]
+		sy = data.header2matrix["YSTART"]
+		sz = data.header2matrix["ZSTART"]
+		ex = data.header2matrix["XEND"]
+		ey = data.header2matrix["YEND"]
+		ez = data.header2matrix["ZEND"]
+		vx = data.header2matrix["XVEL"]
+		vy = data.header2matrix["YVEL"]
+		vz = data.header2matrix["ZVEL"]
+		ax = data.header2matrix["XACC"]
+		ay = data.header2matrix["YACC"]
+		az = data.header2matrix["ZACC"]
+		return [self.getCurve(numFrames, 
+					mdata[row, sx], mdata[row, sy], mdata[row, sz], 
+					mdata[row, ex], mdata[row, ey], mdata[row, ez], 
+					mdata[row, vx], mdata[row, vy], mdata[row, vz], 
+					mdata[row, ax], mdata[row, ay], mdata[row, az])
+			for row in range(mdata.shape[0])]
 	
 	def getColorCalled(self, row):
 		'''

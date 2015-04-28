@@ -43,6 +43,7 @@ class Data:
 			if self.verbose: print("file found, reading data")
 			dialect = csv.excel_tab()
 			dialect.delimiter = delimiter
+			dialect.skipinitialspace = True
 			reader = csv.reader(lines, dialect=dialect)
 		except:
 			print("File not found, assuming input is list of lists of data")
@@ -156,9 +157,8 @@ class Data:
 			lines.append([])
 			for col in range(cols):
 				lines[-1].append(data[row, col])
-		lines = [delimiter.join(line) for line in lines]
 		with open(wfilename, 'w') as wfile:
-			wfile.write("\n".join(lines))
+			csv.writer(wfile).writerows(lines)
 	
 	def parseDate(self, rawDate):
 		'''
@@ -440,9 +440,8 @@ class PCAData(Data):
 			lines.append([])
 			for col in range(cols):
 				lines[-1].append(data[row, col])
-		lines = [delimiter.join(line) for line in lines]
 		with open(wfilename, 'w') as wfile:
-			wfile.write("\n".join(lines))
+			csv.writer(wfile).writerows(lines)
 	
 if __name__ == "__main__":
 	usage = "Usage: python %s <csv_filename>" % sys.argv[0]
