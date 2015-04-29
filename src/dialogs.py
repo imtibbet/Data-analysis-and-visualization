@@ -414,34 +414,55 @@ class GetAtBatID(OkCancelDialog):
 	def body(self, master):
 	
 		fixedfont = tkFont.Font(family="TkCaptionFont")
-		self.dict = {}
+		#self.dict = {}
+		listOfAtBats= []
+		ptDict = {}
 		A = self.data.get_raw_data(self.data.get_raw_headers())
 		
 		ab_id_index = self.data.header2raw["AB_ID"]
 		pitcher_index = self.data.header2raw["PITCHER"]
 		batter_index = self.data.header2raw["BATTER"]
 		event_index = self.data.header2raw["EVENT"]
+		pt_index = self.data.header2raw["PITCH_TYPE"]
 
-	
 	
 		tk.Label(master, text="Select At-Bat ID:").pack(side=tk.TOP)
-		tk.Label(master, text=("%-35s"%"Pitcher") + ("%-35s"%"Hitter") +  ("%-35s"%"Event") + ("%-35s"%"ID")).pack(side=tk.TOP)
+		tk.Label(master, text=("%-15s"%"ID") + ("%-30s"%"Pitcher") + ("%-35s"%"Hitter") +  ("%-35s"%"Event") + ("%-35s"%"Pitch Types")).pack(side=tk.TOP)
 
-		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0, width = 70, font = fixedfont)
+		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0, width = 100, font = fixedfont)
 		#Get At Bat IDS
 		
+		print "fuck off python"
+		
+		B = self.data.get_data(self.data.get_headers())
 
+		print "once"
+		print B
 		
-		for row in A:
-			string = (("%-30s"%row[0, pitcher_index][:28]) + ("%-30s"%row[0, batter_index][:28]) + ("%-30s"%row[0, event_index][:28])+("%-30s"%row[0, ab_id_index][:28]))
-			self.dict[string] = float(row[0 , ab_id_index])	
+		indices = (range(B.shape[0]) if True else
+				np.argsort(B[:, self.data.header2matrix["ZACC"]].T.tolist()[0]))
+	
+		print "twice"
+		print B
+		print "indices"
+		print indices
 		
-		
-		#atbatids = np.unique(np.squeeze(np.asarray(self.data.get_data(["AB_ID"]))))
-		
-		
-		for key in self.dict:
-			self.e1.insert(tk.END, key)
+		for i in indices:
+			row = A[i]
+
+			if row[0, ab_id_index] not in ptDict:
+				#print "hi"
+				ptDict[row[0, ab_id_index]] = [row[0, pt_index]]
+				string = ((("%-12s"%row[0, ab_id_index][:28])+ "%-30s"%row[0, pitcher_index][:28]) + ("%-30s"%row[0, batter_index][:28]) + ("%-30s"%row[0, event_index][:28]) + ("%-30s"%ptDict[row[0, ab_id_index]][:28]))
+				listOfAtBats.append(string)
+			else:
+				ptDict[row[0, ab_id_index]].append(row[0, pt_index])	
+				string = ((("%-12s"%row[0, ab_id_index][:28])+ "%-30s"%row[0, pitcher_index][:28]) + ("%-30s"%row[0, batter_index][:28]) + ("%-30s"%row[0, event_index][:28]) + ("%-30s"%ptDict[row[0, ab_id_index]][:28]))
+				listOfAtBats[-1]=string
+					
+												
+		for atbat in listOfAtBats:
+			self.e1.insert(tk.END, atbat)
 		self.e1.select_set(0)
 		self.e1.pack(side=tk.TOP)
 		
@@ -455,7 +476,7 @@ class GetAtBatID(OkCancelDialog):
 		return None # initial focus
 	
 	def apply(self):
-		self.result = [self.dict[self.e1.get(self.e1.curselection())], self.k.get()]
+		self.result = [float(self.e1.get(self.e1.curselection()).split()[0]), self.k.get()]
 	
 	
 
