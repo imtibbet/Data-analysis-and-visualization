@@ -456,6 +456,12 @@ class DisplayApp:
 		row+=1
 
 		# make a get at bat button in the frame
+		tk.Button( self.rightcntlframe, text="Gen Pitch Data", 
+				   command=self.genPitchesData, width=15
+				   ).grid( row=row, columnspan=3 )
+		row+=1
+
+		# make a get at bat button in the frame
 		tk.Button( self.rightcntlframe, text="Gen Curve Data", 
 				   command=self.genBaseballAnalysisData, width=15
 				   ).grid( row=row, columnspan=3 )
@@ -1339,6 +1345,7 @@ class DisplayApp:
 		fn = curFilename+("_%03dframes" % numFrames)
 		self.openFilesAppend(fn, dataClone)			
 	
+	
 	def genCurvesData(self, data, mdata, numFrames):
 		'''
 		
@@ -1361,6 +1368,50 @@ class DisplayApp:
 					mdata[row, vx], mdata[row, vy], mdata[row, vz], 
 					mdata[row, ax], mdata[row, ay], mdata[row, az])
 			for row in range(mdata.shape[0])]
+	
+	def genPitchesData(self):
+		'''
+		
+		'''
+		# get the selected data object
+		try:
+			curFilename = self.odatas.get(self.odatas.curselection())
+		except:
+			print("No open files")
+			return
+		data = self.filename2data[curFilename]
+		
+		# get the number of frames and atbatid from the user
+		if self.verbose: print("getting pitch data")
+		try:
+			result = dialogs.GetAtBatID(self.root, data).result
+			[rows, numFrames] = result
+		except:
+			return
+		try:
+			numFrames = int(numFrames)
+			if numFrames < 2: numFrames = 2
+		except:
+			numFrames = 50
+		if self.verbose: print("%d frames per pitch" % numFrames)
+
+		# get the raw and numeric data for the specified atbatid
+		selData = data.get_data(data.get_headers(), rows=rows)
+		selRaw =  data.get_raw_data(data.get_raw_headers(), rows=rows)
+
+		# prepare a list of lists as the new data, specifying header and type
+		newData = [["X", "Y", "Z", "SPEED", "TS", "FRAME_DELAY"] + data.get_raw_headers() , 
+					["NUMERIC"]*6 + data.get_raw_types()]
+		
+		# get all the frames for each pitch, then use to populate the new data
+		allFrames = self.genCurvesData(data, selData, numFrames)
+		for row, frames in enumerate(allFrames):
+			for frame in frames:
+				newData.append(frame + selRaw[row].tolist()[0])
+
+		# append the new data to the open data listbox
+		fn = str(rows)+("_%03dframes" % numFrames)
+		self.openFilesAppend(fn, Data(newData, verbose=self.verbose))	
 	
 	def getColorCalled(self, row):
 		'''

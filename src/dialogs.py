@@ -401,7 +401,7 @@ class FilterDataDialog(OkCancelDialog):
 			else:
 				self.result.append([newMins[i], newMaxs[i]])
 
-class GetHeader(OkDialog):
+class GetHeaderSort(OkDialog):
 	'''
 	User selects header
 	'''
@@ -420,10 +420,14 @@ class GetHeader(OkDialog):
 		self.e2.select_set(0)
 		self.e2.pack(side=tk.TOP)
 		
+		self.a = tk.BooleanVar()
+		self.a.set(True)
+		tk.Checkbutton( master, text="Ascending?", variable=self.a).pack(side=tk.TOP)
+		
 		return None # initial focus
 
 	def apply(self):
-		self.result = self.e2.get(self.e2.curselection()).upper()
+		self.result = [self.e2.get(self.e2.curselection()).upper(), self.a.get()]
 
 class GetAtBatID(OkCancelDialog):
 	"""
@@ -431,7 +435,7 @@ class GetAtBatID(OkCancelDialog):
 	"""
 	def __init__(self, parent, data, title = None):
 		self.data = data
-		self.sortHeader = GetHeader(parent, self.data).result
+		self.sortHeader, self.ascending = GetHeaderSort(parent, self.data).result
 		OkCancelDialog.__init__(self, parent, title)
 		
 	def body(self, master):
