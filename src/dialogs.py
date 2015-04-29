@@ -401,86 +401,103 @@ class FilterDataDialog(OkCancelDialog):
 			else:
 				self.result.append([newMins[i], newMaxs[i]])
 
+class GetHeader(OkDialog):
+	'''
+	User selects header
+	'''
+	def __init__(self, parent, data, title = None):
+		self.headers = [h.upper() for h in data.get_headers()]
+		print self.headers
+		OkDialog.__init__(self, parent, title)
+		
+	def body(self, master):
+		print "body"
+		tk.Label(master, text="Header for sorting:").pack(side=tk.TOP)
+		self.e2 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
+		self.e2.insert(tk.END, "None")
+		for header in self.headers:
+			self.e2.insert(tk.END, header.capitalize())	
+		self.e2.select_set(0)
+		self.e2.pack(side=tk.TOP)
+		
+		return None # initial focus
+
+	def apply(self):
+		self.result = self.e2.get(self.e2.curselection()).upper()
 
 class GetAtBatID(OkCancelDialog):
 	"""
 	User select at bat to look at
 	"""
 	def __init__(self, parent, data, title = None):
-		
 		self.data = data
+		self.sortHeader = GetHeader(parent, self.data).result
 		OkCancelDialog.__init__(self, parent, title)
 		
 	def body(self, master):
+		
+		A = self.data.get_raw_data(self.data.get_raw_headers())
+		B = self.data.get_data(self.data.get_headers())
 	
 		fixedfont = tkFont.Font(family="TkCaptionFont")
-		#self.dict = {}
-		listOfAtBats= []
+		listOfAtBats = []
 		ptDict = {}
-		A = self.data.get_raw_data(self.data.get_raw_headers())
+		self.pitch2row = {}
 		
 		ab_id_index = self.data.header2raw["AB_ID"]
 		pitcher_index = self.data.header2raw["PITCHER"]
 		batter_index = self.data.header2raw["BATTER"]
 		event_index = self.data.header2raw["EVENT"]
 		pt_index = self.data.header2raw["PITCH_TYPE"]
-
 	
 		tk.Label(master, text="Select At-Bat ID:").pack(side=tk.TOP)
 		tk.Label(master, text=("%-15s"%"ID") + ("%-30s"%"Pitcher") + ("%-35s"%"Hitter") +  ("%-35s"%"Event") + ("%-35s"%"Pitch Types")).pack(side=tk.TOP)
 
-		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0, width = 100, font = fixedfont)
+		self.e1 = tk.Listbox(master, selectmode=tk.EXTENDED, exportselection=0, width = 100, font = fixedfont)
 		#Get At Bat IDS
-		
-		print "fuck off python"
-		
-		B = self.data.get_data(self.data.get_headers())
-
-		print "once"
-		print B
-		
-		indices = (range(B.shape[0]) if True else
-				np.argsort(B[:, self.data.header2matrix["ZACC"]].T.tolist()[0]))
+		indices = (range(B.shape[0]) if self.sortHeader.upper() == "NONE" else
+				np.argsort(B[:, self.data.header2matrix[self.sortHeader]].T.tolist()[0]))
 	
-		print "twice"
-		print B
-		print "indices"
-		print indices
-		
 		for i in indices:
 			row = A[i]
-
+			ab_id = row[0, ab_id_index][:28]
+			pitcher = row[0, pitcher_index][:28]
+			batter = row[0, batter_index][:28]
+			event = row[0, event_index][:28]
+			pitchStr = " ".join([ab_id, pitcher, batter, event])
+			self.pitch2row[pitchStr.strip()] = i
+			
+			string = ((("%-12s"%ab_id)+ "%-30s"%pitcher) + 
+					("%-30s"%batter) + ("%-30s"%event))
 			if row[0, ab_id_index] not in ptDict:
-				#print "hi"
 				ptDict[row[0, ab_id_index]] = [row[0, pt_index]]
-				string = ((("%-12s"%row[0, ab_id_index][:28])+ "%-30s"%row[0, pitcher_index][:28]) + ("%-30s"%row[0, batter_index][:28]) + ("%-30s"%row[0, event_index][:28]) + ("%-30s"%ptDict[row[0, ab_id_index]][:28]))
-				listOfAtBats.append(string)
+				listOfAtBats.append(string + ("%-30s"%ptDict[ab_id][:28]))
 			else:
 				ptDict[row[0, ab_id_index]].append(row[0, pt_index])	
-				string = ((("%-12s"%row[0, ab_id_index][:28])+ "%-30s"%row[0, pitcher_index][:28]) + ("%-30s"%row[0, batter_index][:28]) + ("%-30s"%row[0, event_index][:28]) + ("%-30s"%ptDict[row[0, ab_id_index]][:28]))
-				listOfAtBats[-1]=string
-					
+				listOfAtBats[-1] = string + ("%-30s"%ptDict[ab_id][:28])	
 												
 		for atbat in listOfAtBats:
 			self.e1.insert(tk.END, atbat)
 		self.e1.select_set(0)
 		self.e1.pack(side=tk.TOP)
 		
-		
-		
 		#Ask for number of frames
 		tk.Label(master, text="Frames").pack(side = tk.TOP)
-		self.k = tk.StringVar()
-		tk.Entry(master, textvariable=self.k).pack(side=tk.TOP)
+		self.frames = tk.StringVar()
+		tk.Entry(master, textvariable=self.frames).pack(side=tk.TOP)
 		
 		return None # initial focus
 	
 	def apply(self):
-		self.result = [float(self.e1.get(self.e1.curselection()).split()[0]), self.k.get()]
+		rows = []
+		selections = [self.e1.get(sel) for sel in self.e1.curselection()]
+		print selections
+		for selection in selections:
+			pitchStr = selection.split("[")[0]
+			pitchStr = " ".join(pitchStr.split())
+			rows.append(self.pitch2row[pitchStr.strip()])
+		self.result = [rows, self.frames.get()]
 	
-	
-
-			
 class MatPlotLibDialog(OkDialog):
 	
 	def __init__(self, parent, figure, title=None):

@@ -1261,7 +1261,7 @@ class DisplayApp:
 		if self.verbose: print("getting at bat data")
 		try:
 			result = dialogs.GetAtBatID(self.root, data).result
-			[atBatID, numFrames] = result
+			[rows, numFrames] = result
 		except:
 			return
 		try:
@@ -1273,6 +1273,7 @@ class DisplayApp:
 
 		# get the raw and numeric data for the specified atbatid
 		atBatIDs = np.squeeze(np.asarray(data.get_data(["AB_ID"])))
+		atBatID = atBatIDs[rows[0]]
 		atBatData = data.get_data(data.get_headers())[atBatIDs == atBatID]
 		atBatRaw =  data.get_raw_data(data.get_raw_headers())[atBatIDs == atBatID]
 
