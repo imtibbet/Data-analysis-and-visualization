@@ -454,7 +454,8 @@ class GetAtBatID(OkCancelDialog):
 		event_index = self.data.header2raw["EVENT"]
 		pt_index = self.data.header2raw["PITCH_TYPE"]
 	
-		tk.Label(master, text="Select At-Bat ID:").pack(side=tk.TOP)
+		# TODO: could have a sort button, rather than have the dialog in the init
+		tk.Label(master, text="Select Pitch(es):").pack(side=tk.TOP)
 		tk.Label(master, text=("%-15s"%"ID") + ("%-30s"%"Pitcher") + ("%-35s"%"Hitter") +  ("%-35s"%"Event") + ("%-35s"%"Pitch Types")).pack(side=tk.TOP)
 
 		self.e1 = tk.Listbox(master, selectmode=tk.EXTENDED, exportselection=0, width = 100, font = fixedfont)
