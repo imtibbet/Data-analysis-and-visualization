@@ -1316,8 +1316,9 @@ class DisplayApp:
 		for frames in allFrames:
 			frames = frames[:numFrames] # TODO: fix for too many frames
 			newDatas.append([])
-			for i in range(3): # arrange the x's together, y's, then z's
-				newDatas[-1] += [frame[i] for frame in frames]
+			newDatas[-1] += [frame[0] for frame in frames] # x's
+			newDatas[-1] += [frame[2] for frame in frames] # z's
+			newDatas[-1] += [frame[1] for frame in frames] # y's
 		
 		#for i in range(len(newDatas)):
 		#	print len(newDatas[i]) # TODO: some lines have more frames
@@ -1325,9 +1326,10 @@ class DisplayApp:
 		# use the above list of lists as columns added to the data
 		newDatas = np.matrix(newDatas, dtype=str)
 		print newDatas.shape
-		newHeaders = ["x%03d" % i for i in range(numFrames)]
-		newHeaders += ["y%03d" % i for i in range(numFrames)]
-		newHeaders += ["z%03d" % i for i in range(numFrames)]
+		newHeaders = []
+		newHeaders += ["x%03d" % i for i in range(numFrames)] # x's
+		newHeaders += ["z%03d" % i for i in range(numFrames)] # z's
+		newHeaders += ["y%03d" % i for i in range(numFrames)] # y's
 		newTypes = ["NUMERIC"]*3*numFrames
 		dataClone = data.clone()
 		dataClone.add_columns(newHeaders, newTypes, newDatas)
@@ -1364,7 +1366,6 @@ class DisplayApp:
 		gets the color according to how the pitch was called
 		'''
 		calledCol = self.data.header2matrix["CALLED"]
-		print self.data.enum2value
 		enumIndex = int(self.data.matrix_data[row, calledCol])
 		calledStr = self.data.enum2value["CALLED"][enumIndex]
 		if calledStr == "B":

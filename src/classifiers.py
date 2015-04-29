@@ -5,8 +5,6 @@
 #
 # Classifier class and child definitions
 
-import sys
-import data
 import analysis as an
 import numpy as np
 import math
@@ -30,6 +28,9 @@ def classify(dtrain, dtest, classHeader, headers=[], knnbool=False, K=None):
 		KNN(dtrain, headers, categories = truetraincats, K=K))
 	traincats, trainlabels = nb.classify(dtrain.get_data(headers))
 	testcats, testlabels = nb.classify(dtest.get_data(headers))
+	print("KNN Classifier with k=%d" % K if knnbool else "Naive Bayes Classifier")
+	print("Headers: "+ str(headers))
+	print("Class Header: " + str(classHeader))
 	print("train")
 	print(nb.confusion_matrix_str(nb.confusion_matrix(truetraincats, traincats)))
 	try:
