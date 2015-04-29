@@ -405,9 +405,9 @@ class GetHeaderSort(OkDialog):
 	'''
 	User selects header
 	'''
-	def __init__(self, parent, data, title = None):
+	def __init__(self, parent, data, curHeader, title = None):
 		self.headers = [h.upper() for h in data.get_headers()]
-		print self.headers
+		self.curHeader = curHeader.upper()
 		OkDialog.__init__(self, parent, title)
 		
 	def body(self, master):
@@ -415,9 +415,11 @@ class GetHeaderSort(OkDialog):
 		tk.Label(master, text="Header for sorting:").pack(side=tk.TOP)
 		self.e2 = tk.Listbox(master, selectmode=tk.SINGLE, exportselection=0)
 		self.e2.insert(tk.END, "None")
-		for header in self.headers:
+		selIndex = 0
+		for i, header in enumerate(self.headers, start=1):
+			if header == self.curHeader: selIndex = i
 			self.e2.insert(tk.END, header.capitalize())	
-		self.e2.select_set(0)
+		self.e2.select_set(selIndex)
 		self.e2.pack(side=tk.TOP)
 		
 		self.a = tk.BooleanVar()
@@ -435,34 +437,61 @@ class GetAtBatID(OkCancelDialog):
 	"""
 	def __init__(self, parent, data, title = None):
 		self.data = data
-		self.sortHeader, self.ascending = GetHeaderSort(parent, self.data).result
+		self.sortHeader = "NONE"
+		self.ascending = True
 		OkCancelDialog.__init__(self, parent, title)
 		
 	def body(self, master):
+	
+		tk.Button(master, text="Sort", command=lambda: self.populateListbox(True)
+				).pack(side=tk.TOP)
+		tk.Label(master, text="Select Pitch(es):").pack(side=tk.TOP)
+		tk.Label(master, text=("%-15s"%"ID") + ("%-30s"%"Pitcher") + ("%-35s"%"Hitter") +  ("%-35s"%"Event") + ("%-35s"%"Pitch Types")).pack(side=tk.TOP)
+
+		fixedfont = tkFont.Font(family="TkCaptionFont")
+		self.e1 = tk.Listbox(master, selectmode=tk.EXTENDED, exportselection=0, width = 100, font = fixedfont)
+		self.e1.pack(side=tk.TOP)
+		self.populateListbox()
+		
+		#Ask for number of frames
+		tk.Label(master, text="Frames").pack(side = tk.TOP)
+		self.frames = tk.StringVar()
+		tk.Entry(master, textvariable=self.frames).pack(side=tk.TOP)
+		
+		return None # initial focus
+	
+	def apply(self):
+		rows = []
+		selections = [self.e1.get(sel) for sel in self.e1.curselection()]
+		print selections
+		for selection in selections:
+			pitchStr = selection.split("[")[0]
+			pitchStr = " ".join(pitchStr.split())
+			rows.append(self.pitch2row[pitchStr.strip()])
+		self.result = [rows, self.frames.get()]
+		
+	def populateListbox(self, prompt=False):
+		
+		self.e1.delete(0, tk.END)
+		
+		if prompt:
+			self.sortHeader, self.ascending = GetHeaderSort(self, self.data, self.sortHeader).result
 		
 		A = self.data.get_raw_data(self.data.get_raw_headers())
 		B = self.data.get_data(self.data.get_headers())
 	
-		fixedfont = tkFont.Font(family="TkCaptionFont")
-		listOfAtBats = []
-		ptDict = {}
-		self.pitch2row = {}
-		
 		ab_id_index = self.data.header2raw["AB_ID"]
 		pitcher_index = self.data.header2raw["PITCHER"]
 		batter_index = self.data.header2raw["BATTER"]
 		event_index = self.data.header2raw["EVENT"]
 		pt_index = self.data.header2raw["PITCH_TYPE"]
-	
-		# TODO: could have a sort button, rather than have the dialog in the init
-		tk.Label(master, text="Select Pitch(es):").pack(side=tk.TOP)
-		tk.Label(master, text=("%-15s"%"ID") + ("%-30s"%"Pitcher") + ("%-35s"%"Hitter") +  ("%-35s"%"Event") + ("%-35s"%"Pitch Types")).pack(side=tk.TOP)
-
-		self.e1 = tk.Listbox(master, selectmode=tk.EXTENDED, exportselection=0, width = 100, font = fixedfont)
-		#Get At Bat IDS
+		listOfAtBats = []
+		ptDict = {}
+		self.pitch2row = {}
 		indices = (range(B.shape[0]) if self.sortHeader.upper() == "NONE" else
 				np.argsort(B[:, self.data.header2matrix[self.sortHeader]].T.tolist()[0]))
-	
+
+		if not self.ascending: indices = reversed(indices)
 		for i in indices:
 			row = A[i]
 			ab_id = row[0, ab_id_index][:28]
@@ -484,24 +513,6 @@ class GetAtBatID(OkCancelDialog):
 		for atbat in listOfAtBats:
 			self.e1.insert(tk.END, atbat)
 		self.e1.select_set(0)
-		self.e1.pack(side=tk.TOP)
-		
-		#Ask for number of frames
-		tk.Label(master, text="Frames").pack(side = tk.TOP)
-		self.frames = tk.StringVar()
-		tk.Entry(master, textvariable=self.frames).pack(side=tk.TOP)
-		
-		return None # initial focus
-	
-	def apply(self):
-		rows = []
-		selections = [self.e1.get(sel) for sel in self.e1.curselection()]
-		print selections
-		for selection in selections:
-			pitchStr = selection.split("[")[0]
-			pitchStr = " ".join(pitchStr.split())
-			rows.append(self.pitch2row[pitchStr.strip()])
-		self.result = [rows, self.frames.get()]
 	
 class MatPlotLibDialog(OkDialog):
 	
