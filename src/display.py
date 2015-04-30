@@ -1266,7 +1266,7 @@ class DisplayApp:
 		# get the number of frames and atbatid from the user
 		if self.verbose: print("getting at bat data")
 		try:
-			result = dialogs.GetAtBatID(self.root, data).result
+			result = dialogs.GetPitches(self.root, data, atbat=True).result
 			[rows, numFrames] = result
 		except:
 			return
@@ -1384,7 +1384,7 @@ class DisplayApp:
 		# get the number of frames and atbatid from the user
 		if self.verbose: print("getting pitch data")
 		try:
-			result = dialogs.GetAtBatID(self.root, data).result
+			result = dialogs.GetPitches(self.root, data).result
 			[rows, numFrames] = result
 		except:
 			return
