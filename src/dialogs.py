@@ -447,7 +447,7 @@ class GetPitches(OkCancelDialog):
 		tk.Button(master, text="Sort", command=self.populateListbox
 				).pack(side=tk.TOP)
 		tk.Label(master, text="Select Pitch(es):").pack(side=tk.TOP)
-		tk.Label(master, text=("%-15s"%"ID") + ("%-30s"%"Pitcher") + ("%-35s"%"Hitter") +  ("%-35s"%"Event") + ("%-35s"%"Pitch Types")).pack(side=tk.TOP)
+		tk.Label(master, text=("%-30s"%"ID") + ("%-50s"%"Pitcher") + ("%-40s"%"Hitter") +  ("%-40s"%"Event") + ("%-70s"%"Pitch Types")).pack(side=tk.TOP)
 
 		fixedfont = tkFont.Font(family="TkCaptionFont")
 		self.e1 = tk.Listbox(master, selectmode=tk.SINGLE if self.atbat else tk.EXTENDED, 
