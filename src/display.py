@@ -293,7 +293,9 @@ class DisplayApp:
 				axesLabelsPts[i, 0], axesLabelsPts[i, 1], 
 				font=("Courier", 12), text=labelVars[i].get()))
 			if not self.enableTicks.get(): continue
-			for j in range(self.numTicks):	
+			for j in range(self.numTicks):
+				tickStr = "%.1f" % (mins[i]+j*(maxs[i]-mins[i])/float(self.numTicks-1))	
+				if tickStr == "-0.0": tickStr = "0.0"
 				self.ticksMarks.append(self.canvas.create_line(
 					ticksMarksPts[self.numTicks*2*i + 2*j, 0], 
 					ticksMarksPts[self.numTicks*2*i + 2*j, 1], 
@@ -303,7 +305,7 @@ class DisplayApp:
 					ticksLabelsPts[self.numTicks*i + j, 0], 
 					ticksLabelsPts[self.numTicks*i + j, 1], 
 					font=("Courier", 12), 
-					text="%.1f" % abs(mins[i]+j*(maxs[i]-mins[i])/float(self.numTicks-1))))
+					text=tickStr))
 				
 		if self.data:
 			self.buildStrikeZone()
@@ -2338,11 +2340,13 @@ class DisplayApp:
 			tkm.showerror("No Data", "No data to plot")
 		else:
 			self.filteredData = None
-			self.headers = ["AGE(GYR)", "PX(PIXELS)", "PY(PIXELS)", 
-						"RAD(PIXELS)","REDSHIFT(Z)","CAMERA"]
+			#self.headers = ["AGE(GYR)", "PX(PIXELS)", "PY(PIXELS)", 
+			#			"RAD(PIXELS)","REDSHIFT(Z)","CAMERA"]
+			self.headers = ["X", "Y", "Z", 
+						"SPEED","PITCH_TYPE","PITCH_TYPE"]
 			for header in self.headers:
 				if header not in [h.upper() for h in self.data.get_headers()]:
-					if self.verbose: print("not astro data")
+					if self.verbose: print("not baseball trajectory data")
 					self.headers = None
 					break
 			self.pickDataAxes()
