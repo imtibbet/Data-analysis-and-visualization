@@ -30,6 +30,18 @@ import time
 from fractions import Fraction
 import threading
 
+# use tkinter for GUI elements
+#try:
+#	import tkinter as tk # python 3
+#	tkf = tk.filedialog
+#	from tk.colorchooser import askcolor
+#except ImportError:
+import Tkinter as tk # python 2
+import tkFileDialog as tkf
+import tkMessageBox as tkm
+import tkSimpleDialog as tks
+from tkColorChooser import askcolor
+
 # defined by me for this project
 import analysis
 import classifiers
@@ -45,20 +57,13 @@ except ImportError:
 		import pyfits as fits
 	except:
 		fits = None
-
-# use tkinter for GUI elements
-#try:
-#	import tkinter as tk # python 3
-#	tkf = tk.filedialog
-#	from tk.colorchooser import askcolor
-#except ImportError:
-import Tkinter as tk # python 2
-import tkFileDialog as tkf
-import tkMessageBox as tkm
-import tkSimpleDialog as tks
-from tkColorChooser import askcolor
 	
 def convertToGif(allFrames, gifName, animate=False):
+	'''
+	use the given strings to convert frame images (regex) to a gif
+	removes frames after conversion and optionally animates
+	conversion and animation rely on ImageMagik's convert and animate commands
+	'''
 	print("converting to gif...")
 	os.system("convert -delay 3 -loop 0 " + allFrames + " " + gifName)
 	print("removing frames...")
@@ -1345,7 +1350,6 @@ class DisplayApp:
 		fn = curFilename+("_%03dframes" % numFrames)
 		self.openFilesAppend(fn, dataClone)			
 	
-	
 	def genCurvesData(self, data, mdata, numFrames):
 		'''
 		
@@ -1616,7 +1620,6 @@ class DisplayApp:
 		if self.verbose: print("handle button 1: %d %d" % (event.x, event.y))
 		self.baseClick = [event.x, event.y]
 		self.baseExtent = self.view.extent.copy()
-
 
 	def handleButton2(self, event):
 		'''
@@ -1986,7 +1989,6 @@ class DisplayApp:
 			self.manualDataRanges = {}
 			self.removeFit()
 			self.processData()
-			#TODO: good for baseball to turn off self.resetView()
 			
 	def plotData(self, event=None):
 		'''
@@ -2506,8 +2508,6 @@ class DisplayApp:
 						tickVal = ""
 				self.canvas.itemconfig( curTick, state=tickstate )
 				self.canvas.itemconfig( curLabel, text=tickVal )
-		#self.canvas.itemconfig(self.axes[2], state=zstate)
-		#self.canvas.itemconfig(self.axesLabels[2], state=zstate)
 			
 	def updateNumObjStrVar(self):
 		'''
