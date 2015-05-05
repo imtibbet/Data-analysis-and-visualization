@@ -1,58 +1,34 @@
+
+Question: Can we build a classifier to identify the result of a pitch based on its trajectory? 
+Does this result depend on how we describe the trajectory? 
+Below are the results looking at the trajectories initial conditions, followed by the same analysis instead using the trajectory of the pitch over 50 frames evenly spaced in time.
+Because of the nature of our data the y position must be excluded since it does not vary between pitches.
+The velocity and acceleration in the y are therefore used in both analyses.
+
 Naive Bayes Classifier
 Headers: ['XSTART', 'ZSTART', 'XVEL', 'YVEL', 'ZVEL', 'XACC', 'YACC', 'ZACC']
 Class Header: CALLED
-train
-
 Confusion Matrix:
-Predicted |    0.0   |   1.0   |   2.0
+Predicted |  Strike  |  Ball  |  Hit
 Actual--------------------------------------
-Cluster 0 |      145      56      28
-Cluster 1 |       81     115      20
-Cluster 2 |      298     137     120
-
-test
-
-Confusion Matrix:
-Predicted |    0.0   |   1.0   |   2.0
-Actual--------------------------------------
-Cluster 0 |      145      56      28
-Cluster 1 |       81     115      20
-Cluster 2 |      298     137     120
+Strike    |     145      56      28
+Ball      |      81     115      20
+Hit       |     298     137     120
 
 Naive Bayes Classifier
-Headers: ['X000', 'X001', 'X002', 'X003', 'X004', 'X005', 'X006', 'X007', 'X008', 'X009', 'X010', 'X011', 'X012', 'X013', 'X014', 'X015', 'X016', 'X017', 'X018', 'X019', 'X020', 'X021', 'X022', 'X023', 'X024', 'X025', 'X026', 'X027', 'X028', 'X029', 'X030', 'X031', 'X032', 'X033', 'X034', 'X035', 'X036', 'X037', 'X038', 'X039', 'X040', 'X041', 'X042', 'X043', 'X044', 'X045', 'X046', 'X047', 'X048', 'X049', 'Z000', 'Z001', 'Z002', 'Z003', 'Z004', 'Z005', 'Z006', 'Z007', 'Z008', 'Z009', 'Z010', 'Z011', 'Z012', 'Z013', 'Z014', 'Z015', 'Z016', 'Z017', 'Z018', 'Z019', 'Z020', 'Z021', 'Z022', 'Z023', 'Z024', 'Z025', 'Z026', 'Z027', 'Z028', 'Z029', 'Z030', 'Z031', 'Z032', 'Z033', 'Z034', 'Z035', 'Z036', 'Z037', 'Z038', 'Z039', 'Z040', 'Z041', 'Z042', 'Z043', 'Z044', 'Z045', 'Z046', 'Z047', 'Z048', 'Z049']
+Headers: ['YVEL', 'YACC', 'X000', 'X001', 'X002', 'X003', 'X004', 'X005', 'X006', 'X007', 'X008', 'X009', 'X010', 'X011', 'X012', 'X013', 'X014', 'X015', 'X016', 'X017', 'X018', 'X019', 'X020', 'X021', 'X022', 'X023', 'X024', 'X025', 'X026', 'X027', 'X028', 'X029', 'X030', 'X031', 'X032', 'X033', 'X034', 'X035', 'X036', 'X037', 'X038', 'X039', 'X040', 'X041', 'X042', 'X043', 'X044', 'X045', 'X046', 'X047', 'X048', 'X049', 'Z000', 'Z001', 'Z002', 'Z003', 'Z004', 'Z005', 'Z006', 'Z007', 'Z008', 'Z009', 'Z010', 'Z011', 'Z012', 'Z013', 'Z014', 'Z015', 'Z016', 'Z017', 'Z018', 'Z019', 'Z020', 'Z021', 'Z022', 'Z023', 'Z024', 'Z025', 'Z026', 'Z027', 'Z028', 'Z029', 'Z030', 'Z031', 'Z032', 'Z033', 'Z034', 'Z035', 'Z036', 'Z037', 'Z038', 'Z039', 'Z040', 'Z041', 'Z042', 'Z043', 'Z044', 'Z045', 'Z046', 'Z047', 'Z048', 'Z049']
 Class Header: CALLED
-train
-
 Confusion Matrix:
-Predicted |    0.0   |   1.0   |   2.0
+Predicted |  Strike  |  Ball  |  Hit
 Actual--------------------------------------
-Cluster 0 |      165      69      44
-Cluster 1 |       85     202      13
-Cluster 2 |      274      37     111
+Strike    |     167      69      43
+Ball      |      85     202      13
+Hit       |     272      37     112
 
-test
-
-Confusion Matrix:
-Predicted |    0.0   |   1.0   |   2.0
-Actual--------------------------------------
-Cluster 0 |      165      69      44
-Cluster 1 |       85     202      13
-Cluster 2 |      274      37     111
-train
-
-Confusion Matrix:
-Predicted |    0.0   |   1.0   |   2.0
-Actual--------------------------------------
-Cluster 0 |      165      69      44
-Cluster 1 |       85     202      13
-Cluster 2 |      274      37     111
-
-test
-
-Confusion Matrix:
-Predicted |    0.0   |   1.0   |   2.0
-Actual--------------------------------------
-Cluster 0 |      165      69      44
-Cluster 1 |       85     202      13
-Cluster 2 |      274      37     111
+Answer: Yes, the trajectory can be used to build a classifier, which does a better job predicting strikes and balls than predicting hits.
+The classifier badly confuses hits as strikes, identifying over half of the hits as strikes.
+The classifier does the best job with balls, which are sometimes confused with strikes and rarely confused with hits.
+Strikes are identified correctly most often, with about even chance of being confused as either a ball or a hit.
+These results differ slightly when using the trajectory as frames instead of initial conditions, but the trends are the same.
+This analysis was done with a single pitcher (Kershaw), and it would be interesting to look in the future at how these trends compare across different pitchers.
+The trends seem sensible given that the classifier was only given trajectory information, which would be significantly different for balls than strikes and very similar for strikes and hits.
