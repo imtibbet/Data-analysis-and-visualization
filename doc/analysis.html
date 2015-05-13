@@ -9,7 +9,7 @@
 <font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>analysis</strong></big></big></font></td
 ><td align=right valign=bottom
 ><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/imtibbet/Documents/CS251/src/analysis.py">/home/imtibbet/Documents/CS251/src/analysis.py</a></font></td></tr></table>
-    <p><tt>Ian&nbsp;Tibbetts<br>
+    <p><tt>Ian&nbsp;"DAPPER"&nbsp;Tibbetts&nbsp;and&nbsp;Daniel&nbsp;"D-Train"&nbsp;Meyer<br>
 Colby&nbsp;College&nbsp;CS251&nbsp;Spring&nbsp;'15<br>
 Professors&nbsp;Stephanie&nbsp;Taylor&nbsp;and&nbsp;Bruce&nbsp;Maxwell</tt></p>
 <p>
@@ -19,9 +19,12 @@ Professors&nbsp;Stephanie&nbsp;Taylor&nbsp;and&nbsp;Bruce&nbsp;Maxwell</tt></p>
 <font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
     
 <tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
-<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="numpy.html">numpy</a><br>
-</td><td width="25%" valign=top><a href="scipy.stats.html">scipy.stats</a><br>
-</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="classifiers.html">classifiers</a><br>
+<a href="numpy.html">numpy</a><br>
+</td><td width="25%" valign=top><a href="random.html">random</a><br>
+<a href="scipy.stats.html">scipy.stats</a><br>
+</td><td width="25%" valign=top><a href="scipy.cluster.vq.html">scipy.cluster.vq</a><br>
+</td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
 <table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="#eeaa77">
 <td colspan=3 valign=bottom>&nbsp;<br>
@@ -32,6 +35,21 @@ Professors&nbsp;Stephanie&nbsp;Taylor&nbsp;and&nbsp;Bruce&nbsp;Maxwell</tt></p>
  <dl><dt><a name="-data_range"><strong>data_range</strong></a>(data, colHeaders)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;list&nbsp;of&nbsp;column&nbsp;headers&nbsp;and&nbsp;the&nbsp;Data&nbsp;object&nbsp;<br>
 returns&nbsp;a&nbsp;list&nbsp;of&nbsp;2-element&nbsp;lists&nbsp;with&nbsp;the&nbsp;minimum&nbsp;and&nbsp;maximum&nbsp;values&nbsp;for<br>
 each&nbsp;column.&nbsp;The&nbsp;function&nbsp;is&nbsp;required&nbsp;to&nbsp;work&nbsp;only&nbsp;on&nbsp;numeric&nbsp;data&nbsp;types.</tt></dd></dl>
+ <dl><dt><a name="-fuzzyPartitionToClusters"><strong>fuzzyPartitionToClusters</strong></a>(points, partition, m)</dt></dl>
+ <dl><dt><a name="-kmeans"><strong>kmeans</strong></a>(d, headers<font color="#909090">=[]</font>, K<font color="#909090">=2</font>, whiten<font color="#909090">=True</font>, categories<font color="#909090">=[]</font>)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;Data&nbsp;object,&nbsp;a&nbsp;set&nbsp;of&nbsp;headers,&nbsp;and&nbsp;the&nbsp;number&nbsp;of&nbsp;clusters&nbsp;to&nbsp;create<br>
+Computes&nbsp;and&nbsp;returns&nbsp;the&nbsp;codebook,&nbsp;codes&nbsp;and&nbsp;representation&nbsp;errors.&nbsp;<br>
+If&nbsp;given&nbsp;an&nbsp;Nx1&nbsp;matrix&nbsp;of&nbsp;categories,&nbsp;it&nbsp;uses&nbsp;the&nbsp;category&nbsp;labels&nbsp;<br>
+to&nbsp;calculate&nbsp;the&nbsp;initial&nbsp;cluster&nbsp;means.</tt></dd></dl>
+ <dl><dt><a name="-kmeans_algorithm"><strong>kmeans_algorithm</strong></a>(A, means)</dt></dl>
+ <dl><dt><a name="-kmeans_classify"><strong>kmeans_classify</strong></a>(d, means)</dt><dd><tt>take&nbsp;in&nbsp;the&nbsp;data&nbsp;and&nbsp;cluster&nbsp;means<br>
+return&nbsp;a&nbsp;matrix&nbsp;of&nbsp;ID&nbsp;values&nbsp;and&nbsp;distances<br>
+The&nbsp;IDs&nbsp;should&nbsp;be&nbsp;the&nbsp;index&nbsp;of&nbsp;the&nbsp;closest&nbsp;cluster&nbsp;mean&nbsp;to&nbsp;the&nbsp;data&nbsp;point.&nbsp;<br>
+The&nbsp;distances&nbsp;should&nbsp;be&nbsp;the&nbsp;Euclidean&nbsp;distance&nbsp;to&nbsp;the&nbsp;nearest&nbsp;cluster&nbsp;mean.</tt></dd></dl>
+ <dl><dt><a name="-kmeans_init"><strong>kmeans_init</strong></a>(d, K, categories<font color="#909090">=[]</font>)</dt><dd><tt>take&nbsp;in&nbsp;the&nbsp;data,&nbsp;the&nbsp;number&nbsp;of&nbsp;clusters&nbsp;K,&nbsp;and&nbsp;an&nbsp;optional&nbsp;set&nbsp;of&nbsp;categories<br>
+return&nbsp;a&nbsp;numpy&nbsp;matrix&nbsp;with&nbsp;K&nbsp;rows,&nbsp;each&nbsp;one&nbsp;repesenting&nbsp;a&nbsp;cluster&nbsp;mean.&nbsp;<br>
+If&nbsp;no&nbsp;categories&nbsp;are&nbsp;given&nbsp;choose&nbsp;K&nbsp;random&nbsp;data&nbsp;points&nbsp;to&nbsp;be&nbsp;the&nbsp;means.</tt></dd></dl>
+ <dl><dt><a name="-kmeans_numpy"><strong>kmeans_numpy</strong></a>(d, headers<font color="#909090">=[]</font>, K<font color="#909090">=2</font>, whiten<font color="#909090">=True</font>, categories<font color="#909090">=[]</font>)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;Data&nbsp;object,&nbsp;a&nbsp;set&nbsp;of&nbsp;headers,&nbsp;and&nbsp;the&nbsp;number&nbsp;of&nbsp;clusters&nbsp;to&nbsp;create<br>
+Computes&nbsp;and&nbsp;returns&nbsp;the&nbsp;codebook,&nbsp;codes,&nbsp;and&nbsp;representation&nbsp;error.</tt></dd></dl>
  <dl><dt><a name="-linear_regression"><strong>linear_regression</strong></a>(d, ind, dep)</dt><dd><tt>linear&nbsp;regression&nbsp;for&nbsp;one&nbsp;or&nbsp;more&nbsp;independent&nbsp;variables<br>
 &nbsp;<br>
 Parameters:<br>
@@ -56,6 +74,9 @@ is&nbsp;mapped&nbsp;to&nbsp;zero&nbsp;and&nbsp;its&nbsp;maximum&nbsp;value&nbsp;
 returns&nbsp;a&nbsp;matrix&nbsp;with&nbsp;each&nbsp;entry&nbsp;normalized&nbsp;so&nbsp;that&nbsp;the&nbsp;minimum&nbsp;value&nbsp;<br>
 (of&nbsp;all&nbsp;the&nbsp;data&nbsp;in&nbsp;this&nbsp;set&nbsp;of&nbsp;columns)&nbsp;is&nbsp;mapped&nbsp;to&nbsp;zero&nbsp;and&nbsp;<br>
 its&nbsp;maximum&nbsp;value&nbsp;is&nbsp;mapped&nbsp;to&nbsp;1.</tt></dd></dl>
+ <dl><dt><a name="-pca"><strong>pca</strong></a>(data, colHeaders, prenorm<font color="#909090">=True</font>, verbose<font color="#909090">=False</font>)</dt><dd><tt>perform&nbsp;a&nbsp;PCA&nbsp;analysis&nbsp;on&nbsp;the&nbsp;data&nbsp;for&nbsp;the&nbsp;given&nbsp;headers<br>
+returns&nbsp;a&nbsp;PCAData&nbsp;object&nbsp;with&nbsp;the&nbsp;source&nbsp;column&nbsp;headers,&nbsp;projected&nbsp;data,&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;eigenvalues,&nbsp;eigenvectors,&nbsp;and&nbsp;source&nbsp;data&nbsp;means&nbsp;within&nbsp;it</tt></dd></dl>
  <dl><dt><a name="-stdev"><strong>stdev</strong></a>(data, colHeaders)</dt><dd><tt>Takes&nbsp;in&nbsp;a&nbsp;list&nbsp;of&nbsp;column&nbsp;headers&nbsp;and&nbsp;the&nbsp;Data&nbsp;object&nbsp;and&nbsp;<br>
 returns&nbsp;a&nbsp;list&nbsp;of&nbsp;the&nbsp;standard&nbsp;deviation&nbsp;for&nbsp;each&nbsp;specified&nbsp;column.</tt></dd></dl>
 </td></tr></table>

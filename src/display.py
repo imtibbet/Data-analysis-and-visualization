@@ -2,16 +2,6 @@
 Ian Tibbetts and Daniel Meyer
 Colby College CS251 Spring '15
 Professors Stephanie Taylor and Bruce Maxwell
-
-TODO: 	Analysis, predicting call/swing from frames as columns
-		Ump Called color expand to include different types of strikes
-		Strike count and most recent pitch type during animation
-			- text in the status bar (or on the canvas?) that updates when y==0
-		Keep track of 'actual' vs 'called' strike or ball
-			- test location, if enters strike zone then strike, else ball
-		Sounds (contact, umpire call, result, catcher's glove, result)
-			- single or multiple sounds per pitch?
-			- sound priority? if multiple apply, which gets used?
 '''
 
 # standard with python
@@ -172,7 +162,7 @@ class DisplayApp:
 		
 	def animateCanvas(self):
 		'''
-		build the data, pausing as if animation
+		build the data, pausing as if animation according to the data's delay
 		'''
 		self.buildData(animate=True)
 		if self.enableAnimateRotate.get():
@@ -188,7 +178,8 @@ class DisplayApp:
 		
 	def animateGif(self):
 		'''
-		build the data, animating with images to make a gif
+		build the data in the background, animating with images to make a gif
+		performs the gif conversion in a new thread to allow continued GUI use
 		'''
 		self.buildData(fn=self.filename)
 		curFrame = self.numericData.shape[0]
@@ -209,10 +200,12 @@ class DisplayApp:
 		
 	def buildAxes(self):
 		'''
-		builds the view transformation matrix [VTM], 
-		multiplies the axis endpoints by the VTM, 
-		then creates three new line objects, one for each axis
-		Note: only called once by __init__, then updateAxes used
+		build the data independent elements of the display:
+			axes
+			ticks
+			strike zone
+			batter
+		Note: used to build initially and update to avoid code duplication
 		'''
 		axes=[[self.minx,0,0],[self.maxx,0,0],
 			  [0,self.miny,0],[0,self.maxy,0],
@@ -313,7 +306,7 @@ class DisplayApp:
 	
 	def buildBatter(self):
 		'''
-		draw the strike zone
+		helper method to define a batter on the canvas using the plotted data
 		'''
 		# side of batter
 		sideCol = self.data.header2raw["HITSIDE"]
@@ -423,25 +416,19 @@ class DisplayApp:
 		tk.Frame( self.root, width=2, bd=1, relief=tk.SUNKEN
 				  ).pack( side=tk.RIGHT, padx = 2, pady = 2, fill=tk.Y)
 
-		row=0
-		# use a label to set the size of the right panel
-		tk.Label( self.rightcntlframe, text="Data"
-				  ).grid( row=row, columnspan=3 )
-		row+=1
-
-		
+		row=0		
 		# make an open button in the frame
 		tk.Button( self.rightcntlframe, text="Open", 
 				   command=self.openData, width=10
 				   ).grid( row=row, columnspan=3 )
 		row+=1
+		# make a listbox for open data objects in the frame
 		self.odatas = tk.Listbox(self.rightcntlframe, selectmode=tk.SINGLE, 
 										exportselection=0, height=6)
-		self.odatas.bind("<Double-Button-1>", self.plotData)
 		self.odatas.grid( row=row, columnspan=3 )
 		row+=1
 
-		# make a plot button in the frame
+		# make a plot, delete, and rename button in the frame
 		tk.Button( self.rightcntlframe, text="Plot", 
 				   command=self.plotData, width=6
 				   ).grid( row=row, column=0 )
@@ -456,51 +443,57 @@ class DisplayApp:
 				  ).grid( row=row, columnspan=3, pady = 10, sticky=tk.EW)
 		row+=1
 
-		# make a get at bat button in the frame
+		# make a gen at bat button in the frame
 		tk.Button( self.rightcntlframe, text="Gen At Bat Data", 
 				   command=self.genAtBatData, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
-		# make a get at bat button in the frame
+		# make a gen pitch button in the frame
 		tk.Button( self.rightcntlframe, text="Gen Pitch Data", 
 				   command=self.genPitchesData, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
-		# make a get at bat button in the frame
+		# make a gen curve button in the frame
 		tk.Button( self.rightcntlframe, text="Gen Curve Data", 
 				   command=self.genBaseballAnalysisData, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
-		# make a get at bat button in the frame
+		# checkbutton in frame to enable rotation at the end of an animation
 		tk.Checkbutton( self.rightcntlframe, variable=self.enableAnimateRotate,
 					text="Enable Animation Rotation"
 					).grid( row=row, columnspan=3 )
 		row+=1
+		
+		# entry in frame for specifying the angular speed of the animation
 		tk.Label( self.rightcntlframe, text="Angular Speed (deg/frame):"
 				   ).grid( row=row, columnspan=2, sticky=tk.E )
 		self.animateAngSpeed = tk.Entry( self.rightcntlframe, width=5 )
 		self.animateAngSpeed.grid( row=row, column=2, sticky=tk.W )
 		row+=1
+		
+		# entry in the frame for specifying the animation speed multiplier
 		tk.Label( self.rightcntlframe, text="Real Time Multiplier:"
 				   ).grid( row=row, columnspan=2, sticky=tk.E )
 		self.animateSpeedupEntry = tk.Entry( self.rightcntlframe, width=5 )
 		self.animateSpeedupEntry.grid( row=row, column=2, sticky=tk.W )
 		row+=1
+		
+		# make an animate button in the frame
 		tk.Button( self.rightcntlframe, text="Animate Canvas", 
 				   command=self.animateCanvas, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
-		# make a get at bat button in the frame
+		# make a generate gif button in the frame
 		tk.Button( self.rightcntlframe, text="Generate Gif", 
 				   command=self.animateGif, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
-		# make a plot button in the frame
+		# make a change axes button in the frame
 		tk.Button( self.rightcntlframe, text="Change Axes", 
 				   command=self.changeDataAxes, width=15
 				   ).grid( row=row, columnspan=3 )
@@ -518,12 +511,13 @@ class DisplayApp:
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 
-		# make a clear button in the frame
+		# make a reset button in the frame
 		tk.Button( self.rightcntlframe, text="Reset", 
 				   command=self.resetView, width=15
 				   ).grid( row=row, columnspan=3 )
 		row+=1
 		
+		# make an option menu for view presets
 		presets = self.getPresets()
 		self.zLabel.trace("w", self.updatePresets)
 		self.presetView = tk.StringVar()
@@ -534,14 +528,9 @@ class DisplayApp:
 		self.presetControl.grid( row=self.presetControlRow, columnspan=3 )
 		row+=1
 		
-		# disable ticks
+		# checkbutton in frame to disable ticks
 		tk.Checkbutton( self.rightcntlframe, text="Enable Ticks",
 					variable=self.enableTicks, command=self.buildAxes
-					   ).grid( row=row, columnspan=3 )
-		row+=1
-		
-		# size selector
-		tk.Label( self.rightcntlframe, text="\nSize"
 					   ).grid( row=row, columnspan=3 )
 		row+=1
 
@@ -563,11 +552,6 @@ class DisplayApp:
 		self.sizeOption.set("6")
 		tk.OptionMenu( self.rightcntlframe, self.sizeOption, command=self.update,
 					   *range(1,31)).grid( row=row, columnspan=3 )
-		row+=1
-		
-		# shape selector
-		tk.Label( self.rightcntlframe, text="\nShape"
-					   ).grid( row=row, columnspan=3 )
 		row+=1
 
 		# make a shape mode selector in the frame
@@ -592,11 +576,6 @@ class DisplayApp:
 					   ).grid( row=row, columnspan=3 )
 		row+=1
 
-		# color selector
-		tk.Label( self.rightcntlframe, text="\nColor"
-					   ).grid( row=row, columnspan=3 )
-		row+=1
-
 		# make a color mode selector in the frame
 		colorModes = [
 			("Ump Called Color", "c"),
@@ -614,10 +593,8 @@ class DisplayApp:
 			b.grid( row=row, columnspan=3 )
 			row+=1
 		
-		# make a an integer selector for each color band
-		tk.Label( self.rightcntlframe, text="OR"
-				  )#.grid( row=row, columnspan=3 )
-		row+=1		
+		# user selected color for each band
+		# uncomment grid below to include RGB labels
 		tk.Label( self.rightcntlframe, text="Red")#.grid( row=row, column=0 )
 		tk.Label( self.rightcntlframe, text="Green")#.grid( row=row, column=1 )
 		tk.Label( self.rightcntlframe, text="Blue")#.grid( row=row, column=2 )
@@ -639,7 +616,9 @@ class DisplayApp:
 	def buildData(self, animate=False, fn=""): 
 		'''
 		build the data on the screen based on the data and filename fields
-		Note: this method is the only one that transforms and draws data
+		parameters to allow animation on screen or to filename (fn)
+		renders by depth unless animating, then renders in csv order
+		Note: used to build initially and update to avoid code duplication
 		'''
 		# if the data is not set, set according to filename
 		if not self.data:
@@ -944,7 +923,7 @@ class DisplayApp:
 	
 	def buildStrikeZone(self):
 		'''
-		draw the strike zone
+		draw the strike zone on the canvas
 		'''
 		axes = [[self.zoneLeft,0,self.zoneBot],[self.zoneLeft,0,self.zoneTop],
 				[self.zoneLeft,0,self.zoneTop],[self.zoneRight,0,self.zoneTop],
@@ -1260,7 +1239,10 @@ class DisplayApp:
 	
 	def genAtBatData(self):
 		'''
-		
+		generate at bat data from the selected open data by presenting a dialog
+		initial position, velocity, and acceleration used to gen position over 
+		time for each pitch selected (1 pitch -> frames rows in the new data)
+		generated data is added to open data listbox in controls
 		'''
 		# get the selected data object
 		try:
@@ -1306,7 +1288,10 @@ class DisplayApp:
 	
 	def genBaseballAnalysisData(self):
 		'''
-		
+		generate trajectory data from the selected open data
+		initial position, velocity, and acceleration used to gen position over 
+		time for each pitch selected (1 pitch -> 3x frames cols in the new data)
+		generated data is added to open data listbox in controls		
 		'''		
 		# get the selected data object
 		try:
@@ -1354,7 +1339,12 @@ class DisplayApp:
 	
 	def genCurvesData(self, data, mdata, numFrames):
 		'''
-		
+		generate position over time data for each pitch in the given data
+		data -> data object
+		mdata -> matrix of pitches
+		initial position, velocity, and acceleration used to gen position over 
+		time for each pitch selected (1 pitch -> frames rows in the new data)
+		generated frames are returned as a list
 		'''
 		sx = data.header2matrix["XSTART"]
 		sy = data.header2matrix["YSTART"]
@@ -1377,7 +1367,10 @@ class DisplayApp:
 	
 	def genPitchesData(self):
 		'''
-		
+		generate pitches data from the selected open data by presenting a dialog
+		initial position, velocity, and acceleration used to gen position over 
+		time for each pitch selected (1 pitch -> frames rows in the new data)
+		generated data is added to open data listbox in controls
 		'''
 		# get the selected data object
 		try:
@@ -2175,16 +2168,6 @@ class DisplayApp:
 		#self.canvas.update()
 		self.canvas.postscript(file=filename, colormode='color')
 		if self.verbose: print("saved canvas as %s" % filename)
-		'''
-		try:
-			img = image.imread(filename)
-			newFilename = ".".join(filename.split(".")[:-1]+["png"])
-			image.imsave(newFilename,img)
-			#os.remove(filename) # comment to keep ps file
-			if self.verbose: print("saved canvas as %s" % newFilename)
-		except:
-			pass
-		'''
 			
 	def saveData(self, event=None):
 		'''
