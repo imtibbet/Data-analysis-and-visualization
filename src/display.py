@@ -584,7 +584,7 @@ class DisplayApp:
 			("Selected Color", "s")
 		]
 		self.colorModeStr = tk.StringVar()
-		self.colorModeStr.set("g") # initialize
+		self.colorModeStr.set("c") # initialize
 		self.getColor = self.getColorGradient
 		for text, mode in colorModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
