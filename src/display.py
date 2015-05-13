@@ -577,15 +577,20 @@ class DisplayApp:
 		row+=1
 
 		# make a color mode selector in the frame
+		self.colorFunctions = {"c":self.getColorCalled,
+							"g":self.getColorGradient,
+							"d":self.getColorDiscrete,
+							"s":self.getColorCurrent}
 		colorModes = [
 			("Ump Called Color", "c"),
 			("Gradient Color", "g"),
 			("Discrete Color", "d"),
 			("Selected Color", "s")
 		]
+		initColor = "c"
 		self.colorModeStr = tk.StringVar()
-		self.colorModeStr.set("c") # initialize
-		self.getColor = self.getColorGradient
+		self.colorModeStr.set(initColor)
+		self.getColor = self.colorFunctions[initColor]
 		for text, mode in colorModes:
 			b = tk.Radiobutton(self.rightcntlframe, text=text,
 							variable=self.colorModeStr, value=mode, 
@@ -2268,15 +2273,7 @@ class DisplayApp:
 		'''
 		callback for radio button, used to change color function for drawing
 		'''
-		cmstr = self.colorModeStr.get()
-		if cmstr == "s":
-			self.getColor = self.getColorCurrent
-		elif cmstr == "g":
-			self.getColor = self.getColorGradient
-		elif cmstr == "d":
-			self.getColor = self.getColorDiscrete
-		else: #cmstr == "c":
-			self.getColor = self.getColorCalled
+		self.getColor = self.colorFunctions[self.colorModeStr.get()]
 		self.update()
 			
 	def setData(self):
