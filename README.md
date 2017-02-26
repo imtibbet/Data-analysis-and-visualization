@@ -1,2 +1,2 @@
-# CS251
+# Colby college
 Data Analysis and Visualization
